@@ -231,3 +231,10 @@ O desenvolvimento passará a ser orientado pelo princípio de que **o
 software é o principal resultado do projeto**, utilizando documentação,
 modelagem e versionamento como instrumentos de apoio, e não como fins em
 si mesmos.
+
+
+# Decisões aprovadas para o MVP
+
+As decisões de escopo aprovadas após esta versão do roadmap estão registradas em `docs/decisoes-mvp.md`. Esse documento é a referência para o MVP local e resolve divergências temporárias de escopo, especialmente quanto à sincronização em nuvem, ao formato ChordPro, à modelagem inicial e às funcionalidades adiadas.
+
+A Fase 4 seguirá esse escopo aprovado: versão local, offline e funcional antes da sincronização em nuvem.
