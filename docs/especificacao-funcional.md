@@ -498,7 +498,9 @@ A primeira versão deverá conter:
 
 -   Funcionamento offline.
 
--   Sincronização com Google Drive.
+-   Persistência local e funcionamento offline.
+
+A sincronização com Google Drive será avaliada após a estabilização da versão local funcional, conforme `docs/decisoes-mvp.md`.
 
 Toda a arquitetura deverá ser preparada para permitir evolução contínua,
 preservando compatibilidade e evitando reestruturações significativas.
