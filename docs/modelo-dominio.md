@@ -91,6 +91,11 @@ A relação entre os documentos é a seguinte:
 Sempre que houver conflito entre documentos, a definição dos conceitos
 do domínio prevalecerá sobre as demais.
 
+Para decisões de escopo e simplificações temporárias do MVP, prevalece
+`docs/decisoes-mvp.md`. Esse documento não altera os conceitos
+musicais permanentes: define somente o recorte aprovado para a primeira
+versão funcional.
+
 ## 1.4 Filosofia do Domínio
 
 O sistema não gerencia arquivos de cifras.
