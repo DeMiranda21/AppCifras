@@ -29,9 +29,13 @@ O MVP incluirá:
 
 O usuário cadastrará uma música digitando ou colando o conteúdo completo da letra com acordes em um editor de texto simples.
 
-O formato de intercâmbio e armazenamento da música será **ChordPro**. A aplicação preservará o conteúdo do usuário e poderá gerar uma representação interpretada em memória para renderização, transposição e exibição de graus.
+O formato de intercâmbio e armazenamento da música será **ChordPro**. Cada música será armazenada como um único arquivo UTF-8 nesse formato. O conteúdo ChordPro original fornecido pelo usuário será preservado sem reescrita; a aplicação poderá gerar uma representação interpretada em memória para renderização, transposição e exibição de graus.
 
-O MVP aceitará somente notações básicas de acordes. A lista exata das notações reconhecidas será definida antes da implementação do parser.
+O parser do MVP aceitará um subconjunto básico ampliado de acordes: fundamentais de A a G, com sustenidos ou bemóis; tríades; extensões; suspensões; adições; alterações entre parênteses; e inversões. Também aceitará os aliases de acordes já documentados no Modelo de Domínio. A definição detalhada dessa gramática pertence à implementação e aos testes do parser, sem ampliar o escopo musical aprovado para o MVP.
+
+Cifras que o parser ainda não consiga interpretar serão preservadas no conteúdo original e sinalizadas como não interpretáveis. Elas não impedirão o cadastro ou a preservação da música e permanecerão como cifras absolutas, sem transposição ou conversão automática para graus.
+
+Os metadados próprios do AppCifras associados ao arquivo ChordPro terão schema versionado. Esse schema incluirá apenas informações necessárias ao MVP e não incorporará recursos adiados.
 
 Não haverá editor estruturado por seções, nem recursos de arrastar, duplicar, excluir ou reorganizar blocos. A evolução futura para seções estruturadas deve permanecer possível.
 
@@ -66,10 +70,52 @@ A plataforma inicial é Android. O aparelho principal de desenvolvimento e teste
 
 O MVP deve priorizar nesse aparelho abertura rápida de músicas, operação offline, rolagem fluida, leitura confortável, transposição sem atraso perceptível e baixo consumo de memória e bateria.
 
-A versão mínima do Android será definida durante a configuração do Flutter, considerando a compatibilidade das ferramentas.
+O Android mínimo do MVP será a API 23 (Android 6.0).
 
-## 9. Pendências antes da implementação
+## 9. Fonte dos dados locais
 
-- definir a versão mínima de Android;
-- especificar a lista de notações básicas aceitas pelo parser ChordPro;
-- definir o esquema versionado dos metadados associados ao arquivo ChordPro.
+O arquivo da música é a fonte original de seu conteúdo e dos metadados próprios do AppCifras. O banco local armazenará apenas dados derivados e locais necessários para índice, favoritos, Listas de Culto e preferências.
+
+## 10. Grafia enarmônica na transposição
+
+Quando houver tom de destino conhecido, a transposição deve preferir a grafia enarmônica coerente com a tonalidade de destino. Por exemplo, ao transpor para Eb, devem ser preferidas grafias como Eb, Ab e Bb, em vez de D#, G# e A#, quando musicalmente correspondentes.
+
+Quando não houver contexto tonal, a transposição deve preservar, quando possível, a família de acidente da grafia original. Por exemplo, C#7 transposto dois semitons deve tender a D#7, enquanto Db7 transposto dois semitons deve tender a Eb7.
+
+Como fallback sem contexto tonal, se a nota resultante possuir representação natural, essa representação deve ser usada. Se a nota original possuir sustenido ou bemol e o resultado exigir acidente, deve ser preservada a preferência pela respectiva família. Se a nota original for natural e o resultado exigir acidente, deve ser preferido sustenido. Essa regra é apenas determinística para ausência de contexto tonal; quando houver tom de destino, prevalece a grafia coerente com a tonalidade.
+
+A equivalência sonora e a grafia continuam sendo conceitos distintos: notas enarmônicas podem ter a mesma classe de altura sem serem estruturalmente iguais.
+
+## 11. Acidentes suportados
+
+O MVP suporta somente notas naturais, sustenidos simples (#) e bemóis simples (b). Acidentes duplos (##, bb e equivalentes) ficam fora do escopo.
+
+Quando uma grafia teoricamente rigorosa exigir acidente duplo, o aplicativo deverá utilizar uma representação enarmônica equivalente suportada pelo MVP. Essa é uma simplificação deliberada e não deve provocar ampliação do modelo Nota nesta fase.
+
+## 12. Conversão de graus harmônicos
+
+Para o MVP, Tom.menor utiliza a escala menor natural como referência diatônica: i, ii°, III, iv, v, VI e VII. Escalas menor harmônica e melódica, incluindo o reconhecimento de V maior e vii° característicos, ficam para evolução futura.
+
+Um acorde será convertido para grau somente se todas as notas que compõem sua estrutura forem diatônicas na escala do Tom informado. Em C maior, por exemplo, Em7, Cadd9 e Dsus4 são convertíveis, enquanto C7 permanece como cifra absoluta por conter Bb.
+
+A conversão preserva estruturalmente qualidade, extensões, adições, suspensões e demais características suportadas do acorde. Inversões, acordes não diatônicos e estruturas que não correspondam ao grau esperado permanecem como cifras absolutas no MVP.
+
+## 13. Subconjunto do parser de acordes
+
+O parser do MVP trabalha com um subconjunto explícito e evolutivo de notações. O conteúdo ChordPro original é preservado sem reescrita; o parser produz somente uma representação estrutural derivada em memória. Uma cifra não reconhecida deve ser preservada exatamente como texto não interpretável, sem impedir o cadastro da música, mas não poderá ser transposta ou convertida para graus automaticamente.
+
+São reconhecidas fundamentais de A a G, naturais, com sustenido simples (#) ou bemol simples (b), e as estruturas: maior (C), menor (Cm), quinta (C5), sexta (C6 e Cm6), sétimas C7, Cm7 e Cmaj7, extensões C9, Cm9, C11 e C13, adições Cadd9 e Cadd11, suspensões Csus2 e Csus4, diminuto (Cdim), aumentado (Caug), meio-diminuto (Cm7(b5)) e inversões com baixo após /.
+
+As alterações inicialmente reconhecidas são b5, #5, b9 e #9, escritas entre parênteses e combináveis quando cada componente for suportado. Formas com extensões entre parênteses são aceitas quando equivalentes às estruturas suportadas, como C7(9), Cm7(9), C7M(9) e C7(13).
+
+Os aliases C7M, CM7 e CΔ7 equivalem a Cmaj7; C° equivale a Cdim; C+ equivale a Caug; Cø equivale a Cm7(b5); e C4 equivale a Csus4. A normalização aplica-se somente à representação estrutural. Parênteses têm significado apenas para componentes previstos neste subconjunto, e / representa exclusivamente inversão; 6/9 não é suportado.
+
+Ficam fora do subconjunto atual: alt, no3, #11, b13, 6/9, 69, 2 e outras notações que exijam ampliação do modelo. Não haverá parsing parcial nem correção silenciosa de texto desconhecido.
+
+Para esse subconjunto, QualidadeAcorde.quinta representa acordes como C5 sem terça, e AdicaoAcorde.decimaPrimeira representa Cadd11. A transposição preserva essas estruturas; acordes de quinta permanecem como cifras absolutas na conversão de graus do MVP.
+
+## 14. Processamento básico de ChordPro
+
+O processamento ChordPro gera uma representação derivada e ordenada em memória, sem reescrever a fonte original. Espaços, linhas vazias, texto, acordes não interpretáveis e conteúdos malformados são preservados.
+
+Nesta etapa são interpretadas somente as diretivas title, artist e key, além de start_of_chorus/end_of_chorus e seus aliases soc/eoc. Diretivas desconhecidas são preservadas, e refrões são reconhecidos exclusivamente por esses marcadores explícitos, sem inferência a partir do texto.
