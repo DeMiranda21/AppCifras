@@ -61,6 +61,21 @@ class DiretivaTomChordPro extends DiretivaChordPro {
   final Tom? tom;
 }
 
+class DiretivaSchemaAppCifras extends DiretivaChordPro {
+  const DiretivaSchemaAppCifras(super.original, super.valor);
+
+  int? get versao => int.tryParse(valorOriginal.trim());
+}
+
+class DiretivaIdAppCifras extends DiretivaChordPro {
+  const DiretivaIdAppCifras(super.original, super.valor);
+
+  String? get id {
+    final valor = valorOriginal.trim();
+    return valor.isEmpty ? null : valor;
+  }
+}
+
 class DiretivaDesconhecidaChordPro extends DiretivaChordPro {
   const DiretivaDesconhecidaChordPro(super.original, super.valor, this.nome);
   final String nome;

@@ -119,3 +119,23 @@ Para esse subconjunto, QualidadeAcorde.quinta representa acordes como C5 sem ter
 O processamento ChordPro gera uma representação derivada e ordenada em memória, sem reescrever a fonte original. Espaços, linhas vazias, texto, acordes não interpretáveis e conteúdos malformados são preservados.
 
 Nesta etapa são interpretadas somente as diretivas title, artist e key, além de start_of_chorus/end_of_chorus e seus aliases soc/eoc. Diretivas desconhecidas são preservadas, e refrões são reconhecidos exclusivamente por esses marcadores explícitos, sem inferência a partir do texto.
+
+## 15. Metadados obrigatórios da Música
+
+Para originar uma Música válida, o Documento ChordPro deve conter exatamente uma diretiva válida de cada metadado obrigatório: title, artist e key. Diretivas ausentes, repetidas ou sem valor válido impedem somente a criação da Música; o Documento ChordPro original continua preservado integralmente, sem escolha de precedência ou alteração automática.
+
+## 16. Armazenamento local e importação
+
+A Biblioteca Musical do MVP é local ao aparelho e funciona integralmente offline. Nuvem, backup e sincronização entre aparelhos são evoluções futuras; a arquitetura deve mantê-los fora do domínio musical e sem acoplamento impeditivo.
+
+Arquivos externos são somente fontes de importação. A importação cria uma cópia pertencente ao AppCifras, que permanece utilizável offline e independente da disponibilidade, movimentação ou exclusão da origem. O aplicativo não modifica a origem: transformações futuras, incluindo TXT para ChordPro, ocorrem exclusivamente sobre a cópia interna.
+
+O conteúdo musical (ChordPro, letra, acordes e metadados musicais), a identidade própria do AppCifras e o estado local derivado da Biblioteca permanecem conceitualmente separados. Favoritos, Listas de Culto, índices e preferências não pertencem à Música nem ao arquivo ChordPro nesta etapa.
+
+Arquivos gerenciados pela Biblioteca poderão declarar `{appcifras_schema: 1}` e `{appcifras_id: <id>}`. `IdMusica` é a identidade canônica no domínio; quando a diretiva `appcifras_id` estiver presente, ela deve ocorrer uma única vez, ser válida e corresponder ao ID da Música. Documentos externos sem essas diretivas continuam válidos para importação, e cópias internas recebem identidade própria sem alterar a origem.
+
+## 17. Persistência local da Biblioteca
+
+Cada Música gerenciada é persistida em arquivo UTF-8 individual com extensão `.cho`, cujo nome interno é derivado de `IdMusica`, nunca de título ou artista. O arquivo ChordPro é a fonte oficial do conteúdo e dos metadados próprios da Música; SQLite mantém somente o índice e o estado local derivado, sem duplicar a cifra completa. Drift é a camada Dart sobre SQLite adotada pelo MVP.
+
+Uma importação com `appcifras_id` já existente não sobrescreve silenciosamente a Música local. Conteúdo identificado com schema AppCifras inválido ou diferente de `1` não é incorporado como Música gerenciada, mas permanece preservado como conteúdo recebido. Nuvem e sincronização continuam fora do MVP local.

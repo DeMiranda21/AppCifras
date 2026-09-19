@@ -124,6 +124,39 @@ void main() {
       expect(tempo.valorOriginal, ' 72');
     });
 
+    test(
+      'reconhece diretivas próprias do AppCifras sem reescrever a fonte',
+      () {
+        const fonte =
+            '{appcifras_schema: 1}\n{appcifras_id: musica-1}\n{title: Música}';
+        final documento = parser.interpretar(fonte);
+
+        expect(documento.conteudoOriginal, fonte);
+        expect((documento.elementos[0] as DiretivaSchemaAppCifras).versao, 1);
+        expect((documento.elementos[1] as DiretivaIdAppCifras).id, 'musica-1');
+      },
+    );
+
+    test('aceita a ausência de diretivas próprias em ChordPro externo', () {
+      final documento = parser.interpretar('{title: Música}\n{key: C}');
+
+      expect(documento.elementos.whereType<DiretivaSchemaAppCifras>(), isEmpty);
+      expect(documento.elementos.whereType<DiretivaIdAppCifras>(), isEmpty);
+    });
+
+    test('preserva diretivas próprias duplicadas ou inválidas', () {
+      final documento = parser.interpretar(
+        '{appcifras_schema: zero}\n{appcifras_id: }\n{appcifras_id: outra}',
+      );
+
+      expect(
+        (documento.elementos[0] as DiretivaSchemaAppCifras).versao,
+        isNull,
+      );
+      expect((documento.elementos[1] as DiretivaIdAppCifras).id, isNull);
+      expect((documento.elementos[2] as DiretivaIdAppCifras).id, 'outra');
+    });
+
     test('reconhece marcadores explícitos de refrão e aliases', () {
       final documento = parser.interpretar(
         '{start_of_chorus}\n{end_of_chorus}\n{soc}\n{eoc}',

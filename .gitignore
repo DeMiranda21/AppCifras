@@ -4,3 +4,4 @@ build/
 *.iml
 .metadata
 .DS_Store
+.flutter-plugins-dependencies

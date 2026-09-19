@@ -47,6 +47,8 @@ class ParserDocumentoChordPro {
       valor,
       _interpretarTom(valor.trim()),
     ),
+    'appcifras_schema' => DiretivaSchemaAppCifras(original, valor),
+    'appcifras_id' => DiretivaIdAppCifras(original, valor),
     'start_of_chorus' || 'soc' => InicioRefraoChordPro(original),
     'end_of_chorus' || 'eoc' => FimRefraoChordPro(original),
     _ => DiretivaDesconhecidaChordPro(original, valor, nome),
