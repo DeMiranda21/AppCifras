@@ -118,6 +118,66 @@ void main() {
         throwsA(isA<IdMusicaJaExistente>()),
       );
     });
+
+    test(
+      'cadastra música e cria diretivas obrigatórias sem reescrever o conteúdo',
+      () async {
+        final repositorio = _RepositorioMusicasFake();
+        final cadastro = CadastrarMusica(
+          repositorio: repositorio,
+          parserDocumento: parser,
+          geradorId: _GeradorIdMusicaFake(IdMusica('musica-gerada')),
+        );
+        const conteudo = '[G]Grande é o [D]Senhor\n[C]Digno de louvor';
+
+        final musicaCadastrada = await cadastro.executar(
+          const DadosCadastroMusica(
+            titulo: 'Grande é o Senhor',
+            artista: 'Exemplo',
+            tomOriginal: 'G',
+            conteudoChordPro: conteudo,
+          ),
+        );
+
+        expect(musicaCadastrada.id, IdMusica('musica-gerada'));
+        expect(
+          musicaCadastrada.documento.conteudoOriginal,
+          '{title: Grande é o Senhor}\n{artist: Exemplo}\n{key: G}\n$conteudo',
+        );
+        expect(
+          await repositorio.obterPorId(musicaCadastrada.id),
+          musicaCadastrada,
+        );
+      },
+    );
+
+    test('rejeita tom inválido sem salvar música', () async {
+      final repositorio = _RepositorioMusicasFake();
+      final cadastro = CadastrarMusica(
+        repositorio: repositorio,
+        parserDocumento: parser,
+        geradorId: _GeradorIdMusicaFake(IdMusica('musica-gerada')),
+      );
+
+      await expectLater(
+        cadastro.executar(
+          const DadosCadastroMusica(
+            titulo: 'Título',
+            artista: 'Artista',
+            tomOriginal: 'H',
+            conteudoChordPro: '[C]Letra',
+          ),
+        ),
+        throwsA(
+          isA<CadastroMusicaInvalido>().having(
+            (erro) => erro.campo,
+            'campo',
+            CampoCadastroMusica.tomOriginal,
+          ),
+        ),
+      );
+      expect(await repositorio.listar(), isEmpty);
+    });
   });
 }
 

@@ -28,6 +28,10 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   @override
   int get schemaVersion => 1;
 
+  Future<void> inicializar() async {
+    await customSelect('SELECT 1').get();
+  }
+
   Future<IndiceMusica?> obterPorId(String id) => (select(
     indiceMusicas,
   )..where((tabela) => tabela.id.equals(id))).getSingleOrNull();

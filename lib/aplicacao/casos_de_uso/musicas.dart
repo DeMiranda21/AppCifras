@@ -28,6 +28,79 @@ class ListarMusicas {
   Future<List<Musica>> executar() => _repositorio.listar();
 }
 
+class DadosCadastroMusica {
+  const DadosCadastroMusica({
+    required this.titulo,
+    required this.artista,
+    required this.tomOriginal,
+    required this.conteudoChordPro,
+  });
+
+  final String titulo;
+  final String artista;
+  final String tomOriginal;
+  final String conteudoChordPro;
+}
+
+enum CampoCadastroMusica { titulo, artista, tomOriginal, conteudo }
+
+class CadastroMusicaInvalido implements Exception {
+  const CadastroMusicaInvalido(this.campo);
+
+  final CampoCadastroMusica campo;
+}
+
+class CadastrarMusica {
+  const CadastrarMusica({
+    required this.repositorio,
+    required this.parserDocumento,
+    required this.geradorId,
+  });
+
+  final RepositorioMusicas repositorio;
+  final ParserDocumentoChordPro parserDocumento;
+  final GeradorIdMusica geradorId;
+
+  Future<Musica> executar(DadosCadastroMusica dados) async {
+    _validarObrigatorios(dados);
+    final documento = parserDocumento.interpretar(_montarConteudo(dados));
+    final diretivaTom = documento.elementos.whereType<DiretivaTomChordPro>();
+    if (diretivaTom.length != 1 || diretivaTom.single.tom == null) {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.tomOriginal);
+    }
+
+    late Musica musica;
+    try {
+      musica = Musica(id: geradorId.gerar(), documento: documento);
+    } on ArgumentError {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.conteudo);
+    }
+    await repositorio.salvar(musica);
+    return musica;
+  }
+
+  void _validarObrigatorios(DadosCadastroMusica dados) {
+    if (dados.titulo.trim().isEmpty) {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.titulo);
+    }
+    if (dados.artista.trim().isEmpty) {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.artista);
+    }
+    if (dados.tomOriginal.trim().isEmpty) {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.tomOriginal);
+    }
+    if (dados.conteudoChordPro.trim().isEmpty) {
+      throw const CadastroMusicaInvalido(CampoCadastroMusica.conteudo);
+    }
+  }
+
+  String _montarConteudo(DadosCadastroMusica dados) =>
+      '{title: ${dados.titulo}}\n'
+      '{artist: ${dados.artista}}\n'
+      '{key: ${dados.tomOriginal}}\n'
+      '${dados.conteudoChordPro}';
+}
+
 class ExcluirMusica {
   const ExcluirMusica(this._repositorio);
   final RepositorioMusicas _repositorio;
