@@ -474,6 +474,60 @@ mecanismo de sincronização.
 -   Integração com Inteligência Artificial para organização e análise do
     repertório.
 
+## **7.1 PR-001 — Centralização da versão utilizada pela equipe**
+
+**Status:** necessidade futura registrada; solução e conceitos candidatos,
+ainda não aprovados para implementação ou incorporação ao Modelo de Domínio.
+
+**Problema observado**
+
+Músicos de uma mesma equipe de louvor frequentemente chegam aos ensaios
+utilizando cifras ou versões diferentes da mesma música. Isso gera
+divergências de letra, acordes, tom e, eventualmente, estrutura ou ordem
+das partes da música, dificultando o uso de uma referência comum.
+
+**Possível solução futura**
+
+Permitir a criação de Grupos ou Equipes de Louvor com membros e um papel
+responsável pela definição do repertório oficial da equipe,
+provisoriamente chamado de "Diretor". Esse responsável poderia selecionar
+as músicas/versões a serem utilizadas e disponibilizá-las aos demais
+membros, para que todos utilizem a mesma referência.
+
+Essa referência compartilhada poderia contemplar o tom utilizado pela
+equipe, a cifra, a letra, a estrutura/ordem das partes e outras adaptações
+específicas daquela equipe. A necessidade detalha o contexto de uso do
+compartilhamento de músicas e repertórios já citado nesta seção; não
+define ainda seu mecanismo de disponibilização.
+
+**Hipótese conceitual a validar**
+
+A necessidade sugere uma possível distinção futura entre:
+
+- Música: identidade/conteúdo musical de referência;
+- Arranjo ou Versão: configuração utilizada em determinado contexto ou
+  por determinada equipe.
+
+Essa distinção é apenas uma hipótese, não uma redefinição da Música atual.
+Arranjo/Versão, Grupo/Equipe e os respectivos papéis (Diretor e Membro)
+são conceitos candidatos, não elementos aprovados do Modelo de Domínio.
+Nomes, responsabilidades e relações permanecem sujeitos a validação futura.
+
+**Decisão para o desenvolvimento atual**
+
+Não implementar esta funcionalidade agora. Conforme o escopo de recursos
+adiados em [Decisões do MVP, seção 6](decisoes-mvp.md#6-sincronização-e-recursos-adiados),
+ela permanece fora do MVP, sem alterar seu escopo ou cronograma.
+Não criar Usuário, Grupo/Equipe, Diretor, Membro, Arranjo/Versão,
+permissões, autenticação, sincronização colaborativa ou infraestrutura
+de nuvem nesta etapa. Não alterar a arquitetura ou o Modelo de Domínio
+para antecipar essa funcionalidade.
+
+A única orientação para o desenvolvimento atual é evitar decisões
+desnecessárias que pressuponham que uma Música sempre possuirá uma única
+versão global e definitiva. Isso não exige suporte a múltiplas versões
+no MVP nem modifica as regras atuais de preservação do conteúdo original.
+
 # **8. MVP**
 
 A primeira versão deverá conter:

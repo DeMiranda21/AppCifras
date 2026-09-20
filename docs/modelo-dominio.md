@@ -595,8 +595,8 @@ Regras do Domínio
 
 O Tom Original nunca poderá ser alterado por operações de transposição.
 
-A Letra representa a composição oficial da Música e permanece inalterada
-durante mudanças de tonalidade.
+A Letra representa a estrutura textual completa de uma Música e permanece
+inalterada durante mudanças de tonalidade.
 
 Todo histórico de utilização deve ser registrado por meio de Registros
 de Tom, sem modificar os atributos permanentes da Música.
@@ -2241,7 +2241,7 @@ Toda Música possui exatamente uma Letra.
 
 **RM-03**
 
-A Letra representa a versão oficial da composição.
+A Letra representa a estrutura textual completa de uma Música.
 
 **RM-04**
 
