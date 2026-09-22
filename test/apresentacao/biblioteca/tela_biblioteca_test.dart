@@ -303,6 +303,45 @@ void main() {
     expect(repositorio.musicas, isEmpty);
   });
 
+  testWidgets('pesquisa por título, artista, acentos e permite limpar', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    for (final dados in [
+      ('Coração de Adorador', 'Ministério Ágape', 'musica-1'),
+      ('Outra Canção', 'Banda Exemplo', 'musica-2'),
+    ]) {
+      repositorio.musicas.add(
+        Musica(
+          id: IdMusica(dados.$3),
+          documento: parser.interpretar(
+            '{title: ${dados.$1}}\n{artist: ${dados.$2}}\n{key: C}\n[C]Letra',
+          ),
+        ),
+      );
+    }
+    await montar(tester, repositorio);
+    await tester.pumpAndSettle();
+    final pesquisa = find.byType(TextField);
+    await tester.enterText(pesquisa, '  coracao  ');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('musica-2')), findsNothing);
+    await tester.enterText(pesquisa, 'ÁGAPE');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
+    await tester.enterText(pesquisa, 'inexistente');
+    await tester.pump();
+    expect(
+      find.text('Nenhuma música encontrada para esta pesquisa.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Limpar pesquisa'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('musica-2')), findsOneWidget);
+  });
+
   testWidgets('falha ao salvar mantém o usuário na edição', (tester) async {
     final repositorio = _RepositorioFake()..erroAtualizar = StateError('falha');
     repositorio.musicas.add(

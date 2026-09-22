@@ -106,6 +106,7 @@ class _TelaRevisaoEntradaMusicaState extends State<TelaRevisaoEntradaMusica> {
   @override
   Widget build(BuildContext context) {
     final avisos = MensagensEntradaMusica.avisos(widget.entrada);
+    final detalhes = MensagensEntradaMusica.detalhesConversao(widget.entrada);
     return Scaffold(
       appBar: AppBar(title: const Text('Revisar música')),
       body: SafeArea(
@@ -131,6 +132,14 @@ class _TelaRevisaoEntradaMusicaState extends State<TelaRevisaoEntradaMusica> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                ],
+                if (detalhes.isNotEmpty) ...[
+                  const Text('Alguns trechos precisam de revisão:'),
+                  const SizedBox(height: 8),
+                  for (final detalhe in detalhes) ...[
+                    Text(detalhe),
+                    const SizedBox(height: 12),
+                  ],
                 ],
                 TextFormField(
                   controller: _titulo,

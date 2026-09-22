@@ -25,4 +25,28 @@ class MensagensEntradaMusica {
 
   static String erroGeral() =>
       'Não foi possível salvar a música. Tente novamente.';
+
+  static List<String> detalhesConversao(EntradaMusicaPreparada entrada) {
+    final conversao = entrada.conversao;
+    if (conversao == null) return const [];
+    return conversao.avisos.map((aviso) {
+      final motivo = switch (aviso.tipo) {
+        TipoAvisoConversaoCifra.acordesConvergentes =>
+          'Dois acordes ficaram associados à mesma posição.',
+        TipoAvisoConversaoCifra.acordeAposLetra =>
+          'Um acorde ficou após o fim da letra.',
+        TipoAvisoConversaoCifra.associacaoNaoSegura =>
+          'Não foi possível associar os acordes à letra com segurança.',
+        TipoAvisoConversaoCifra.linhaInstrumental =>
+          'O trecho foi preservado como passagem instrumental.',
+        TipoAvisoConversaoCifra.rotuloComConteudo =>
+          'O rótulo possui conteúdo que precisa de revisão.',
+        TipoAvisoConversaoCifra.tomExplicitoAmbiguo =>
+          'Há mais de uma indicação de tom.',
+        TipoAvisoConversaoCifra.tomExplicitoInvalido =>
+          'A indicação de tom não pôde ser interpretada.',
+      };
+      return 'Linha ${aviso.linha + 1} — "${conversao.trechoOriginal(aviso)}"\n$motivo';
+    }).toList();
+  }
 }

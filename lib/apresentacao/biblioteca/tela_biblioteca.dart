@@ -31,12 +31,25 @@ class TelaBiblioteca extends StatefulWidget {
 
 class _TelaBibliotecaState extends State<TelaBiblioteca> {
   late Future<List<Musica>> _musicas;
+  final _pesquisa = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _musicas = widget.listarMusicas.executar();
+    _pesquisa.addListener(_atualizarPesquisa);
   }
+
+  @override
+  void dispose() {
+    _pesquisa.removeListener(_atualizarPesquisa);
+    _pesquisa.dispose();
+    super.dispose();
+  }
+
+  void _atualizarPesquisa() => setState(() {});
+
+  void _limparPesquisa() => _pesquisa.clear();
 
   @override
   void didUpdateWidget(covariant TelaBiblioteca oldWidget) {
@@ -103,22 +116,68 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         if (musicas.isEmpty) {
           return const _EstadoBibliotecaVazia();
         }
-        return ListView.separated(
-          itemCount: musicas.length,
-          itemBuilder: (context, indice) {
-            final musica = musicas[indice];
-            return ListTile(
-              key: ValueKey(musica.id.valor),
-              onTap: () => _abrirMusica(musica),
-              title: Text(musica.titulo),
-              subtitle: Text(musica.artista),
-            );
-          },
-          separatorBuilder: (context, indice) => const Divider(height: 1),
+        final filtradas = _filtrar(musicas, _pesquisa.text);
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                controller: _pesquisa,
+                decoration: InputDecoration(
+                  labelText: 'Pesquisar músicas',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _pesquisa.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Limpar pesquisa',
+                          icon: const Icon(Icons.clear),
+                          onPressed: _limparPesquisa,
+                        ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: filtradas.isEmpty
+                  ? const _EstadoPesquisaVazia()
+                  : ListView.separated(
+                      itemCount: filtradas.length,
+                      itemBuilder: (context, indice) {
+                        final musica = filtradas[indice];
+                        return ListTile(
+                          key: ValueKey(musica.id.valor),
+                          onTap: () => _abrirMusica(musica),
+                          title: Text(musica.titulo),
+                          subtitle: Text(musica.artista),
+                        );
+                      },
+                      separatorBuilder: (context, indice) =>
+                          const Divider(height: 1),
+                    ),
+            ),
+          ],
         );
       },
     ),
   );
+
+  List<Musica> _filtrar(List<Musica> musicas, String consulta) {
+    final normalizada = _normalizar(consulta);
+    if (normalizada.isEmpty) return musicas;
+    return musicas.where((musica) {
+      return _normalizar(musica.titulo).contains(normalizada) ||
+          _normalizar(musica.artista).contains(normalizada);
+    }).toList();
+  }
+
+  String _normalizar(String valor) => valor
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp('[áàâãä]'), 'a')
+      .replaceAll(RegExp('[éèêë]'), 'e')
+      .replaceAll(RegExp('[íìîï]'), 'i')
+      .replaceAll(RegExp('[óòôõö]'), 'o')
+      .replaceAll(RegExp('[úùûü]'), 'u')
+      .replaceAll('ç', 'c');
 }
 
 class _EstadoBibliotecaVazia extends StatelessWidget {
@@ -169,6 +228,18 @@ class _EstadoErroBiblioteca extends StatelessWidget {
           Text('Tente novamente mais tarde.', textAlign: TextAlign.center),
         ],
       ),
+    ),
+  );
+}
+
+class _EstadoPesquisaVazia extends StatelessWidget {
+  const _EstadoPesquisaVazia();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(24),
+      child: Text('Nenhuma música encontrada para esta pesquisa.'),
     ),
   );
 }

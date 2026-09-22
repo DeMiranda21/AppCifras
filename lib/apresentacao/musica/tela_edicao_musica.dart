@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
 import '../../aplicacao/entrada/conteudo_chordpro_editavel.dart';
+import '../../aplicacao/entrada/reanalisador_conteudo_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
@@ -134,6 +135,38 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     }
   }
 
+  Future<void> _analisarAlteracoes() async {
+    final resultado = ReanalisadorConteudoChordPro().analisar(_conteudo.text);
+    if (resultado.chordProSugerido == _conteudo.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma conversão necessária.')),
+      );
+      return;
+    }
+    final aplicar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Aplicar conversão?'),
+        content: SingleChildScrollView(
+          child: SelectableText(resultado.chordProSugerido),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Aplicar alterações'),
+          ),
+        ],
+      ),
+    );
+    if (aplicar == true && mounted) {
+      setState(() => _conteudo.text = resultado.chordProSugerido);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Editar música')),
@@ -186,6 +219,11 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
                 validator: (valor) => _obrigatorio(valor, 'Conteúdo ChordPro'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _salvando ? null : _analisarAlteracoes,
+                child: const Text('Analisar alterações'),
               ),
               if (_erroGeral != null) ...[
                 const SizedBox(height: 16),

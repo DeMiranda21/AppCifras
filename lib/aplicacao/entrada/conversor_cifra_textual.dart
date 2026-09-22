@@ -45,6 +45,9 @@ class ResultadoConversaoCifraTextual {
   final String chordProSugerido;
   final List<AvisoConversaoCifra> avisos;
   final List<TrechoConversaoCifra> trechos;
+
+  String trechoOriginal(AvisoConversaoCifra aviso) =>
+      conteudoOriginal.split(RegExp(r'\r\n|\n|\r')).elementAt(aviso.linha);
 }
 
 /// Converte somente padrões textuais conservadores para uma sugestão ChordPro.

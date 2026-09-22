@@ -165,3 +165,7 @@ A visualização deverá suportar futuramente zoom in e zoom out da cifra. A imp
 A edição atualiza a mesma Música, preservando seu `IdMusica`; não cria outra entrada nem usa exclusão seguida de cadastro. O ChordPro canônico persistido é a origem da edição. Alterações de título, artista e tom substituem explicitamente somente as respectivas diretivas, sem deduplicação automática; o restante do documento é preservado. Quando `appcifras_id` estiver presente, deve continuar único, válido e coerente com a identidade da Música.
 
 Diretivas internas do AppCifras, como `appcifras_schema` e `appcifras_id`, não são conteúdo editável pelo usuário. A interface apresenta apenas metadados funcionais e conteúdo musical; identidade e schema são preservados ou reaplicados pela aplicação e persistência. Diretivas reservadas coladas manualmente na área editável são ignoradas antes da reconstrução do documento canônico.
+
+Na reanálise de música existente, ChordPro e rótulos já presentes são preservados exatamente. Somente pares inequívocos de linha textual de acordes e letra, sem marcação ChordPro, podem ser convertidos; em caso de dúvida, o conteúdo é preservado.
+
+O usuário não deve precisar conhecer ChordPro para operações comuns de entrada e edição. ChordPro permanece canônico, mas sua sintaxe técnica não é requisito cotidiano. Futuramente, a edição permitirá reanálise e conversão segura de alterações textuais, preservando trechos ChordPro já válidos.
