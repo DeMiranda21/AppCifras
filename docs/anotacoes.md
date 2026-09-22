@@ -17,6 +17,30 @@ converter em chorpro dentro do app (que tinha essa funcionalidade).
 
 ## (Nova ideia) 06 - Possibilidade de guitarristas salvarem patchs de pedaleiras, com timbres.
 
+## (Problema / oportunidade) 07 - Facilitar a seleção de repertório pelo ministrante
+
+### Problema percebido
+
+Ministrantes podem ter dificuldade para escolher as músicas do louvor pelo qual estão responsáveis. O aplicativo poderá futuramente oferecer recursos que facilitem a descoberta de opções e a tomada de decisão durante a montagem do repertório.
+
+### Possíveis soluções a avaliar
+
+- Histórico de execução das músicas, permitindo consultar quais músicas foram tocadas, em quais cultos, datas ou outros contextos relevantes.
+- Histórico de tons utilizados, permitindo identificar o último tom em que determinada música foi executada e, se fizer sentido, o histórico por ministrante.
+- Categorização das músicas para facilitar a descoberta de opções, com classificações como animadas, lentas, adoração e outras categorias ainda a definir.
+- Filtros adicionais, como tema e outros metadados que possam ser úteis na preparação do repertório.
+
+### Pontos a analisar antes de implementar
+
+Este registro representa um problema e hipóteses de solução, e não uma decisão de implementação. Antes de desenvolver esses recursos, avaliar:
+
+- se a necessidade é relevante no uso real;
+- quais informações realmente ajudam o ministrante a escolher o repertório;
+- quais categorias e filtros são adequados;
+- quais dados vale a pena registrar e manter;
+- como oferecer esses recursos sem aumentar desnecessariamente a complexidade da interface;
+- outras soluções possíveis para o mesmo problema.
+
 ## 
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
@@ -26,7 +50,7 @@ converter em chorpro dentro do app (que tinha essa funcionalidade).
 -   Item 1.3 cita documentos para o projeto, ainda não temos alguns
     (Arquitetura do Sistema, Modelo de Dados e Backlog) - **VERIFICAR**.
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 # PONTOS DE ALTERAÇÃO NOS DOCS., PENDENTES:
 
