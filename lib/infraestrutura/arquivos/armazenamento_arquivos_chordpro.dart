@@ -43,6 +43,33 @@ class ArmazenamentoArquivosChordPro {
     }
   }
 
+  Future<void> substituir(IdMusica id, String conteudo) async {
+    final destino = _arquivo(id);
+    if (!await destino.exists()) {
+      throw ArquivoChordProInexistente(id);
+    }
+
+    final temporario = File('${destino.path}.tmp');
+    final anterior = File('${destino.path}.bak');
+    try {
+      await temporario.writeAsString(conteudo, encoding: utf8, flush: true);
+      if (await anterior.exists()) {
+        await anterior.delete();
+      }
+      await destino.rename(anterior.path);
+      await temporario.rename(destino.path);
+      await anterior.delete();
+    } catch (_) {
+      if (!await destino.exists() && await anterior.exists()) {
+        await anterior.rename(destino.path);
+      }
+      if (await temporario.exists()) {
+        await temporario.delete();
+      }
+      rethrow;
+    }
+  }
+
   Future<String> obter(IdMusica id) async {
     final arquivo = _arquivo(id);
     if (!await arquivo.exists()) {

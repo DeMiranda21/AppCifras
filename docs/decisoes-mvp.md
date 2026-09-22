@@ -139,3 +139,29 @@ Arquivos gerenciados pela Biblioteca poderão declarar `{appcifras_schema: 1}` e
 Cada Música gerenciada é persistida em arquivo UTF-8 individual com extensão `.cho`, cujo nome interno é derivado de `IdMusica`, nunca de título ou artista. O arquivo ChordPro é a fonte oficial do conteúdo e dos metadados próprios da Música; SQLite mantém somente o índice e o estado local derivado, sem duplicar a cifra completa. Drift é a camada Dart sobre SQLite adotada pelo MVP.
 
 Uma importação com `appcifras_id` já existente não sobrescreve silenciosamente a Música local. Conteúdo identificado com schema AppCifras inválido ou diferente de `1` não é incorporado como Música gerenciada, mas permanece preservado como conteúdo recebido. Nuvem e sincronização continuam fora do MVP local.
+
+## 18. Entrada de cifras e revisão
+
+A entrada principal evoluirá para receber texto bruto em uma única área, com análise e revisão antes do salvamento. ChordPro permanece o formato operacional e canônico da Música.
+
+Para texto que não esteja em ChordPro, o conteúdo original recebido deve ser preservado como fonte de importação; a representação ChordPro convertida não cria uma segunda versão editável concorrente. A persistência adicional desse original será definida em etapa própria.
+
+Quando a entrada for ChordPro completo, as diretivas existentes são a fonte dos metadados. Alterações confirmadas pelo usuário em título, artista ou tom devem alterar explicitamente o documento que será salvo, mantendo uma única fonte de verdade. Não haverá metadados paralelos, escolha de precedência ou deduplicação silenciosa.
+
+Entradas ambíguas não devem receber conversões arriscadas: o conteúdo é preservado e a revisão informa o que foi ou não reconhecido. Rótulos inequívocos como Intro, Primeira Parte, Verso, Pré-Refrão, Refrão, Ponte e Final poderão ser identificados futuramente, preservando seu texto original, mas sua representação ChordPro ou estrutural não faz parte desta etapa. Comentários e tablaturas também são apenas preservados por enquanto.
+
+Uma linha somente de acordes não implica, por si só, associação à próxima linha de letra, pois pode representar passagem instrumental ou introdução. Essa distinção pertence ao futuro conversor de cifra textual e não é uma regra de domínio.
+
+## 19. Visualização responsiva da cifra e zoom
+
+A visualização principal da cifra deve caber horizontalmente na largura útil disponível na tela. Nenhum acorde ou trecho de letra pode ficar cortado ou inacessível à direita; a navegação normal da música permanece vertical e não deve exigir rolagem horizontal.
+
+Quando uma linha musical não couber, ela deverá ser reorganizada ou quebrada de forma controlada, preservando a associação entre cada acorde e o respectivo trecho de letra. A unidade semântica `acorde + trecho de letra associado` orientará essa quebra, evitando separação visual entre ambos. Não serão usadas como solução truncamento, ellipsis ou redução arbitrária da fonte.
+
+A visualização deverá suportar futuramente zoom in e zoom out da cifra. A implementação atual não inclui zoom, mas a arquitetura de renderização deve permitir que o tamanho escolhido recalcule as dimensões dos grupos musicais e reorganize as linhas conforme a largura disponível, mantendo o conteúdo limitado à viewport e a navegação vertical. Não deve ser adotada solução estrutural baseada em canvas de largura fixa ou rolagem horizontal obrigatória.
+
+## 20. Edição de música
+
+A edição atualiza a mesma Música, preservando seu `IdMusica`; não cria outra entrada nem usa exclusão seguida de cadastro. O ChordPro canônico persistido é a origem da edição. Alterações de título, artista e tom substituem explicitamente somente as respectivas diretivas, sem deduplicação automática; o restante do documento é preservado. Quando `appcifras_id` estiver presente, deve continuar único, válido e coerente com a identidade da Música.
+
+Diretivas internas do AppCifras, como `appcifras_schema` e `appcifras_id`, não são conteúdo editável pelo usuário. A interface apresenta apenas metadados funcionais e conteúdo musical; identidade e schema são preservados ou reaplicados pela aplicação e persistência. Diretivas reservadas coladas manualmente na área editável são ignoradas antes da reconstrução do documento canônico.

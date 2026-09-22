@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:appcifras/dominio/chordpro/validador_schema_appcifras.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/erros/id_musica_ja_existente.dart';
+import 'package:appcifras/dominio/erros/musica_nao_encontrada.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
@@ -119,6 +120,52 @@ void main() {
       throwsA(isA<IdMusicaJaExistente>()),
     );
     expect(await repositorio.obterPorId(original.id), original);
+  });
+
+  test('atualiza arquivo e índice mantendo a identidade da música', () async {
+    final original = musica('musica-1');
+    await repositorio.salvar(original);
+    final atualizada = musica(
+      'musica-1',
+      conteudo:
+          '{appcifras_schema: 1}\n'
+          '{appcifras_id: musica-1}\n'
+          '{title: Título revisado}\n'
+          '{artist: Artista revisado}\n'
+          '{key: G}\n'
+          '{comment: manter}\n[G]Novo conteúdo',
+    );
+
+    await repositorio.atualizar(atualizada);
+
+    final recuperada = await repositorio.obterPorId(original.id);
+    expect(recuperada!.id, original.id);
+    expect(recuperada.titulo, 'Título revisado');
+    expect(recuperada.artista, 'Artista revisado');
+    expect(await banco.listar(), hasLength(1));
+    expect(await arquivos.obter(original.id), contains('{comment: manter}'));
+  });
+
+  test('rejeita atualização de música inexistente', () async {
+    await expectLater(
+      repositorio.atualizar(musica('inexistente')),
+      throwsA(isA<MusicaNaoEncontrada>()),
+    );
+  });
+
+  test('reaplica identidade e schema gerenciados ao atualizar', () async {
+    final original = musica('musica-1');
+    await repositorio.salvar(original);
+    final atualizada = musica(
+      'musica-1',
+      conteudo: '{title: Título}\n{artist: Artista}\n{key: C}\n[C]Letra',
+    );
+
+    await repositorio.atualizar(atualizada);
+
+    final conteudo = await arquivos.obter(original.id);
+    expect(conteudo, contains('{appcifras_schema: 1}'));
+    expect(conteudo, contains('{appcifras_id: musica-1}'));
   });
 
   test('rejeita schema AppCifras não suportado sem criar arquivo ou índice', () async {

@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
+import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../dominio/entidades/musica.dart';
-import '../cadastro/tela_cadastro_musica.dart';
+import '../entrada/tela_entrada_musica.dart';
+import '../musica/tela_visualizacao_musica.dart';
 
 class TelaBiblioteca extends StatefulWidget {
   const TelaBiblioteca({
     super.key,
     required this.listarMusicas,
-    required this.cadastrarMusica,
+    required this.prepararEntradaMusica,
+    required this.salvarRascunhoChordPro,
+    required this.obterMusicaPorId,
+    required this.atualizarMusica,
+    required this.excluirMusica,
   });
 
   final ListarMusicas listarMusicas;
-  final CadastrarMusica cadastrarMusica;
+  final PrepararEntradaMusica prepararEntradaMusica;
+  final SalvarRascunhoChordPro salvarRascunhoChordPro;
+  final ObterMusicaPorId obterMusicaPorId;
+  final AtualizarMusica atualizarMusica;
+  final ExcluirMusica excluirMusica;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -38,11 +49,32 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   Future<void> _abrirCadastro() async {
     final cadastrada = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) =>
-            TelaCadastroMusica(cadastrarMusica: widget.cadastrarMusica),
+        builder: (context) => TelaEntradaMusica(
+          prepararEntradaMusica: widget.prepararEntradaMusica,
+          salvarRascunhoChordPro: widget.salvarRascunhoChordPro,
+        ),
       ),
     );
     if (cadastrada == true && mounted) {
+      final musicas = widget.listarMusicas.executar();
+      setState(() {
+        _musicas = musicas;
+      });
+    }
+  }
+
+  Future<void> _abrirMusica(Musica musica) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => TelaVisualizacaoMusica(
+          idMusica: musica.id,
+          obterMusicaPorId: widget.obterMusicaPorId,
+          atualizarMusica: widget.atualizarMusica,
+          excluirMusica: widget.excluirMusica,
+        ),
+      ),
+    );
+    if (mounted) {
       final musicas = widget.listarMusicas.executar();
       setState(() {
         _musicas = musicas;
@@ -77,6 +109,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
             final musica = musicas[indice];
             return ListTile(
               key: ValueKey(musica.id.valor),
+              onTap: () => _abrirMusica(musica),
               title: Text(musica.titulo),
               subtitle: Text(musica.artista),
             );

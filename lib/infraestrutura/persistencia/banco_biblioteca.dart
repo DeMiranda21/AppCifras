@@ -54,6 +54,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     );
   }
 
+  Future<int> atualizar({
+    required String id,
+    required String titulo,
+    required String artista,
+  }) => (update(indiceMusicas)..where((tabela) => tabela.id.equals(id))).write(
+    IndiceMusicasCompanion(titulo: Value(titulo), artista: Value(artista)),
+  );
+
   Future<void> excluirPorId(String id) async {
     await (delete(indiceMusicas)..where((tabela) => tabela.id.equals(id))).go();
   }

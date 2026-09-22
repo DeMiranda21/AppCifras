@@ -1,4 +1,6 @@
 import '../aplicacao/casos_de_uso/musicas.dart';
+import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
+import '../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
 import '../dominio/repositorios/repositorio_musicas.dart';
@@ -18,12 +20,24 @@ class ComposicaoAppCifras {
   }) : salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
        listarMusicas = ListarMusicas(repositorio),
+       excluirMusica = ExcluirMusica(repositorio),
+       atualizarMusica = AtualizarMusica(
+         repositorio: repositorio,
+         parserDocumento: parserDocumento,
+       ),
        cadastrarMusica = CadastrarMusica(
          repositorio: repositorio,
          parserDocumento: parserDocumento,
          geradorId: geradorId,
        ),
-       excluirMusica = ExcluirMusica(repositorio),
+       salvarRascunhoChordPro = SalvarRascunhoChordPro(
+         repositorio: repositorio,
+         parserDocumento: parserDocumento,
+         geradorId: geradorId,
+       ),
+       prepararEntradaMusica = PrepararEntradaMusica(
+         parserDocumento: parserDocumento,
+       ),
        importarMusica = ImportarMusica(
          repositorio: repositorio,
          parserDocumento: parserDocumento,
@@ -36,7 +50,10 @@ class ComposicaoAppCifras {
   final SalvarMusica salvarMusica;
   final ObterMusicaPorId obterMusicaPorId;
   final ListarMusicas listarMusicas;
+  final AtualizarMusica atualizarMusica;
   final CadastrarMusica cadastrarMusica;
+  final SalvarRascunhoChordPro salvarRascunhoChordPro;
+  final PrepararEntradaMusica prepararEntradaMusica;
   final ExcluirMusica excluirMusica;
   final ImportarMusica importarMusica;
 

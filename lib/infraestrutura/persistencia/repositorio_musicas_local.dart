@@ -1,6 +1,7 @@
 import '../../dominio/chordpro/validador_schema_appcifras.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/id_musica_ja_existente.dart';
+import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
@@ -56,6 +57,35 @@ class RepositorioMusicasLocal implements RepositorioMusicas {
   }
 
   @override
+  Future<void> atualizar(Musica musica) async {
+    final indice = await _banco.obterPorId(musica.id.valor);
+    if (indice == null) {
+      throw MusicaNaoEncontrada(musica.id);
+    }
+    _validarNomeArquivo(musica.id, indice.arquivo);
+    final conteudoAnterior = await _armazenamentoArquivos.obter(musica.id);
+    final conteudoAtualizado = _codificador.codificar(musica);
+    await _armazenamentoArquivos.substituir(musica.id, conteudoAtualizado);
+    try {
+      final linhasAtualizadas = await _banco.atualizar(
+        id: musica.id.valor,
+        titulo: musica.titulo,
+        artista: musica.artista,
+      );
+      if (linhasAtualizadas != 1) {
+        throw MusicaNaoEncontrada(musica.id);
+      }
+    } catch (erro, pilha) {
+      try {
+        await _armazenamentoArquivos.substituir(musica.id, conteudoAnterior);
+      } catch (_) {
+        throw EstadoPersistenciaMusicaInconsistente(musica.id);
+      }
+      Error.throwWithStackTrace(erro, pilha);
+    }
+  }
+
+  @override
   Future<Musica?> obterPorId(IdMusica id) async {
     final indice = await _banco.obterPorId(id.valor);
     if (indice == null) {
@@ -78,7 +108,7 @@ class RepositorioMusicasLocal implements RepositorioMusicas {
   Future<void> excluir(IdMusica id) async {
     final indice = await _banco.obterPorId(id.valor);
     if (indice == null) {
-      return;
+      throw MusicaNaoEncontrada(id);
     }
     _validarNomeArquivo(id, indice.arquivo);
     final conteudo = await _armazenamentoArquivos.obter(id);

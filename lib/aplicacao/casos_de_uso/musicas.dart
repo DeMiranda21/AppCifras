@@ -3,9 +3,12 @@ import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/chordpro/validador_schema_appcifras.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/erros/id_musica_ja_existente.dart';
+import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../portas/gerador_id_musica.dart';
+import '../entrada/rascunho_documento_chordpro.dart';
+import '../entrada/conteudo_chordpro_editavel.dart';
 
 class SalvarMusica {
   const SalvarMusica(this._repositorio);
@@ -26,6 +29,52 @@ class ListarMusicas {
   final RepositorioMusicas _repositorio;
 
   Future<List<Musica>> executar() => _repositorio.listar();
+}
+
+class DadosAtualizacaoMusica {
+  const DadosAtualizacaoMusica({
+    required this.id,
+    required this.conteudoChordPro,
+    required this.revisaoMetadados,
+  });
+
+  final IdMusica id;
+  final String conteudoChordPro;
+  final RevisaoMetadadosChordPro revisaoMetadados;
+}
+
+class AtualizarMusica {
+  const AtualizarMusica({
+    required this.repositorio,
+    required this.parserDocumento,
+    this.validadorSchema = const ValidadorSchemaAppCifras(),
+  });
+
+  final RepositorioMusicas repositorio;
+  final ParserDocumentoChordPro parserDocumento;
+  final ValidadorSchemaAppCifras validadorSchema;
+
+  Future<Musica> executar(DadosAtualizacaoMusica dados) async {
+    final existente = await repositorio.obterPorId(dados.id);
+    if (existente == null) {
+      throw MusicaNaoEncontrada(dados.id);
+    }
+
+    final rascunho = RascunhoDocumentoChordPro.criar(
+      conteudoChordPro: ConteudoChordProEditavel.recomporCanonico(
+        conteudoCanonicoAnterior: existente.documento.conteudoOriginal,
+        conteudoEditavel: dados.conteudoChordPro,
+      ),
+      parserDocumento: parserDocumento,
+    ).comRevisao(dados.revisaoMetadados);
+    final documento = parserDocumento.interpretar(
+      rascunho.produzirConteudoFinal(),
+    );
+    validadorSchema.validarParaIncorporacao(documento);
+    final musica = Musica(id: dados.id, documento: documento);
+    await repositorio.atualizar(musica);
+    return musica;
+  }
 }
 
 class DadosCadastroMusica {
@@ -63,11 +112,10 @@ class CadastrarMusica {
 
   Future<Musica> executar(DadosCadastroMusica dados) async {
     _validarObrigatorios(dados);
-    final documento = parserDocumento.interpretar(_montarConteudo(dados));
-    final diretivaTom = documento.elementos.whereType<DiretivaTomChordPro>();
-    if (diretivaTom.length != 1 || diretivaTom.single.tom == null) {
+    if (!_tomOriginalEhValido(dados.tomOriginal)) {
       throw const CadastroMusicaInvalido(CampoCadastroMusica.tomOriginal);
     }
+    final documento = parserDocumento.interpretar(_montarConteudo(dados));
 
     late Musica musica;
     try {
@@ -77,6 +125,14 @@ class CadastrarMusica {
     }
     await repositorio.salvar(musica);
     return musica;
+  }
+
+  bool _tomOriginalEhValido(String tomOriginal) {
+    final documento = parserDocumento.interpretar('{key: $tomOriginal}');
+    final diretivasTom = documento.elementos.whereType<DiretivaTomChordPro>();
+    return documento.elementos.length == 1 &&
+        diretivasTom.length == 1 &&
+        diretivasTom.single.tom != null;
   }
 
   void _validarObrigatorios(DadosCadastroMusica dados) {
@@ -105,11 +161,14 @@ class ExcluirMusica {
   const ExcluirMusica(this._repositorio);
   final RepositorioMusicas _repositorio;
 
-  Future<void> executar(IdMusica id, {required bool confirmada}) {
+  Future<void> executar(IdMusica id, {required bool confirmada}) async {
     if (!confirmada) {
       throw StateError('A exclusão da música exige confirmação explícita.');
     }
-    return _repositorio.excluir(id);
+    if (await _repositorio.obterPorId(id) == null) {
+      throw MusicaNaoEncontrada(id);
+    }
+    await _repositorio.excluir(id);
   }
 }
 
