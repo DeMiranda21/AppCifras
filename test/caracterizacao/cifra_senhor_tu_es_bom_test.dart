@@ -205,7 +205,7 @@ void main() {
       );
     });
 
-    test('interpreta somente os acordes pertencentes ao subconjunto atual', () {
+    test('interpreta os acordes pertencentes ao subconjunto atual', () {
       final acordes = parser
           .interpretar(_conteudoReal)
           .elementos
@@ -226,6 +226,8 @@ void main() {
         'C#5',
         'D5',
         'G5',
+        'D2(6)',
+        'A2',
       ]) {
         expect(
           acordes.where((elemento) => elemento.conteudoOriginal == acorde),
@@ -238,18 +240,6 @@ void main() {
               .every((elemento) => elemento.resultado is AcordeInterpretado),
           isTrue,
           reason: 'acorde $acorde deveria ser interpretável',
-        );
-      }
-
-      for (final acorde in ['D2(6)', 'A2']) {
-        expect(
-          acordes
-              .where((elemento) => elemento.conteudoOriginal == acorde)
-              .every(
-                (elemento) => elemento.resultado is AcordeNaoInterpretavel,
-              ),
-          isTrue,
-          reason: 'acorde $acorde deveria ser preservado sem interpretação',
         );
       }
     });

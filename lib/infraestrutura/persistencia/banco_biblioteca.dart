@@ -19,14 +19,37 @@ class IndiceMusicas extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [IndiceMusicas])
+class PreferenciasTomExecucao extends Table {
+  TextColumn get idMusica =>
+      text().references(IndiceMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get nomeNota => text()();
+
+  TextColumn get alteracao => text()();
+
+  TextColumn get modo => text()();
+
+  @override
+  Set<Column> get primaryKey => {idMusica};
+}
+
+@DriftDatabase(tables: [IndiceMusicas, PreferenciasTomExecucao])
 class BancoBiblioteca extends _$BancoBiblioteca {
   BancoBiblioteca(super.executor);
 
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.createTable(preferenciasTomExecucao);
+      }
+    },
+  );
 
   Future<void> inicializar() async {
     await customSelect('SELECT 1').get();
@@ -64,6 +87,32 @@ class BancoBiblioteca extends _$BancoBiblioteca {
 
   Future<void> excluirPorId(String id) async {
     await (delete(indiceMusicas)..where((tabela) => tabela.id.equals(id))).go();
+  }
+
+  Future<PreferenciasTomExecucaoData?> obterTomExecucaoPorMusica(
+    String idMusica,
+  ) => (select(preferenciasTomExecucao)
+        ..where((tabela) => tabela.idMusica.equals(idMusica)))
+      .getSingleOrNull();
+
+  Future<void> salvarTomExecucao({
+    required String idMusica,
+    required String nomeNota,
+    required String alteracao,
+    required String modo,
+  }) => into(preferenciasTomExecucao).insertOnConflictUpdate(
+    PreferenciasTomExecucaoCompanion.insert(
+      idMusica: idMusica,
+      nomeNota: nomeNota,
+      alteracao: alteracao,
+      modo: modo,
+    ),
+  );
+
+  Future<void> removerTomExecucao(String idMusica) async {
+    await (delete(preferenciasTomExecucao)
+          ..where((tabela) => tabela.idMusica.equals(idMusica)))
+        .go();
   }
 }
 

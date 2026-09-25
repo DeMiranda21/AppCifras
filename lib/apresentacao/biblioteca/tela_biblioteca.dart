@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
+import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../dominio/entidades/musica.dart';
 import '../entrada/tela_entrada_musica.dart';
@@ -16,6 +17,9 @@ class TelaBiblioteca extends StatefulWidget {
     required this.obterMusicaPorId,
     required this.atualizarMusica,
     required this.excluirMusica,
+    this.obterUltimoTomExecucao,
+    this.salvarUltimoTomExecucao,
+    this.removerUltimoTomExecucao,
   });
 
   final ListarMusicas listarMusicas;
@@ -24,6 +28,9 @@ class TelaBiblioteca extends StatefulWidget {
   final ObterMusicaPorId obterMusicaPorId;
   final AtualizarMusica atualizarMusica;
   final ExcluirMusica excluirMusica;
+  final ObterUltimoTomExecucao? obterUltimoTomExecucao;
+  final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
+  final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -84,6 +91,9 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
           excluirMusica: widget.excluirMusica,
+          obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
+          salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
+          removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
         ),
       ),
     );

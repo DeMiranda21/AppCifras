@@ -104,15 +104,15 @@ A conversão preserva estruturalmente qualidade, extensões, adições, suspens�
 
 O parser do MVP trabalha com um subconjunto explícito e evolutivo de notações. O conteúdo ChordPro original é preservado sem reescrita; o parser produz somente uma representação estrutural derivada em memória. Uma cifra não reconhecida deve ser preservada exatamente como texto não interpretável, sem impedir o cadastro da música, mas não poderá ser transposta ou convertida para graus automaticamente.
 
-São reconhecidas fundamentais de A a G, naturais, com sustenido simples (#) ou bemol simples (b), e as estruturas: maior (C), menor (Cm), quinta (C5), sexta (C6 e Cm6), sétimas C7, Cm7 e Cmaj7, extensões C9, Cm9, C11 e C13, adições Cadd9 e Cadd11, suspensões Csus2 e Csus4, diminuto (Cdim), aumentado (Caug), meio-diminuto (Cm7(b5)) e inversões com baixo após /.
+São reconhecidas fundamentais de A a G, naturais, com sustenido simples (#) ou bemol simples (b), e as estruturas: maior (C), menor (Cm), quinta (C5), sexta (C6 e Cm6), sétimas C7, Cm7 e Cmaj7, extensões C9, Cm9, C11 e C13, adições C2, Cadd9 e Cadd11, suspensões Csus2 e Csus4, diminuto (Cdim), aumentado (Caug), meio-diminuto (Cm7(b5)) e inversões com baixo após /. C2 representa segunda adicionada, preservando a terça, e não equivale a Csus2; C2(6) combina segunda adicionada e sexta.
 
 As alterações inicialmente reconhecidas são b5, #5, b9 e #9, escritas entre parênteses e combináveis quando cada componente for suportado. Formas com extensões entre parênteses são aceitas quando equivalentes às estruturas suportadas, como C7(9), Cm7(9), C7M(9) e C7(13).
 
 Os aliases C7M, CM7 e CΔ7 equivalem a Cmaj7; C° equivale a Cdim; C+ equivale a Caug; Cø equivale a Cm7(b5); e C4 equivale a Csus4. A normalização aplica-se somente à representação estrutural. Parênteses têm significado apenas para componentes previstos neste subconjunto, e / representa exclusivamente inversão; 6/9 não é suportado.
 
-Ficam fora do subconjunto atual: alt, no3, #11, b13, 6/9, 69, 2 e outras notações que exijam ampliação do modelo. Não haverá parsing parcial nem correção silenciosa de texto desconhecido.
+Ficam fora do subconjunto atual: alt, no3, #11, b13, 6/9, 69 e outras notações que exijam ampliação do modelo. Não haverá parsing parcial nem correção silenciosa de texto desconhecido.
 
-Para esse subconjunto, QualidadeAcorde.quinta representa acordes como C5 sem terça, e AdicaoAcorde.decimaPrimeira representa Cadd11. A transposição preserva essas estruturas; acordes de quinta permanecem como cifras absolutas na conversão de graus do MVP.
+Para esse subconjunto, QualidadeAcorde.quinta representa acordes como C5 sem terça, AdicaoAcorde.segunda representa C2 e AdicaoAcorde.decimaPrimeira representa Cadd11. A transposição preserva essas estruturas; acordes de quinta permanecem como cifras absolutas na conversão de graus do MVP.
 
 ## 14. Processamento básico de ChordPro
 
@@ -169,3 +169,13 @@ Diretivas internas do AppCifras, como `appcifras_schema` e `appcifras_id`, não 
 Na reanálise de música existente, ChordPro e rótulos já presentes são preservados exatamente. Somente pares inequívocos de linha textual de acordes e letra, sem marcação ChordPro, podem ser convertidos; em caso de dúvida, o conteúdo é preservado.
 
 O usuário não deve precisar conhecer ChordPro para operações comuns de entrada e edição. ChordPro permanece canônico, mas sua sintaxe técnica não é requisito cotidiano. Futuramente, a edição permitirá reanálise e conversão segura de alterações textuais, preservando trechos ChordPro já válidos.
+
+## 21. Transposição de visualização
+
+A transposição do MVP é uma projeção para leitura: não reescreve o ChordPro canônico nem altera `Musica.tomOriginal`. O intervalo é calculado exclusivamente entre o tom original declarado em `{key}` e o tom de execução escolhido; não há inferência tonal pelos acordes. Os controles rápidos `+` e `−` alteram o tom de execução em um semitom.
+
+O último tom de execução é uma preferência local, separada da Música e do ChordPro, salva automaticamente após uma alteração aceita. Não existe botão específico para salvar tom. Na ausência de preferência a visualização inicia no `tomOriginal`; ao retornar ao tom original, a preferência redundante é removida. Uma edição que altere o `tomOriginal` invalida a preferência anterior, enquanto a exclusão da música também a remove. Futuramente, o tom de execução de um item de Lista de Culto continuará sendo um conceito separado.
+
+Quando o tom de execução for diferente, a projeção somente estará disponível se todos os acordes musicais forem interpretáveis. Acordes não interpretáveis permanecem preservados e bloqueiam explicitamente a transposição, sem transposição parcial silenciosa; a visualização no tom original continua disponível.
+
+Futuramente, o AppCifras deverá lembrar automaticamente o último tom de execução escolhido para cada música, sem alterar o `tomOriginal` nem o ChordPro e sem exigir um botão específico para salvar esse tom. Essa preferência será modelada separadamente, permitindo evolução compatível com Listas de Culto, nas quais cada item poderá ter seu próprio tom de execução.

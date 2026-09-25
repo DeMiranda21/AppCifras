@@ -7,6 +7,7 @@ import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../portas/gerador_id_musica.dart';
+import '../portas/repositorio_tom_execucao.dart';
 import '../entrada/rascunho_documento_chordpro.dart';
 import '../entrada/conteudo_chordpro_editavel.dart';
 
@@ -47,11 +48,13 @@ class AtualizarMusica {
   const AtualizarMusica({
     required this.repositorio,
     required this.parserDocumento,
+    this.repositorioTomExecucao,
     this.validadorSchema = const ValidadorSchemaAppCifras(),
   });
 
   final RepositorioMusicas repositorio;
   final ParserDocumentoChordPro parserDocumento;
+  final RepositorioTomExecucao? repositorioTomExecucao;
   final ValidadorSchemaAppCifras validadorSchema;
 
   Future<Musica> executar(DadosAtualizacaoMusica dados) async {
@@ -73,6 +76,9 @@ class AtualizarMusica {
     validadorSchema.validarParaIncorporacao(documento);
     final musica = Musica(id: dados.id, documento: documento);
     await repositorio.atualizar(musica);
+    if (existente.tomOriginal != musica.tomOriginal) {
+      await repositorioTomExecucao?.removerUltimoTom(musica.id);
+    }
     return musica;
   }
 }
@@ -158,8 +164,9 @@ class CadastrarMusica {
 }
 
 class ExcluirMusica {
-  const ExcluirMusica(this._repositorio);
+  const ExcluirMusica(this._repositorio, {this.repositorioTomExecucao});
   final RepositorioMusicas _repositorio;
+  final RepositorioTomExecucao? repositorioTomExecucao;
 
   Future<void> executar(IdMusica id, {required bool confirmada}) async {
     if (!confirmada) {
@@ -169,6 +176,7 @@ class ExcluirMusica {
       throw MusicaNaoEncontrada(id);
     }
     await _repositorio.excluir(id);
+    await repositorioTomExecucao?.removerUltimoTom(id);
   }
 }
 

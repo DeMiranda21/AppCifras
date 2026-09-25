@@ -73,6 +73,12 @@ class ParserAcorde {
     if (partes == null) {
       return null;
     }
+    if (partes.base == '2' &&
+        partes.componentesEntreParenteses.isNotEmpty &&
+        (partes.componentesEntreParenteses.length != 1 ||
+            partes.componentesEntreParenteses.single != '6')) {
+      return null;
+    }
 
     final estrutura = _interpretarBase(notaFundamental, partes.base);
     if (estrutura == null) {
@@ -80,7 +86,11 @@ class ParserAcorde {
     }
 
     for (final componente in partes.componentesEntreParenteses) {
-      if (!_adicionarComponenteEntreParenteses(estrutura, componente)) {
+      if (!_adicionarComponenteEntreParenteses(
+        estrutura,
+        partes.base,
+        componente,
+      )) {
         return null;
       }
     }
@@ -129,6 +139,9 @@ class ParserAcorde {
       case 'm6':
         estrutura.qualidade = QualidadeAcorde.menor;
         estrutura.extensoes.add(ExtensaoAcorde.sexta);
+        return estrutura;
+      case '2':
+        estrutura.adicoes.add(AdicaoAcorde.segunda);
         return estrutura;
       case '7':
         estrutura.extensoes.add(ExtensaoAcorde.setima);
@@ -206,9 +219,13 @@ class ParserAcorde {
 
   bool _adicionarComponenteEntreParenteses(
     _EstruturaAcorde estrutura,
+    String base,
     String componente,
   ) {
     switch (componente) {
+      case '6' when base == '2':
+        estrutura.extensoes.add(ExtensaoAcorde.sexta);
+        return true;
       case 'b5':
         estrutura.alteracoes.add(
           AlteracaoAcorde(grau: 5, alteracao: AlteracaoNota.bemol),

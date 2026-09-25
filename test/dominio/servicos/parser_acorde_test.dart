@@ -45,6 +45,30 @@ void main() {
         qualidade: QualidadeAcorde.menor,
         extensoes: {ExtensaoAcorde.sexta},
       ),
+      'A2': Acorde(
+        notaFundamental: const Nota(nome: NomeNota.a),
+        adicoes: {AdicaoAcorde.segunda},
+      ),
+      'D2(6)': Acorde(
+        notaFundamental: const Nota(nome: NomeNota.d),
+        extensoes: {ExtensaoAcorde.sexta},
+        adicoes: {AdicaoAcorde.segunda},
+      ),
+      'F#2': Acorde(
+        notaFundamental: const Nota(
+          nome: NomeNota.f,
+          alteracao: AlteracaoNota.sustenido,
+        ),
+        adicoes: {AdicaoAcorde.segunda},
+      ),
+      'Bb2(6)': Acorde(
+        notaFundamental: const Nota(
+          nome: NomeNota.b,
+          alteracao: AlteracaoNota.bemol,
+        ),
+        extensoes: {ExtensaoAcorde.sexta},
+        adicoes: {AdicaoAcorde.segunda},
+      ),
       'C7': Acorde(
         notaFundamental: const Nota(nome: NomeNota.c),
         extensoes: {ExtensaoAcorde.setima},
@@ -177,6 +201,11 @@ void main() {
         adicoes: {AdicaoAcorde.nona},
         baixo: const Nota(nome: NomeNota.g),
       ),
+      'A2/C#': Acorde(
+        notaFundamental: const Nota(nome: NomeNota.a),
+        adicoes: {AdicaoAcorde.segunda},
+        baixo: const Nota(nome: NomeNota.c, alteracao: AlteracaoNota.sustenido),
+      ),
     };
 
     for (final caso in casos.entries) {
@@ -207,6 +236,19 @@ void main() {
     }
   });
 
+  group('ParserAcorde - segunda adicionada', () {
+    test('distingue A2 de Asus2', () {
+      final comSegundaAdicionada = _acordeInterpretado(parser, 'A2');
+      final suspenso = _acordeInterpretado(parser, 'Asus2');
+
+      expect(comSegundaAdicionada.adicoes, {AdicaoAcorde.segunda});
+      expect(comSegundaAdicionada.suspensoes, isEmpty);
+      expect(suspenso.adicoes, isEmpty);
+      expect(suspenso.suspensoes, {SuspensaoAcorde.segunda});
+      expect(comSegundaAdicionada, isNot(suspenso));
+    });
+  });
+
   group('ParserAcorde - conteúdo não interpretável', () {
     const textos = [
       'Cmaj9(#11)',
@@ -217,6 +259,9 @@ void main() {
       'C7(b9)desconhecido',
       'C7(#11)',
       'C7(9)(desconhecido)',
+      'C2(7)',
+      'C2(6)(9)',
+      'C(6)',
     ];
 
     for (final texto in textos) {

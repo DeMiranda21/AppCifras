@@ -17,7 +17,7 @@ enum ExtensaoAcorde {
 enum SuspensaoAcorde { segunda, quarta }
 
 /// Notas adicionadas a um acorde sem formar uma extensão.
-enum AdicaoAcorde { nona, decimaPrimeira }
+enum AdicaoAcorde { segunda, nona, decimaPrimeira }
 
 /// Uma alteração aplicada a um grau do acorde, como a quinta bemol.
 class AlteracaoAcorde {

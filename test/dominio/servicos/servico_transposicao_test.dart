@@ -130,6 +130,56 @@ void main() {
       expect(resultado.qualidade, QualidadeAcorde.quinta);
     });
 
+    test('transpõe A2 preservando a segunda adicionada', () {
+      final resultado = servico.transporAcorde(
+        Acorde(
+          notaFundamental: const Nota(nome: NomeNota.a),
+          adicoes: {AdicaoAcorde.segunda},
+        ),
+        2,
+      );
+
+      expect(resultado.notaFundamental, const Nota(nome: NomeNota.b));
+      expect(resultado.adicoes, {AdicaoAcorde.segunda});
+      expect(resultado.extensoes, isEmpty);
+    });
+
+    test('transpõe D2(6) preservando segunda adicionada e sexta', () {
+      final resultado = servico.transporAcorde(
+        Acorde(
+          notaFundamental: const Nota(nome: NomeNota.d),
+          extensoes: {ExtensaoAcorde.sexta},
+          adicoes: {AdicaoAcorde.segunda},
+        ),
+        2,
+      );
+
+      expect(resultado.notaFundamental, const Nota(nome: NomeNota.e));
+      expect(resultado.extensoes, {ExtensaoAcorde.sexta});
+      expect(resultado.adicoes, {AdicaoAcorde.segunda});
+    });
+
+    test('transpõe a inversão A2/C# preservando a segunda adicionada', () {
+      final resultado = servico.transporAcorde(
+        Acorde(
+          notaFundamental: const Nota(nome: NomeNota.a),
+          adicoes: {AdicaoAcorde.segunda},
+          baixo: const Nota(
+            nome: NomeNota.c,
+            alteracao: AlteracaoNota.sustenido,
+          ),
+        ),
+        2,
+      );
+
+      expect(resultado.notaFundamental, const Nota(nome: NomeNota.b));
+      expect(
+        resultado.baixo,
+        const Nota(nome: NomeNota.d, alteracao: AlteracaoNota.sustenido),
+      );
+      expect(resultado.adicoes, {AdicaoAcorde.segunda});
+    });
+
     test('preserva as características estruturais do acorde', () {
       final acordeOriginal = Acorde(
         notaFundamental: const Nota(
@@ -140,7 +190,7 @@ void main() {
         extensoes: {ExtensaoAcorde.setima},
         alteracoes: {AlteracaoAcorde(grau: 5, alteracao: AlteracaoNota.bemol)},
         suspensoes: {SuspensaoAcorde.quarta},
-        adicoes: {AdicaoAcorde.nona},
+        adicoes: {AdicaoAcorde.segunda, AdicaoAcorde.nona},
       );
 
       final resultado = servico.transporAcorde(acordeOriginal, 2);

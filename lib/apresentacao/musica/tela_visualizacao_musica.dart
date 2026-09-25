@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/tom_execucao.dart';
+import '../../aplicacao/visualizacao/alterar_tom_execucao.dart';
+import '../../aplicacao/visualizacao/projetar_musica_para_visualizacao.dart';
 import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
+import '../../dominio/servicos/parser_acorde.dart';
 import 'tela_edicao_musica.dart';
 
 class TelaVisualizacaoMusica extends StatefulWidget {
@@ -15,26 +19,43 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     required this.obterMusicaPorId,
     required this.atualizarMusica,
     required this.excluirMusica,
+    this.projetarMusicaParaVisualizacao,
+    this.alterarTomExecucao,
+    this.obterUltimoTomExecucao,
+    this.salvarUltimoTomExecucao,
+    this.removerUltimoTomExecucao,
   });
 
   final IdMusica idMusica;
   final ObterMusicaPorId obterMusicaPorId;
   final AtualizarMusica atualizarMusica;
   final ExcluirMusica excluirMusica;
+  final ProjetarMusicaParaVisualizacao? projetarMusicaParaVisualizacao;
+  final AlterarTomExecucao? alterarTomExecucao;
+  final ObterUltimoTomExecucao? obterUltimoTomExecucao;
+  final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
+  final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
 
   @override
   State<TelaVisualizacaoMusica> createState() => _TelaVisualizacaoMusicaState();
 }
 
 class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
-  late Future<Musica?> _musica;
+  late Future<_DadosVisualizacaoMusica?> _dadosVisualizacao;
+  late final ProjetarMusicaParaVisualizacao _projetarMusica;
+  late final AlterarTomExecucao _alterarTomExecucao;
+  Tom? _tomExecucao;
   var _excluindo = false;
   String? _erroExclusao;
 
   @override
   void initState() {
     super.initState();
-    _musica = widget.obterMusicaPorId.executar(widget.idMusica);
+    _dadosVisualizacao = _carregarDadosVisualizacao();
+    _projetarMusica =
+        widget.projetarMusicaParaVisualizacao ??
+        ProjetarMusicaParaVisualizacao();
+    _alterarTomExecucao = widget.alterarTomExecucao ?? AlterarTomExecucao();
   }
 
   Future<void> _abrirEdicao(Musica musica) async {
@@ -47,12 +68,50 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
       ),
     );
     if (alterada == true && mounted) {
-      final musicaAtualizada = widget.obterMusicaPorId.executar(
-        widget.idMusica,
-      );
       setState(() {
-        _musica = musicaAtualizada;
+        _tomExecucao = null;
+        _dadosVisualizacao = _carregarDadosVisualizacao();
       });
+    }
+  }
+
+  Future<void> _alterarTom(Musica musica, Tom tomInicial, int semitons) async {
+    final tomAtual = _tomExecucao ?? tomInicial;
+    final novoTom = _alterarTomExecucao.executar(tomAtual, semitons);
+    final resultado = _projetarMusica.executar(musica, novoTom);
+    if (resultado is TransposicaoVisualizacaoIndisponivel) {
+      final acordes = resultado.problemas
+          .map((problema) => problema.textoOriginal)
+          .join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Não foi possível alterar o tom. Revise os acordes destacados na cifra: $acordes.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _tomExecucao = novoTom;
+    });
+    try {
+      if (novoTom == musica.tomOriginal) {
+        await widget.removerUltimoTomExecucao?.executar(musica.id);
+      } else {
+        await widget.salvarUltimoTomExecucao?.executar(musica.id, novoTom);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'O tom foi alterado, mas não foi possível lembrá-lo para a próxima abertura.',
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -100,63 +159,126 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<Musica?>(
-    future: _musica,
-    builder: (context, resultado) {
-      final musica = resultado.data;
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Cifra'),
-          actions: [
-            if (resultado.connectionState == ConnectionState.done &&
-                !resultado.hasError &&
-                musica != null)
-              IconButton(
-                tooltip: 'Editar música',
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _excluindo ? null : () => _abrirEdicao(musica),
-              ),
-            if (resultado.connectionState == ConnectionState.done &&
-                musica != null)
-              PopupMenuButton<String>(
-                enabled: !_excluindo,
-                onSelected: (_) => _excluir(musica),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'excluir', child: Text('Excluir')),
-                ],
-              ),
-          ],
-        ),
-        body: switch (resultado.connectionState) {
-          ConnectionState.done when resultado.hasError || musica == null =>
-            const _EstadoErroMusica(),
-          ConnectionState.done => Column(
-            children: [
-              if (_excluindo) const LinearProgressIndicator(),
-              if (_erroExclusao != null)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    _erroExclusao!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+  Widget build(BuildContext context) =>
+      FutureBuilder<_DadosVisualizacaoMusica?>(
+        future: _dadosVisualizacao,
+        builder: (context, resultado) {
+          final dadosVisualizacao = resultado.data;
+          final musica = dadosVisualizacao?.musica;
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Cifra'),
+              actions: [
+                if (resultado.connectionState == ConnectionState.done &&
+                    !resultado.hasError &&
+                    musica != null)
+                  IconButton(
+                    tooltip: 'Editar música',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: _excluindo ? null : () => _abrirEdicao(musica),
+                  ),
+                if (resultado.connectionState == ConnectionState.done &&
+                    musica != null)
+                  PopupMenuButton<String>(
+                    enabled: !_excluindo,
+                    onSelected: (_) => _excluir(musica),
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'excluir', child: Text('Excluir')),
+                    ],
+                  ),
+              ],
+            ),
+            body: switch (resultado.connectionState) {
+              ConnectionState.done when resultado.hasError || musica == null =>
+                const _EstadoErroMusica(),
+              ConnectionState.done => Column(
+                children: [
+                  if (_excluindo) const LinearProgressIndicator(),
+                  if (_erroExclusao != null)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        _erroExclusao!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: _ConteudoMusica(
+                      projecao: _projecaoAtual(
+                        musica!,
+                        dadosVisualizacao!.tomInicial,
+                      ),
+                      aoDiminuirTom: _excluindo
+                          ? null
+                          : () => _alterarTom(
+                              musica,
+                              dadosVisualizacao.tomInicial,
+                              -1,
+                            ),
+                      aoAumentarTom: _excluindo
+                          ? null
+                          : () => _alterarTom(
+                              musica,
+                              dadosVisualizacao.tomInicial,
+                              1,
+                            ),
                     ),
                   ),
-                ),
-              Expanded(child: _ConteudoMusica(musica: musica!)),
-            ],
-          ),
-          _ => const Center(child: CircularProgressIndicator()),
+                ],
+              ),
+              _ => const Center(child: CircularProgressIndicator()),
+            },
+          );
         },
       );
-    },
-  );
+
+  Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() async {
+    final musica = await widget.obterMusicaPorId.executar(widget.idMusica);
+    if (musica == null) {
+      return null;
+    }
+    final ultimoTom = await widget.obterUltimoTomExecucao?.executar(musica.id);
+    return _DadosVisualizacaoMusica(
+      musica: musica,
+      tomInicial: ultimoTom ?? musica.tomOriginal,
+    );
+  }
+
+  ProjecaoMusicaVisualizacao _projecaoAtual(Musica musica, Tom tomInicial) {
+    final resultado = _projetarMusica.executar(
+      musica,
+      _tomExecucao ?? tomInicial,
+    );
+    if (resultado is ProjecaoMusicaVisualizacao) {
+      return resultado;
+    }
+    return (resultado as TransposicaoVisualizacaoIndisponivel)
+        .projecaoNoTomOriginal;
+  }
+}
+
+class _DadosVisualizacaoMusica {
+  const _DadosVisualizacaoMusica({
+    required this.musica,
+    required this.tomInicial,
+  });
+
+  final Musica musica;
+  final Tom tomInicial;
 }
 
 class _ConteudoMusica extends StatelessWidget {
-  const _ConteudoMusica({required this.musica});
+  const _ConteudoMusica({
+    required this.projecao,
+    required this.aoDiminuirTom,
+    required this.aoAumentarTom,
+  });
 
-  final Musica musica;
+  final ProjecaoMusicaVisualizacao projecao;
+  final VoidCallback? aoDiminuirTom;
+  final VoidCallback? aoAumentarTom;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +286,7 @@ class _ConteudoMusica extends StatelessWidget {
     var emRefrao = false;
     var indiceLinha = 0;
 
-    for (final elemento in musica.documento.elementos) {
+    for (final elemento in projecao.elementos) {
       if (elemento is InicioRefraoChordPro) {
         emRefrao = true;
         continue;
@@ -189,11 +311,31 @@ class _ConteudoMusica extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(musica.titulo, style: Theme.of(context).textTheme.headlineSmall),
+        Text(projecao.titulo, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
-        Text(musica.artista, style: Theme.of(context).textTheme.titleMedium),
+        Text(projecao.artista, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
-        Text('Tom original: ${_formatarTom(musica.tomOriginal)}'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              tooltip: 'Diminuir tom',
+              icon: const Icon(Icons.remove),
+              onPressed: aoDiminuirTom,
+            ),
+            Text(
+              'Tom: ${_formatarTom(projecao.tomExecucao)}',
+              key: const ValueKey('tom-execucao'),
+            ),
+            IconButton(
+              tooltip: 'Aumentar tom',
+              icon: const Icon(Icons.add),
+              onPressed: aoAumentarTom,
+            ),
+          ],
+        ),
+        if (projecao.tomExecucao != projecao.tomOriginal)
+          Text('Original: ${_formatarTom(projecao.tomOriginal)}'),
         const SizedBox(height: 24),
         ...linhas,
       ],
@@ -299,7 +441,13 @@ class _LinhaInterpretada extends StatelessWidget {
             unidades.add(_UnidadeDaLinha(texto: texto.conteudoOriginal));
           }
         case AcordeLinhaChordPro acorde:
-          unidades.add(_UnidadeDaLinha(acorde: acorde.conteudoOriginal));
+          unidades.add(
+            _UnidadeDaLinha(
+              acorde: acorde.conteudoOriginal,
+              acordeNaoInterpretavel:
+                  acorde.resultado is AcordeNaoInterpretavel,
+            ),
+          );
       }
     }
     return unidades;
@@ -307,13 +455,21 @@ class _LinhaInterpretada extends StatelessWidget {
 }
 
 class _UnidadeDaLinha {
-  const _UnidadeDaLinha({this.acorde, this.texto = ''});
+  const _UnidadeDaLinha({
+    this.acorde,
+    this.texto = '',
+    this.acordeNaoInterpretavel = false,
+  });
 
   final String? acorde;
   final String texto;
+  final bool acordeNaoInterpretavel;
 
-  _UnidadeDaLinha comTexto(String novoTexto) =>
-      _UnidadeDaLinha(acorde: acorde, texto: novoTexto);
+  _UnidadeDaLinha comTexto(String novoTexto) => _UnidadeDaLinha(
+    acorde: acorde,
+    texto: novoTexto,
+    acordeNaoInterpretavel: acordeNaoInterpretavel,
+  );
 }
 
 class _UnidadeMusical extends StatelessWidget {
@@ -328,17 +484,27 @@ class _UnidadeMusical extends StatelessWidget {
   final TextStyle? estiloAcorde;
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      if (unidade.acorde != null)
-        Text(unidade.acorde!, style: estiloAcorde, softWrap: false, maxLines: 1)
-      else
-        Text('', style: estiloLetra),
-      Text(unidade.texto, style: estiloLetra),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final estiloDoAcorde = unidade.acordeNaoInterpretavel
+        ? estiloAcorde?.copyWith(color: Theme.of(context).colorScheme.error)
+        : estiloAcorde;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (unidade.acorde != null)
+          Text(
+            unidade.acorde!,
+            style: estiloDoAcorde,
+            softWrap: false,
+            maxLines: 1,
+          )
+        else
+          Text('', style: estiloLetra),
+        Text(unidade.texto, style: estiloLetra),
+      ],
+    );
+  }
 }
 
 class _SegmentoLinhaMusical extends StatelessWidget {

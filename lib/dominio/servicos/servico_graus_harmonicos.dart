@@ -126,7 +126,11 @@ class ServicoGrausHarmonicos {
       });
     }
     for (final adicao in acorde.adicoes) {
-      intervalos.add(adicao == AdicaoAcorde.nona ? 14 : 17);
+      intervalos.add(switch (adicao) {
+        AdicaoAcorde.segunda => 2,
+        AdicaoAcorde.nona => 14,
+        AdicaoAcorde.decimaPrimeira => 17,
+      });
     }
 
     return intervalos
