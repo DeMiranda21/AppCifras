@@ -114,7 +114,7 @@ class RepositorioMusicasLocal implements RepositorioMusicas {
     final conteudo = await _armazenamentoArquivos.obter(id);
     await _armazenamentoArquivos.excluir(id);
     try {
-      await _banco.excluirPorId(id.valor);
+      await _banco.excluirMusicaEItensListaCulto(id.valor);
     } catch (erro, pilha) {
       try {
         await _armazenamentoArquivos.salvar(id, conteudo);

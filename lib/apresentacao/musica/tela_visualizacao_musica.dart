@@ -10,6 +10,7 @@ import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/servicos/parser_acorde.dart';
+import 'contexto_navegacao_lista_culto.dart';
 import 'tela_edicao_musica.dart';
 
 class TelaVisualizacaoMusica extends StatefulWidget {
@@ -24,6 +25,7 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.contextoListaCulto,
   });
 
   final IdMusica idMusica;
@@ -35,6 +37,7 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ContextoNavegacaoListaCulto? contextoListaCulto;
 
   @override
   State<TelaVisualizacaoMusica> createState() => _TelaVisualizacaoMusicaState();
@@ -44,6 +47,9 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   late Future<_DadosVisualizacaoMusica?> _dadosVisualizacao;
   late final ProjetarMusicaParaVisualizacao _projetarMusica;
   late final AlterarTomExecucao _alterarTomExecucao;
+  late IdMusica _idMusicaAtual;
+  ContextoNavegacaoListaCulto? _contextoListaCulto;
+  final _rolagem = ScrollController();
   Tom? _tomExecucao;
   var _excluindo = false;
   String? _erroExclusao;
@@ -51,11 +57,19 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   @override
   void initState() {
     super.initState();
+    _contextoListaCulto = widget.contextoListaCulto;
+    _idMusicaAtual = _contextoListaCulto?.itemAtual.idMusica ?? widget.idMusica;
     _dadosVisualizacao = _carregarDadosVisualizacao();
     _projetarMusica =
         widget.projetarMusicaParaVisualizacao ??
         ProjetarMusicaParaVisualizacao();
     _alterarTomExecucao = widget.alterarTomExecucao ?? AlterarTomExecucao();
+  }
+
+  @override
+  void dispose() {
+    _rolagem.dispose();
+    super.dispose();
   }
 
   Future<void> _abrirEdicao(Musica musica) async {
@@ -113,6 +127,24 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         );
       }
     }
+  }
+
+  void _navegarNaLista(int deslocamento) {
+    final contexto = _contextoListaCulto;
+    if (contexto == null) return;
+    final novoIndice = contexto.indiceAtual + deslocamento;
+    if (novoIndice < 0 || novoIndice >= contexto.itens.length) return;
+    setState(() {
+      _contextoListaCulto = contexto.comIndice(novoIndice);
+      _idMusicaAtual = _contextoListaCulto!.itemAtual.idMusica;
+      _tomExecucao = null;
+      _dadosVisualizacao = _carregarDadosVisualizacao();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_rolagem.hasClients) {
+        _rolagem.jumpTo(0);
+      }
+    });
   }
 
   Future<void> _excluir(Musica musica) async {
@@ -224,18 +256,26 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
                               dadosVisualizacao.tomInicial,
                               1,
                             ),
+                      controladorRolagem: _rolagem,
                     ),
                   ),
                 ],
               ),
               _ => const Center(child: CircularProgressIndicator()),
             },
+            bottomNavigationBar: _contextoListaCulto == null
+                ? null
+                : _BarraNavegacaoListaCulto(
+                    contexto: _contextoListaCulto!,
+                    aoAnterior: () => _navegarNaLista(-1),
+                    aoProximo: () => _navegarNaLista(1),
+                  ),
           );
         },
       );
 
   Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() async {
-    final musica = await widget.obterMusicaPorId.executar(widget.idMusica);
+    final musica = await widget.obterMusicaPorId.executar(_idMusicaAtual);
     if (musica == null) {
       return null;
     }
@@ -274,11 +314,13 @@ class _ConteudoMusica extends StatelessWidget {
     required this.projecao,
     required this.aoDiminuirTom,
     required this.aoAumentarTom,
+    required this.controladorRolagem,
   });
 
   final ProjecaoMusicaVisualizacao projecao;
   final VoidCallback? aoDiminuirTom;
   final VoidCallback? aoAumentarTom;
+  final ScrollController controladorRolagem;
 
   @override
   Widget build(BuildContext context) {
@@ -309,6 +351,7 @@ class _ConteudoMusica extends StatelessWidget {
     }
 
     return ListView(
+      controller: controladorRolagem,
       padding: const EdgeInsets.all(16),
       children: [
         Text(projecao.titulo, style: Theme.of(context).textTheme.headlineSmall),
@@ -344,6 +387,56 @@ class _ConteudoMusica extends StatelessWidget {
 
   String _formatarTom(Tom tom) =>
       '${tom.notaFundamental}${tom.modo == ModoTom.menor ? ' menor' : ''}';
+}
+
+class _BarraNavegacaoListaCulto extends StatelessWidget {
+  const _BarraNavegacaoListaCulto({
+    required this.contexto,
+    required this.aoAnterior,
+    required this.aoProximo,
+  });
+
+  final ContextoNavegacaoListaCulto contexto;
+  final VoidCallback aoAnterior;
+  final VoidCallback aoProximo;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Material(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const ValueKey('navegacao-lista-anterior'),
+                onPressed: contexto.possuiAnterior ? aoAnterior : null,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Anterior'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                '${contexto.indiceAtual + 1} de ${contexto.itens.length}',
+                key: const ValueKey('navegacao-lista-posicao'),
+              ),
+            ),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const ValueKey('navegacao-lista-proxima'),
+                onPressed: contexto.possuiProximo ? aoProximo : null,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Próxima'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _LinhaDaMusica extends StatelessWidget {

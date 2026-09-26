@@ -70,6 +70,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       obterUltimoTomExecucao: widget.composicao.obterUltimoTomExecucao,
       salvarUltimoTomExecucao: widget.composicao.salvarUltimoTomExecucao,
       removerUltimoTomExecucao: widget.composicao.removerUltimoTomExecucao,
+      listarListasCulto: widget.composicao.listarListasCulto,
+      criarListaCulto: widget.composicao.criarListaCulto,
+      renomearListaCulto: widget.composicao.renomearListaCulto,
+      excluirListaCulto: widget.composicao.excluirListaCulto,
+      listarItensListaCulto: widget.composicao.listarItensListaCulto,
+      adicionarMusicaAListaCulto: widget.composicao.adicionarMusicaAListaCulto,
+      removerItemListaCulto: widget.composicao.removerItemListaCulto,
+      reordenarItensListaCulto: widget.composicao.reordenarItensListaCulto,
     ),
   );
 }

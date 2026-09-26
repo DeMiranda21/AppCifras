@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../dominio/entidades/musica.dart';
+import '../compartilhado/normalizacao_pesquisa.dart';
 import '../entrada/tela_entrada_musica.dart';
+import '../listas_culto/tela_listas_culto.dart';
 import '../musica/tela_visualizacao_musica.dart';
 
 class TelaBiblioteca extends StatefulWidget {
@@ -20,6 +23,14 @@ class TelaBiblioteca extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.listarListasCulto,
+    this.criarListaCulto,
+    this.renomearListaCulto,
+    this.excluirListaCulto,
+    this.listarItensListaCulto,
+    this.adicionarMusicaAListaCulto,
+    this.removerItemListaCulto,
+    this.reordenarItensListaCulto,
   });
 
   final ListarMusicas listarMusicas;
@@ -31,6 +42,14 @@ class TelaBiblioteca extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ListarListasCulto? listarListasCulto;
+  final CriarListaCulto? criarListaCulto;
+  final RenomearListaCulto? renomearListaCulto;
+  final ExcluirListaCulto? excluirListaCulto;
+  final ListarItensListaCulto? listarItensListaCulto;
+  final AdicionarMusicaAListaCulto? adicionarMusicaAListaCulto;
+  final RemoverItemListaCulto? removerItemListaCulto;
+  final ReordenarItensListaCulto? reordenarItensListaCulto;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -105,9 +124,67 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     }
   }
 
+  Future<void> _abrirListasCulto() async {
+    final listarListasCulto = widget.listarListasCulto;
+    final criarListaCulto = widget.criarListaCulto;
+    final renomearListaCulto = widget.renomearListaCulto;
+    final excluirListaCulto = widget.excluirListaCulto;
+    final listarItensListaCulto = widget.listarItensListaCulto;
+    final adicionarMusicaAListaCulto = widget.adicionarMusicaAListaCulto;
+    final removerItemListaCulto = widget.removerItemListaCulto;
+    final reordenarItensListaCulto = widget.reordenarItensListaCulto;
+    if (listarListasCulto == null ||
+        criarListaCulto == null ||
+        renomearListaCulto == null ||
+        excluirListaCulto == null ||
+        listarItensListaCulto == null ||
+        adicionarMusicaAListaCulto == null ||
+        removerItemListaCulto == null ||
+        reordenarItensListaCulto == null) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => TelaListasCulto(
+          listarListasCulto: listarListasCulto,
+          criarListaCulto: criarListaCulto,
+          renomearListaCulto: renomearListaCulto,
+          excluirListaCulto: excluirListaCulto,
+          listarItensListaCulto: listarItensListaCulto,
+          adicionarMusicaAListaCulto: adicionarMusicaAListaCulto,
+          removerItemListaCulto: removerItemListaCulto,
+          reordenarItensListaCulto: reordenarItensListaCulto,
+          listarMusicas: widget.listarMusicas,
+          obterMusicaPorId: widget.obterMusicaPorId,
+          atualizarMusica: widget.atualizarMusica,
+          excluirMusica: widget.excluirMusica,
+          obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
+          salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
+          removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
+        ),
+      ),
+    );
+    if (mounted) {
+      final musicas = widget.listarMusicas.executar();
+      setState(() {
+        _musicas = musicas;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Biblioteca')),
+    appBar: AppBar(
+      title: const Text('Biblioteca'),
+      actions: [
+        if (widget.listarListasCulto != null)
+          TextButton.icon(
+            onPressed: _abrirListasCulto,
+            icon: const Icon(Icons.queue_music_outlined),
+            label: const Text('Listas'),
+          ),
+      ],
+    ),
     floatingActionButton: FloatingActionButton(
       onPressed: _abrirCadastro,
       tooltip: 'Adicionar música',
@@ -171,23 +248,13 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   );
 
   List<Musica> _filtrar(List<Musica> musicas, String consulta) {
-    final normalizada = _normalizar(consulta);
+    final normalizada = normalizarPesquisa(consulta);
     if (normalizada.isEmpty) return musicas;
     return musicas.where((musica) {
-      return _normalizar(musica.titulo).contains(normalizada) ||
-          _normalizar(musica.artista).contains(normalizada);
+      return normalizarPesquisa(musica.titulo).contains(normalizada) ||
+          normalizarPesquisa(musica.artista).contains(normalizada);
     }).toList();
   }
-
-  String _normalizar(String valor) => valor
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp('[áàâãä]'), 'a')
-      .replaceAll(RegExp('[éèêë]'), 'e')
-      .replaceAll(RegExp('[íìîï]'), 'i')
-      .replaceAll(RegExp('[óòôõö]'), 'o')
-      .replaceAll(RegExp('[úùûü]'), 'u')
-      .replaceAll('ç', 'c');
 }
 
 class _EstadoBibliotecaVazia extends StatelessWidget {

@@ -179,3 +179,11 @@ O último tom de execução é uma preferência local, separada da Música e do 
 Quando o tom de execução for diferente, a projeção somente estará disponível se todos os acordes musicais forem interpretáveis. Acordes não interpretáveis permanecem preservados e bloqueiam explicitamente a transposição, sem transposição parcial silenciosa; a visualização no tom original continua disponível.
 
 Futuramente, o AppCifras deverá lembrar automaticamente o último tom de execução escolhido para cada música, sem alterar o `tomOriginal` nem o ChordPro e sem exigir um botão específico para salvar esse tom. Essa preferência será modelada separadamente, permitindo evolução compatível com Listas de Culto, nas quais cada item poderá ter seu próprio tom de execução.
+
+## 22. Lista de Culto v1
+
+A Lista de Culto v1 guarda somente `IdListaCulto` e nome. Cada item possui `IdItemListaCulto`, referencia uma Música por `IdMusica` e possui posição persistente; a lista não guarda ChordPro, conteúdo musical nem tom próprio nesta versão. A mesma Música pode aparecer mais de uma vez na mesma Lista, em itens independentes.
+
+Excluir um item ou uma Lista não exclui Músicas. Excluir uma Música da Biblioteca remove explicitamente todos os itens que a referenciam, sem depender exclusivamente de `ON DELETE CASCADE`. A UI v1 não permite adicionar novamente à mesma Lista uma Música que já possua item nela, embora domínio e persistência continuem compatíveis com duplicações preexistentes. A remoção de item exige confirmação explícita.
+
+A visualização aberta a partir de uma Lista de Culto oferece navegação anterior/próxima pela ordem capturada da Lista, sem criar novas rotas por Música. A Lista não possui tom próprio nesta versão: cada Música usa sua preferência de último tom ou seu tom original.
