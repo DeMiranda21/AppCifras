@@ -1,240 +1,89 @@
-# **Roadmap de Desenvolvimento -- Aplicativo de Cifras**
-
-## **Objetivo**
-
-Este documento estabelece o planejamento das próximas etapas do
-desenvolvimento do aplicativo de cifras.
-
-O propósito é manter um fluxo de trabalho organizado, sem tornar o
-projeto excessivamente complexo. A prioridade passa a ser a
-implementação do software, utilizando apenas as práticas de engenharia
-que realmente agreguem valor ao projeto.
-
-# **Fase 1 -- Preparação do Ambiente de Desenvolvimento (Prioridade Máxima)**
-
-## **Objetivo**
-
-Preparar um ambiente único de desenvolvimento que permita trabalhar no
-projeto a partir de diferentes computadores de forma segura e
-organizada.
-
-Esta etapa será realizada apenas uma vez e servirá como base para todo o
-restante do desenvolvimento.
-
-## **Atividades**
-
--   Instalar e configurar o Git.
-
--   Criar (ou configurar) a conta no GitHub.
-
--   Criar o repositório do projeto.
-
--   Definir a estrutura inicial de diretórios.
-
--   Configurar o VS Code para documentação e desenvolvimento.
-
--   Publicar a documentação existente no repositório.
-
--   Aprender o fluxo básico de versionamento:
-
-    -   Clone;
-
-    -   Pull;
-
-    -   Commit;
-
-    -   Push.
-
-## **Resultado esperado**
-
-Ao final desta etapa o projeto deverá possuir:
-
--   repositório no GitHub;
-
--   sincronização entre computadores;
-
--   histórico de alterações;
-
--   ambiente preparado para desenvolvimento.
-
-A partir desse momento, o versionamento passa a fazer parte da rotina do
-projeto.
-
-# **Fase 2 -- Consolidação do Modelo de Domínio**
-
-## **Objetivo**
-
-Realizar apenas as alterações estruturais consideradas essenciais antes
-do início da implementação.
-
-Não será buscada uma modelagem perfeita, mas sim uma modelagem
-suficientemente sólida para permitir o desenvolvimento.
-
-## **Revisões previstas**
-
--   Revisar Biblioteca Musical como Aggregate Root.
-
--   Revisar Registro de Tom (Entity × Value Object).
-
--   Revisar Tag.
-
--   Revisar Fonte de Sincronização.
-
--   Avaliar a necessidade da entidade Execução.
-
-## **Critério de encerramento**
-
-Concluídas essas revisões, o documento será considerado:
-
-**Modelo de Domínio v1.0**
-
-Após essa versão, novas alterações somente serão realizadas quando
-surgirem necessidades reais durante a implementação.
-
-# **Fase 3 -- Arquitetura da Aplicação**
-
-## **Objetivo**
-
-Transformar o Modelo de Domínio em uma estrutura de software.
-
-Serão definidos:
-
--   organização das camadas;
-
--   casos de uso;
-
--   repositórios;
-
--   persistência;
-
--   sincronização;
-
--   comunicação entre módulos.
-
-## **Diretriz**
-
-A arquitetura deverá permanecer simples.
-
-Serão evitados padrões arquiteturais que aumentem a complexidade do
-projeto sem oferecer benefícios concretos nesta fase.
-
-# **Fase 4 -- Implementação do MVP**
-
-## **Objetivo**
-
-Desenvolver uma primeira versão funcional do aplicativo.
-
-A ordem inicial sugerida é:
-
-1.  Cadastro de músicas.
-
-2.  Visualização de cifras.
-
-3.  Transposição.
-
-4.  Listas de culto.
-
-5.  Persistência local.
-
-6.  Configurações.
-
-O foco desta etapa será colocar o aplicativo em funcionamento, ainda que
-algumas funcionalidades permaneçam ausentes.
-
-# **Fase 5 -- Evolução Contínua**
-
-Após a estabilização do MVP, serão avaliadas funcionalidades mais
-avançadas, como:
-
--   sincronização em nuvem;
-
--   compartilhamento;
-
--   múltiplos usuários;
-
--   estatísticas;
-
--   recursos colaborativos;
-
--   outras melhorias identificadas durante o uso.
-
-# **Princípios do Projeto**
-
-Durante todo o desenvolvimento serão observados os seguintes princípios.
-
-## **1. Implementação acima de documentação**
-
-A documentação existe para apoiar o desenvolvimento do software.
-
-Ela não deve impedir que o desenvolvimento avance.
-
-## **2. Complexidade somente quando necessária**
-
-Toda decisão arquitetural deverá resolver um problema real.
-
-Tecnologias, padrões ou metodologias não serão adotados apenas por serem
-considerados boas práticas em projetos maiores.
-
-## **3. Evolução incremental**
-
-O projeto não precisa nascer perfeito.
-
-Ele deverá evoluir continuamente, com pequenas melhorias e revisões
-sempre que houver justificativa prática.
-
-## **4. Funcionalidade acima de teoria**
-
-Uma funcionalidade concluída possui mais valor do que diversas
-funcionalidades apenas planejadas.
-
-A prioridade será produzir software executável.
-
-## **5. Aprendizado contínuo**
-
-Este projeto também faz parte do processo de aprendizado em
-desenvolvimento de software.
-
-É esperado que novas experiências levem à revisão de algumas decisões
-arquiteturais ao longo do tempo.
-
-Essas revisões serão tratadas como evolução natural do projeto.
-
-# **Fluxo de Trabalho**
-
-A partir deste momento, o desenvolvimento seguirá o seguinte ciclo:
-
-1.  Configurar e manter o ambiente de desenvolvimento.
-
-2.  Concluir o Modelo de Domínio v1.0.
-
-3.  Definir uma arquitetura simples e adequada ao projeto.
-
-4.  Iniciar imediatamente a implementação do MVP.
-
-5.  Evoluir o aplicativo conforme novas necessidades surgirem.
-
-# **Considerações Finais**
-
-Este projeto não tem como objetivo servir apenas como exercício de
-programação.
-
-O propósito é desenvolver um aplicativo que possa ser utilizado de forma
-prática e evoluir ao longo do tempo.
-
-Ao mesmo tempo, por se tratar do primeiro projeto do desenvolvedor,
-serão priorizadas soluções simples, compreensíveis e sustentáveis.
-
-A organização será suficiente para facilitar a evolução do sistema, mas
-nunca a ponto de retardar desnecessariamente o início da implementação.
-
-O desenvolvimento passará a ser orientado pelo princípio de que **o
-software é o principal resultado do projeto**, utilizando documentação,
-modelagem e versionamento como instrumentos de apoio, e não como fins em
-si mesmos.
-
-
-# Decisões aprovadas para o MVP
-
-As decisões de escopo aprovadas após esta versão do roadmap estão registradas em `docs/decisoes-mvp.md`. Esse documento é a referência para o MVP local e resolve divergências temporárias de escopo, especialmente quanto à sincronização em nuvem, ao formato ChordPro, à modelagem inicial e às funcionalidades adiadas.
-
-A Fase 4 seguirá esse escopo aprovado: versão local, offline e funcional antes da sincronização em nuvem.
+# Roadmap de Desenvolvimento — AppCifras
+
+Este é o documento de referência para funcionalidades futuras, prioridades e
+dependências. Decisões aprovadas pertencem a decisoes-mvp.md; visão funcional
+consolidada, a especificacao-funcional.md.
+
+## Base já entregue
+
+- Biblioteca offline, cadastro por colagem/importação, edição, exclusão
+  confirmada e pesquisa por título e artista.
+- ChordPro canônico, parser conservador e preservação de conteúdo desconhecido.
+- Visualização responsiva, transposição temporária e último tom por música.
+- Listas de Culto: criar, renomear, excluir, adicionar, remover, reordenar e
+  navegar entre itens.
+- Arquivos ChordPro e SQLite local para índices e preferências.
+
+## Prioridade 0 — Qualidade do núcleo
+
+1. **Falsos acordes e localização de erros:** reconhecer rótulos como Intro,
+   Verso, Refrão, Ponte e Final; evitar texto comum como acorde; destacar e
+   permitir localizar no editor o trecho que bloqueia transposição.
+2. **Zoom com reflow:** pinch zoom e tamanho de fonte, recompondo letra e
+   acordes sem rolagem horizontal.
+3. **Swipe na Lista de Culto:** substituir anterior/próxima, mantendo posição e
+   sem conflitar com rolagem vertical.
+4. **Tela ligada durante cifra:** manter ativa na leitura e restaurar ao sair.
+
+## Prioridade 1 — Estrutura, classificação e histórico
+
+5. **Reconhecimento estrutural:** Intro, Verso, Pré-Refrão, Refrão, Ponte,
+   Instrumental, Final e outros rótulos, sempre preservando o original.
+6. **Editor por blocos:** criar, excluir, duplicar, arrastar e ocultar blocos
+   para reorganização rápida. Não criar entidade Arranjo/Versão nesta fase.
+7. **Tags, classificação e metadados:** energia (muito calma, calma,
+   moderada, animada e muito animada), tema, momento/tipo (celebração,
+   adoração, abertura, ceia, oferta e encerramento) e tags livres; BPM,
+   compasso, duração, dificuldade, ministério, compositor, álbum, idioma,
+   instrumentação e observações, de forma gradual.
+8. **Pesquisa ampliada e filtros:** letra, tags, tema, categoria e ministério,
+   conforme os metadados disponíveis.
+9. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
+   histórico de tons por Música + Ministrante e histórico de cultos/listas.
+
+## Prioridade 2 — Apoio ao ministrante e evoluções locais
+
+10. **Descoberta e uso recente:** repertório por classificação, BPM,
+    tonalidade, ministrante, histórico e tempo desde última execução;
+    recorrência e prevenção de repetição.
+11. **BPM e compasso:** BPM por música, indicador luminoso discreto e
+    compasso. Sem tap tempo ou metrônomo sonoro.
+12. **Listas de Culto:** duplicar, data opcional, responsável, status derivado
+    da data (futura, hoje ou passada/executada) e histórico após definir como
+    confirmar execução real.
+13. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
+    em baixa prioridade.
+14. **Seleção direta de tom** e **graus na interface** (cifras, graus ou
+    ambos; romano ou numérico).
+15. **Importação:** colagem melhorada, lote, fontes externas/APIs e detecção
+    explícita de metadados e estrutura. Sem importação automática de PDF.
+
+## Prioridade 3 — Compartilhamento, backup e estatísticas
+
+16. Compartilhamento de músicas/Listas, equipe, versão oficial, distribuição,
+    atualização e conflitos; sem antecipar entidade Arranjo/Versão.
+17. Backup, importação/exportação, sincronização entre aparelhos e resolução de
+    conflitos.
+18. Estatísticas derivadas do histórico real: execuções, frequência, tons,
+    ministrantes, cultos e classificações.
+
+## Prioridade 4 — Interface e plataforma
+
+19. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
+20. iOS como evolução posterior; Android continua principal.
+
+## Última etapa — IA
+
+IA não será integrada no horizonte atual. Antes de decidir, avaliar hospedagem
+própria. Usos possíveis: tags, tema/energia, estrutura, correção de cifras e
+análise de repertório. Não inclui sugestão automática de repertório, tom ou
+transições.
+
+## Dependências principais
+
+    Correção de cifra → reconhecimento estrutural → editor por blocos
+    Tags/metadados → pesquisa/filtros → descoberta de repertório
+    Histórico → ministrantes/histórico de tons → descoberta e estatísticas
+    BPM → indicador luminoso
+    Listas + histórico → registro de culto → estatísticas
+    Compartilhamento → usuários/equipe → sincronização colaborativa
