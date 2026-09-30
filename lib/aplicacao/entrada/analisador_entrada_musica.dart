@@ -3,30 +3,19 @@ import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/servicos/parser_acorde.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import 'resultado_analise_entrada_musica.dart';
+import 'classificador_linha_cifra_textual.dart';
 
 class AnalisadorEntradaMusica {
   AnalisadorEntradaMusica({ParserDocumentoChordPro? parserDocumento})
     : _parserDocumento = parserDocumento ?? ParserDocumentoChordPro();
 
   final ParserDocumentoChordPro _parserDocumento;
+  final _classificador = ClassificadorLinhaCifraTextual();
 
   static final _linhaTom = RegExp(
     r'^\s*(?:tom|key)\s*:\s*(.+?)\s*$',
     caseSensitive: false,
   );
-  static final _rotuloSecao = RegExp(r'^\s*\[(.+)\]\s*$');
-  static final _candidatoAcorde = RegExp(
-    r'^[A-G](?:[#b])?(?:[A-Za-z0-9#b()+/°Δø-]*)$',
-  );
-  static const _nomesSecao = {
-    'intro',
-    'primeira parte',
-    'verso',
-    'pré-refrão',
-    'refrão',
-    'ponte',
-    'final',
-  };
 
   ResultadoAnaliseEntradaMusica analisar(String conteudo) {
     final documento = _parserDocumento.interpretar(conteudo);
@@ -119,25 +108,14 @@ class AnalisadorEntradaMusica {
                 ),
       );
 
-  bool _possuiRotulosDeSecao(String conteudo) => _linhas(conteudo).any((linha) {
-    final correspondencia = _rotuloSecao.firstMatch(linha);
-    return correspondencia != null &&
-        _nomesSecao.contains(correspondencia.group(1)!.trim().toLowerCase());
-  });
+  bool _possuiRotulosDeSecao(String conteudo) =>
+      _linhas(conteudo).any(_classificador.ehRotuloDeSecao);
 
   bool _possuiLinhaDeAcordesProvavel(String conteudo) =>
       _linhas(conteudo).any(_eLinhaDeAcordesProvavel);
 
-  bool _eLinhaDeAcordesProvavel(String linha) {
-    final tokens = linha.trim().split(RegExp(r'\s+'));
-    if (tokens.length == 1 && tokens.single.isEmpty) {
-      return false;
-    }
-    if (!tokens.every(_candidatoAcorde.hasMatch)) {
-      return false;
-    }
-    return tokens.length > 1 || tokens.single.length > 1;
-  }
+  bool _eLinhaDeAcordesProvavel(String linha) =>
+      _classificador.ehLinhaDeAcordes(linha);
 
   _TomTexto _extrairTomTexto(String conteudo) {
     for (final linha in _linhas(conteudo)) {
@@ -244,7 +222,8 @@ class AnalisadorEntradaMusica {
     for (final acorde in documento.elementos.whereType<LinhaChordPro>().expand(
       (linha) => linha.elementos.whereType<AcordeLinhaChordPro>(),
     )) {
-      if (acorde.resultado is AcordeNaoInterpretavel) {
+      if (acorde.resultado is AcordeNaoInterpretavel &&
+          !_classificador.ehNomeDeSecao(acorde.conteudoOriginal)) {
         avisos.add(
           AvisoAnaliseEntrada(
             tipo: TipoAvisoAnaliseEntrada.acordeNaoInterpretavel,

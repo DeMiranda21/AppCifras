@@ -24,6 +24,11 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Entrada textual usa análise e revisão conservadoras. ChordPro completo usa
   as próprias diretivas: sem cabeçalhos duplicados, metadados paralelos ou
   deduplicação silenciosa. Na dúvida entre converter e preservar, preserva.
+  Rótulos inequívocos de seção são preservados como texto e nunca convertidos
+  automaticamente em acordes. No ChordPro, `[]` delimita cifras; no fluxo de
+  entrada textual, rótulos inequívocos entre colchetes são reconhecidos antes
+  da conversão. Fora desses casos, o conteúdo entre colchetes é tratado como
+  cifra e, se não for suportado, permanece não interpretável.
 - Cifras desconhecidas, diretivas desconhecidas, comentários, tablaturas,
   linhas vazias e conteúdo malformado permanecem preservados.
 - Edição preserva IdMusica e altera explicitamente só diretivas funcionais.
@@ -69,7 +74,15 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - A cifra cabe na largura útil, sem truncamento, ellipsis ou rolagem horizontal
   no modo normal. Reflow preserva acorde e trecho associado.
 - Zoom deve recompor o layout e manter leitura vertical.
+- Zoom é um estado temporário da rota de leitura: pinça altera a fonte entre
+  75% e 180%, 100% é a escala padrão, há ação discreta de redefinição e não há
+  persistência no MVP.
+- A visualização de cifra mantém a tela ativa enquanto estiver aberta e libera
+  esse comportamento ao sair da leitura.
 - Acordes não interpretáveis permanecem visíveis com destaque discreto.
+- Na visualização aberta por Lista de Culto, swipe horizontal navega entre os
+  itens na ordem capturada; o indicador de posição permanece visível e o botão
+  de voltar retorna diretamente à Lista.
 
 ## Lista de Culto v1
 

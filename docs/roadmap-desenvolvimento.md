@@ -9,7 +9,9 @@ consolidada, a especificacao-funcional.md.
 - Biblioteca offline, cadastro por colagem/importação, edição, exclusão
   confirmada e pesquisa por título e artista.
 - ChordPro canônico, parser conservador e preservação de conteúdo desconhecido.
-- Visualização responsiva, transposição temporária e último tom por música.
+- Visualização responsiva, transposição temporária, último tom por música,
+  zoom com reflow, swipe entre itens da Lista de Culto e tela mantida ativa
+  durante a leitura.
 - Listas de Culto: criar, renomear, excluir, adicionar, remover, reordenar e
   navegar entre itens.
 - Arquivos ChordPro e SQLite local para índices e preferências.
@@ -18,12 +20,16 @@ consolidada, a especificacao-funcional.md.
 
 1. **Falsos acordes e localização de erros:** reconhecer rótulos como Intro,
    Verso, Refrão, Ponte e Final; evitar texto comum como acorde; destacar e
-   permitir localizar no editor o trecho que bloqueia transposição.
+   permitir localizar no editor o trecho que bloqueia transposição. Explicar
+   em linguagem simples por que o trecho exige revisão, com orientação
+   contextual quando houver informação suficiente.
 2. **Zoom com reflow:** pinch zoom e tamanho de fonte, recompondo letra e
-   acordes sem rolagem horizontal.
-3. **Swipe na Lista de Culto:** substituir anterior/próxima, mantendo posição e
-   sem conflitar com rolagem vertical.
-4. **Tela ligada durante cifra:** manter ativa na leitura e restaurar ao sair.
+   acordes sem rolagem horizontal. Adicionar futuramente um indicador
+   percentual discreto de zoom e avaliar suavização visual da escala, sem
+   prejudicar reflow, rolagem vertical, desempenho ou resposta ao gesto.
+3. **Transições de leitura:** animar futuramente a troca horizontal entre
+   músicas da Lista de Culto de modo coerente com a direção do swipe, sem
+   prejudicar a resposta imediata à navegação.
 
 ## Prioridade 1 — Estrutura, classificação e histórico
 

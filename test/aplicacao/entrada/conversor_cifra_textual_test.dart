@@ -289,5 +289,55 @@ void main() {
         expect(resultado.chordProSugerido, contains('[$acorde]'));
       }
     });
+
+    test('preserva rótulos claros sem convertê-los em acordes', () {
+      for (final rotulo in [
+        'Refrão',
+        'Refrão:',
+        '[Refrão]',
+        'VERSO 1',
+        'Ponte',
+        'Introdução',
+        'Segunda Parte',
+        'Pre-Refrão',
+        'Coro',
+        'Instrumental',
+        'Solo',
+        'Final',
+      ]) {
+        final resultado = conversor.converter(rotulo);
+
+        expect(resultado.chordProSugerido, isNot(contains('[$rotulo]')));
+        expect(
+          resultado.trechos.single.tipo,
+          TipoTrechoConversaoCifra.rotuloPreservado,
+        );
+      }
+    });
+
+    test('preserva frases e marcadores sem interpretá-los como acordes', () {
+      for (final texto in ['Volta ao refrão', '2x', 'Repete', 'Só voz']) {
+        final resultado = conversor.converter(texto);
+
+        expect(resultado.chordProSugerido, texto);
+        expect(
+          resultado.trechos.single.tipo,
+          TipoTrechoConversaoCifra.preservado,
+        );
+      }
+    });
+
+    test('mantém acordes interpretáveis como linhas musicais', () {
+      expect(conversor.converter('G').chordProSugerido, '[G]');
+      expect(conversor.converter('G/B').chordProSugerido, '[G/B]');
+      expect(
+        conversor.converter('Cadd9 D/F# Em7').chordProSugerido,
+        '[Cadd9] [D/F#] [Em7]',
+      );
+      expect(
+        conversor.converter('Am  F  C  G').chordProSugerido,
+        '[Am] [F] [C] [G]',
+      );
+    });
   });
 }

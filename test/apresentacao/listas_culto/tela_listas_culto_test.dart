@@ -17,7 +17,41 @@ import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+RenderPointerListener _listenerDaCifra(WidgetTester tester) {
+  final areaDaCifra = find.byKey(const ValueKey('conteudo-cifra'));
+  expect(areaDaCifra, findsOneWidget);
+  final listener = tester.renderObject<RenderPointerListener>(areaDaCifra);
+  expect(listener.hasSize, isTrue);
+  expect(listener.size.isEmpty, isFalse);
+  return listener;
+}
+
+Rect _retanguloInterativoDaCifra(WidgetTester tester) {
+  final listener = _listenerDaCifra(tester);
+  final retangulo = listener.localToGlobal(Offset.zero) & listener.size;
+  expect(retangulo.width, greaterThan(0));
+  expect(retangulo.height, greaterThan(0));
+  return retangulo;
+}
+
+void _confirmarPontoInterativoDaCifra(WidgetTester tester, Offset ponto) {
+  final listener = _listenerDaCifra(tester);
+  final cadeia = tester.hitTestOnBinding(ponto).path;
+  final cadeiaFormatada = cadeia
+      .map((entrada) => entrada.target.runtimeType)
+      .join(' -> ');
+  expect(
+    cadeia.any((entrada) => identical(entrada.target, listener)),
+    isTrue,
+    reason:
+        'O ponto $ponto não atingiu o Listener da cifra. '
+        'Retângulo: ${_retanguloInterativoDaCifra(tester)}. '
+        'Cadeia: $cadeiaFormatada',
+  );
+}
 
 void main() {
   Future<void> tocarFabEstendidoInterativo(
@@ -31,6 +65,17 @@ void main() {
     await tester.ensureVisible(fab);
     expect(fab.hitTestable(), findsOneWidget);
     await tester.tap(fab);
+  }
+
+  Future<void> arrastarCifra(WidgetTester tester, Offset deslocamento) async {
+    final pontoInicial = _retanguloInterativoDaCifra(tester).center;
+    _confirmarPontoInterativoDaCifra(tester, pontoInicial);
+    final gesto = await tester.startGesture(pontoInicial);
+    await tester.pump();
+    await gesto.moveBy(deslocamento);
+    await gesto.up();
+    await tester.pump();
+    await tester.pump();
   }
 
   testWidgets('cria, renomeia e exclui uma lista pela interface', (
@@ -215,43 +260,31 @@ void main() {
     await cenario.montar(tester);
     await tester.tap(find.byKey(const ValueKey('lista-lista-1')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('item-lista-item-1')));
+    final primeiroItem = find.byKey(const ValueKey('item-lista-item-1'));
+    await tester.ensureVisible(primeiroItem);
+    expect(primeiroItem.hitTestable(), findsOneWidget);
+    await tester.tap(primeiroItem);
     await tester.pumpAndSettle();
 
     expect(find.text('Caminho'), findsOneWidget);
     expect(find.text('Tom: C'), findsOneWidget);
     expect(find.text('1 de 3'), findsOneWidget);
-    expect(
-      tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('navegacao-lista-anterior')),
-          )
-          .onPressed,
-      isNull,
-    );
 
-    await tester.tap(find.byKey(const ValueKey('navegacao-lista-proxima')));
-    await tester.pumpAndSettle();
+    await arrastarCifra(tester, const Offset(-160, 0));
     expect(find.text('Esperança'), findsOneWidget);
     expect(find.text('Tom: F#'), findsOneWidget);
     expect(find.text('2 de 3'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('navegacao-lista-proxima')));
-    await tester.pumpAndSettle();
+    await arrastarCifra(tester, const Offset(-160, 0));
     expect(find.text('Coração'), findsOneWidget);
     expect(find.text('Tom: C'), findsOneWidget);
     expect(find.text('3 de 3'), findsOneWidget);
-    expect(
-      tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('navegacao-lista-proxima')),
-          )
-          .onPressed,
-      isNull,
-    );
 
-    await tester.tap(find.byKey(const ValueKey('navegacao-lista-anterior')));
-    await tester.pumpAndSettle();
+    await arrastarCifra(tester, const Offset(-160, 0));
+    expect(find.text('Coração'), findsOneWidget);
+    expect(find.text('3 de 3'), findsOneWidget);
+
+    await arrastarCifra(tester, const Offset(160, 0));
     expect(find.text('Esperança'), findsOneWidget);
     expect(find.text('2 de 3'), findsOneWidget);
   });

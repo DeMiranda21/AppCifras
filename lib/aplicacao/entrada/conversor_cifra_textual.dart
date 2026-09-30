@@ -1,4 +1,4 @@
-import '../../dominio/servicos/parser_acorde.dart';
+import 'classificador_linha_cifra_textual.dart';
 
 enum TipoTrechoConversaoCifra {
   tomConvertido,
@@ -58,28 +58,15 @@ class ResultadoConversaoCifraTextual {
 /// combinados ou de largura dupla. Quando não existe letra imediatamente após
 /// uma linha de acordes, a sequência é preservada como linha instrumental.
 class ConversorCifraTextual {
-  ConversorCifraTextual({ParserAcorde? parserAcorde})
-    : _parserAcorde = parserAcorde ?? ParserAcorde();
+  ConversorCifraTextual() : _classificador = ClassificadorLinhaCifraTextual();
 
-  final ParserAcorde _parserAcorde;
+  final ClassificadorLinhaCifraTextual _classificador;
 
   static final _linhaTom = RegExp(
     r'^\s*(?:tom|key)\s*:\s*([A-G](?:[#b])?m?)\s*$',
     caseSensitive: false,
   );
   static final _rotulo = RegExp(r'^\s*\[([^\]]+)\](.*)$');
-  static final _candidatoAcorde = RegExp(
-    r'^[A-G](?:[#b])?(?:[A-Za-z0-9#b()+/°Δø-]*)$',
-  );
-  static const _nomesSecao = {
-    'intro',
-    'primeira parte',
-    'verso',
-    'pré-refrão',
-    'refrão',
-    'ponte',
-    'final',
-  };
 
   ResultadoConversaoCifraTextual converter(String conteudo) {
     final separador = conteudo.contains('\r\n') ? '\r\n' : '\n';
@@ -152,6 +139,18 @@ class ConversorCifraTextual {
             ),
           );
         }
+        indice += 1;
+        continue;
+      }
+
+      if (_classificador.ehRotuloDeSecao(linha)) {
+        saida.add(linha);
+        trechos.add(
+          TrechoConversaoCifra(
+            linhaOriginal: indice,
+            tipo: TipoTrechoConversaoCifra.rotuloPreservado,
+          ),
+        );
         indice += 1;
         continue;
       }
@@ -258,7 +257,7 @@ class ConversorCifraTextual {
       return null;
     }
     final nome = correspondencia.group(1)!.trim();
-    if (!_nomesSecao.contains(nome.toLowerCase())) {
+    if (!_classificador.ehNomeDeSecao(nome)) {
       return null;
     }
     return _RotuloSecao(nome, correspondencia.group(2) ?? '');
@@ -268,6 +267,9 @@ class ConversorCifraTextual {
       RegExp(r'\[[^\]]+\]').hasMatch(linha);
 
   _LinhaDeAcordes? _interpretarLinhaDeAcordes(String linha) {
+    if (!_classificador.ehLinhaDeAcordes(linha)) {
+      return null;
+    }
     final tokens = <_TokenAcorde>[];
     var coluna = 0;
     var inicioToken = -1;
@@ -279,13 +281,6 @@ class ConversorCifraTextual {
         return;
       }
       final texto = String.fromCharCodes(buffer);
-      final resultado = _parserAcorde.interpretar(texto);
-      if (resultado is! AcordeInterpretado &&
-          !_candidatoAcorde.hasMatch(texto)) {
-        tokens.clear();
-        inicioToken = -2;
-        return;
-      }
       tokens.add(_TokenAcorde(texto, inicioColuna));
       buffer.clear();
       inicioToken = -1;
@@ -294,9 +289,6 @@ class ConversorCifraTextual {
     for (final rune in linha.runes) {
       if (_eEspaco(rune)) {
         concluirToken();
-        if (inicioToken == -2) {
-          return null;
-        }
         coluna = _avancarColuna(coluna, rune);
         continue;
       }
@@ -308,7 +300,7 @@ class ConversorCifraTextual {
       coluna += 1;
     }
     concluirToken();
-    if (inicioToken == -2 || tokens.isEmpty) {
+    if (tokens.isEmpty) {
       return null;
     }
     return _LinhaDeAcordes(tokens);
@@ -320,7 +312,7 @@ class ConversorCifraTextual {
     }
     final proxima = linhas[indice + 1];
     return proxima.trim().isNotEmpty &&
-        _obterRotulo(proxima) == null &&
+        !_classificador.ehRotuloDeSecao(proxima) &&
         !_contemMarcacaoChordPro(proxima) &&
         _interpretarLinhaDeAcordes(proxima) == null &&
         !_pareceDiretiva(proxima);

@@ -70,7 +70,7 @@ class ProjetarMusicaParaVisualizacao {
       return projecaoOriginal;
     }
 
-    final problemas = _acordesNaoInterpretaveis(musica.documento);
+    final problemas = problemasDeTransposicao(musica);
     if (problemas.isNotEmpty) {
       return TransposicaoVisualizacaoIndisponivel(
         projecaoNoTomOriginal: projecaoOriginal,
@@ -92,6 +92,10 @@ class ProjetarMusicaParaVisualizacao {
       ),
     );
   }
+
+  List<AcordeNaoTransponivelVisualizacao> problemasDeTransposicao(
+    Musica musica,
+  ) => _acordesNaoInterpretaveis(musica.documento);
 
   ProjecaoMusicaVisualizacao _projecaoOriginal(Musica musica) =>
       ProjecaoMusicaVisualizacao(

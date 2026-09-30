@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
@@ -11,6 +13,8 @@ import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/servicos/parser_acorde.dart';
 import 'contexto_navegacao_lista_culto.dart';
+import 'controle_tela_ativa.dart';
+import 'escala_visualizacao_cifra.dart';
 import 'tela_edicao_musica.dart';
 
 class TelaVisualizacaoMusica extends StatefulWidget {
@@ -26,6 +30,7 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
     this.contextoListaCulto,
+    this.controleTelaAtiva = const ControleTelaAtivaWakelockPlus(),
   });
 
   final IdMusica idMusica;
@@ -38,19 +43,34 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
   final ContextoNavegacaoListaCulto? contextoListaCulto;
+  final ControleTelaAtiva controleTelaAtiva;
 
   @override
   State<TelaVisualizacaoMusica> createState() => _TelaVisualizacaoMusicaState();
 }
 
 class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
+  static const _distanciaMinimaDoSwipe = 72.0;
+  static const _proporcaoMinimaHorizontalDoSwipe = 1.5;
+
   late Future<_DadosVisualizacaoMusica?> _dadosVisualizacao;
   late final ProjetarMusicaParaVisualizacao _projetarMusica;
   late final AlterarTomExecucao _alterarTomExecucao;
   late IdMusica _idMusicaAtual;
   ContextoNavegacaoListaCulto? _contextoListaCulto;
   final _rolagem = ScrollController();
+  final _ponteirosDoZoom = <int, Offset>{};
   Tom? _tomExecucao;
+  ProjecaoMusicaVisualizacao? _projecaoEmCache;
+  IdMusica? _idDaProjecaoEmCache;
+  Tom? _tomDaProjecaoEmCache;
+  List<AcordeNaoTransponivelVisualizacao>? _problemasEmCache;
+  var _escalaCifra = EscalaVisualizacaoCifra.padrao;
+  EscalaVisualizacaoCifra? _escalaNoInicioDoZoom;
+  double? _distanciaInicialDoZoom;
+  int? _ponteiroDoSwipe;
+  Offset? _inicioDoSwipe;
+  var _gestoPossuiMultiplosPonteiros = false;
   var _excluindo = false;
   String? _erroExclusao;
 
@@ -64,26 +84,53 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         widget.projetarMusicaParaVisualizacao ??
         ProjetarMusicaParaVisualizacao();
     _alterarTomExecucao = widget.alterarTomExecucao ?? AlterarTomExecucao();
+    unawaited(_ativarTelaAtiva());
   }
 
   @override
   void dispose() {
+    unawaited(_desativarTelaAtiva());
     _rolagem.dispose();
     super.dispose();
   }
 
-  Future<void> _abrirEdicao(Musica musica) async {
+  Future<void> _ativarTelaAtiva() async {
+    try {
+      await widget.controleTelaAtiva.ativar();
+    } catch (_) {
+      // O wake lock é auxiliar e não pode impedir a leitura da cifra.
+    }
+  }
+
+  Future<void> _desativarTelaAtiva() async {
+    try {
+      await widget.controleTelaAtiva.desativar();
+    } catch (_) {
+      // O wake lock é auxiliar e não pode impedir a leitura da cifra.
+    }
+  }
+
+  Future<void> _abrirEdicao(
+    Musica musica, {
+    String? textoParaLocalizacao,
+  }) async {
+    unawaited(_desativarTelaAtiva());
     final alterada = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (context) => TelaEdicaoMusica(
           musica: musica,
           atualizarMusica: widget.atualizarMusica,
+          textoParaLocalizacao: textoParaLocalizacao,
         ),
       ),
     );
+    if (mounted) {
+      unawaited(_ativarTelaAtiva());
+    }
     if (alterada == true && mounted) {
       setState(() {
         _tomExecucao = null;
+        _limparCacheDaVisualizacao();
         _dadosVisualizacao = _carregarDadosVisualizacao();
       });
     }
@@ -94,13 +141,10 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     final novoTom = _alterarTomExecucao.executar(tomAtual, semitons);
     final resultado = _projetarMusica.executar(musica, novoTom);
     if (resultado is TransposicaoVisualizacaoIndisponivel) {
-      final acordes = resultado.problemas
-          .map((problema) => problema.textoOriginal)
-          .join(', ');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Não foi possível alterar o tom. Revise os acordes destacados na cifra: $acordes.',
+            'Não foi possível alterar o tom. Revise os acordes destacados na cifra.',
           ),
         ),
       );
@@ -138,6 +182,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
       _contextoListaCulto = contexto.comIndice(novoIndice);
       _idMusicaAtual = _contextoListaCulto!.itemAtual.idMusica;
       _tomExecucao = null;
+      _limparCacheDaVisualizacao();
       _dadosVisualizacao = _carregarDadosVisualizacao();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,6 +190,107 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         _rolagem.jumpTo(0);
       }
     });
+  }
+
+  void _iniciarPonteiroDoZoom(PointerDownEvent evento) {
+    _ponteirosDoZoom[evento.pointer] = evento.position;
+    if (_ponteirosDoZoom.length == 1) {
+      _ponteiroDoSwipe = evento.pointer;
+      _inicioDoSwipe = evento.position;
+      _gestoPossuiMultiplosPonteiros = false;
+    } else {
+      _gestoPossuiMultiplosPonteiros = true;
+      _ponteiroDoSwipe = null;
+      _inicioDoSwipe = null;
+    }
+    if (_ponteirosDoZoom.length == 2) {
+      _escalaNoInicioDoZoom = _escalaCifra;
+      _distanciaInicialDoZoom = _distanciaEntrePonteiros;
+    }
+  }
+
+  void _atualizarPonteiroDoZoom(PointerMoveEvent evento) {
+    if (!_ponteirosDoZoom.containsKey(evento.pointer)) {
+      return;
+    }
+    _ponteirosDoZoom[evento.pointer] = evento.position;
+    final escalaInicial = _escalaNoInicioDoZoom;
+    final distanciaInicial = _distanciaInicialDoZoom;
+    final distanciaAtual = _distanciaEntrePonteiros;
+    if (escalaInicial == null ||
+        distanciaInicial == null ||
+        distanciaAtual == null ||
+        distanciaInicial == 0) {
+      return;
+    }
+    final novaEscala = escalaInicial.aplicarFator(
+      distanciaAtual / distanciaInicial,
+    );
+    if (novaEscala == _escalaCifra) {
+      return;
+    }
+    setState(() => _escalaCifra = novaEscala);
+  }
+
+  void _encerrarPonteiroDoZoom(PointerEvent evento) {
+    _ponteirosDoZoom.remove(evento.pointer);
+    if (_ponteirosDoZoom.length < 2) {
+      _escalaNoInicioDoZoom = null;
+      _distanciaInicialDoZoom = null;
+    }
+    if (_ponteirosDoZoom.isEmpty) {
+      _gestoPossuiMultiplosPonteiros = false;
+    }
+  }
+
+  void _encerrarPonteiro(PointerUpEvent evento) {
+    _reconhecerSwipe(evento);
+    _encerrarPonteiroDoZoom(evento);
+  }
+
+  void _cancelarPonteiro(PointerCancelEvent evento) {
+    _encerrarPonteiroDoZoom(evento);
+  }
+
+  void _reconhecerSwipe(PointerUpEvent evento) {
+    final inicio = _inicioDoSwipe;
+    if (_contextoListaCulto == null ||
+        _gestoPossuiMultiplosPonteiros ||
+        _ponteiroDoSwipe != evento.pointer ||
+        inicio == null) {
+      return;
+    }
+    final deslocamento = evento.position - inicio;
+    final distanciaHorizontal = deslocamento.dx.abs();
+    final distanciaVertical = deslocamento.dy.abs();
+    if (distanciaHorizontal < _distanciaMinimaDoSwipe ||
+        distanciaHorizontal <
+            distanciaVertical * _proporcaoMinimaHorizontalDoSwipe) {
+      return;
+    }
+    _navegarNaLista(deslocamento.dx < 0 ? 1 : -1);
+  }
+
+  double? get _distanciaEntrePonteiros {
+    if (_ponteirosDoZoom.length != 2) {
+      return null;
+    }
+    final posicoes = _ponteirosDoZoom.values.toList(growable: false);
+    return (posicoes[0] - posicoes[1]).distance;
+  }
+
+  void _redefinirEscalaDaCifra() {
+    if (_escalaCifra == EscalaVisualizacaoCifra.padrao) {
+      return;
+    }
+    setState(() => _escalaCifra = EscalaVisualizacaoCifra.padrao);
+  }
+
+  void _limparCacheDaVisualizacao() {
+    _projecaoEmCache = null;
+    _idDaProjecaoEmCache = null;
+    _tomDaProjecaoEmCache = null;
+    _problemasEmCache = null;
   }
 
   Future<void> _excluir(Musica musica) async {
@@ -202,6 +348,15 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
               title: const Text('Cifra'),
               actions: [
                 if (resultado.connectionState == ConnectionState.done &&
+                    musica != null)
+                  IconButton(
+                    tooltip: 'Redefinir tamanho da cifra',
+                    icon: const Icon(Icons.restart_alt),
+                    onPressed: _escalaCifra == EscalaVisualizacaoCifra.padrao
+                        ? null
+                        : _redefinirEscalaDaCifra,
+                  ),
+                if (resultado.connectionState == ConnectionState.done &&
                     !resultado.hasError &&
                     musica != null)
                   IconButton(
@@ -242,6 +397,13 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
                         musica!,
                         dadosVisualizacao!.tomInicial,
                       ),
+                      problemasTransposicao: _problemasTransposicaoAtuais(
+                        musica,
+                      ),
+                      aoRevisarProblema: (problema) => _abrirEdicao(
+                        musica,
+                        textoParaLocalizacao: problema.textoOriginal,
+                      ),
                       aoDiminuirTom: _excluindo
                           ? null
                           : () => _alterarTom(
@@ -257,6 +419,11 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
                               1,
                             ),
                       controladorRolagem: _rolagem,
+                      escalaCifra: _escalaCifra,
+                      aoIniciarPonteiroDoZoom: _iniciarPonteiroDoZoom,
+                      aoAtualizarPonteiroDoZoom: _atualizarPonteiroDoZoom,
+                      aoEncerrarPonteiro: _encerrarPonteiro,
+                      aoCancelarPonteiro: _cancelarPonteiro,
                     ),
                   ),
                 ],
@@ -265,11 +432,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
             },
             bottomNavigationBar: _contextoListaCulto == null
                 ? null
-                : _BarraNavegacaoListaCulto(
-                    contexto: _contextoListaCulto!,
-                    aoAnterior: () => _navegarNaLista(-1),
-                    aoProximo: () => _navegarNaLista(1),
-                  ),
+                : _BarraNavegacaoListaCulto(contexto: _contextoListaCulto!),
           );
         },
       );
@@ -287,15 +450,34 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   }
 
   ProjecaoMusicaVisualizacao _projecaoAtual(Musica musica, Tom tomInicial) {
-    final resultado = _projetarMusica.executar(
-      musica,
-      _tomExecucao ?? tomInicial,
-    );
-    if (resultado is ProjecaoMusicaVisualizacao) {
-      return resultado;
+    final tomExecucao = _tomExecucao ?? tomInicial;
+    final projecaoEmCache = _projecaoEmCache;
+    if (projecaoEmCache != null &&
+        _idDaProjecaoEmCache == musica.id &&
+        _tomDaProjecaoEmCache == tomExecucao) {
+      return projecaoEmCache;
     }
-    return (resultado as TransposicaoVisualizacaoIndisponivel)
-        .projecaoNoTomOriginal;
+    final resultado = _projetarMusica.executar(musica, tomExecucao);
+    final projecao = resultado is ProjecaoMusicaVisualizacao
+        ? resultado
+        : (resultado as TransposicaoVisualizacaoIndisponivel)
+              .projecaoNoTomOriginal;
+    _projecaoEmCache = projecao;
+    _idDaProjecaoEmCache = musica.id;
+    _tomDaProjecaoEmCache = tomExecucao;
+    return projecao;
+  }
+
+  List<AcordeNaoTransponivelVisualizacao> _problemasTransposicaoAtuais(
+    Musica musica,
+  ) {
+    final problemasEmCache = _problemasEmCache;
+    if (problemasEmCache != null && _idDaProjecaoEmCache == musica.id) {
+      return problemasEmCache;
+    }
+    final problemas = _projetarMusica.problemasDeTransposicao(musica);
+    _problemasEmCache = problemas;
+    return problemas;
   }
 }
 
@@ -315,12 +497,26 @@ class _ConteudoMusica extends StatelessWidget {
     required this.aoDiminuirTom,
     required this.aoAumentarTom,
     required this.controladorRolagem,
+    required this.problemasTransposicao,
+    required this.aoRevisarProblema,
+    required this.escalaCifra,
+    required this.aoIniciarPonteiroDoZoom,
+    required this.aoAtualizarPonteiroDoZoom,
+    required this.aoEncerrarPonteiro,
+    required this.aoCancelarPonteiro,
   });
 
   final ProjecaoMusicaVisualizacao projecao;
   final VoidCallback? aoDiminuirTom;
   final VoidCallback? aoAumentarTom;
   final ScrollController controladorRolagem;
+  final List<AcordeNaoTransponivelVisualizacao> problemasTransposicao;
+  final ValueChanged<AcordeNaoTransponivelVisualizacao> aoRevisarProblema;
+  final EscalaVisualizacaoCifra escalaCifra;
+  final PointerDownEventListener aoIniciarPonteiroDoZoom;
+  final PointerMoveEventListener aoAtualizarPonteiroDoZoom;
+  final PointerUpEventListener aoEncerrarPonteiro;
+  final PointerCancelEventListener aoCancelarPonteiro;
 
   @override
   Widget build(BuildContext context) {
@@ -344,44 +540,65 @@ class _ConteudoMusica extends StatelessWidget {
             key: ValueKey('linha-$indiceLinha'),
             elemento: elemento,
             emRefrao: emRefrao,
+            escalaCifra: escalaCifra,
           ),
         );
         indiceLinha += 1;
       }
     }
 
-    return ListView(
-      controller: controladorRolagem,
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(projecao.titulo, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 4),
-        Text(projecao.artista, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              tooltip: 'Diminuir tom',
-              icon: const Icon(Icons.remove),
-              onPressed: aoDiminuirTom,
-            ),
-            Text(
-              'Tom: ${_formatarTom(projecao.tomExecucao)}',
-              key: const ValueKey('tom-execucao'),
-            ),
-            IconButton(
-              tooltip: 'Aumentar tom',
-              icon: const Icon(Icons.add),
-              onPressed: aoAumentarTom,
+    return Listener(
+      key: const ValueKey('conteudo-cifra'),
+      onPointerDown: aoIniciarPonteiroDoZoom,
+      onPointerMove: aoAtualizarPonteiroDoZoom,
+      onPointerUp: aoEncerrarPonteiro,
+      onPointerCancel: aoCancelarPonteiro,
+      child: ListView(
+        controller: controladorRolagem,
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            projecao.titulo,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            projecao.artista,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                tooltip: 'Diminuir tom',
+                icon: const Icon(Icons.remove),
+                onPressed: aoDiminuirTom,
+              ),
+              Text(
+                'Tom: ${_formatarTom(projecao.tomExecucao)}',
+                key: const ValueKey('tom-execucao'),
+              ),
+              IconButton(
+                tooltip: 'Aumentar tom',
+                icon: const Icon(Icons.add),
+                onPressed: aoAumentarTom,
+              ),
+            ],
+          ),
+          if (projecao.tomExecucao != projecao.tomOriginal)
+            Text('Original: ${_formatarTom(projecao.tomOriginal)}'),
+          if (problemasTransposicao.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _AvisoProblemasTransposicao(
+              problemas: problemasTransposicao,
+              aoRevisar: aoRevisarProblema,
             ),
           ],
-        ),
-        if (projecao.tomExecucao != projecao.tomOriginal)
-          Text('Original: ${_formatarTom(projecao.tomOriginal)}'),
-        const SizedBox(height: 24),
-        ...linhas,
-      ],
+          const SizedBox(height: 24),
+          ...linhas,
+        ],
+      ),
     );
   }
 
@@ -389,16 +606,47 @@ class _ConteudoMusica extends StatelessWidget {
       '${tom.notaFundamental}${tom.modo == ModoTom.menor ? ' menor' : ''}';
 }
 
-class _BarraNavegacaoListaCulto extends StatelessWidget {
-  const _BarraNavegacaoListaCulto({
-    required this.contexto,
-    required this.aoAnterior,
-    required this.aoProximo,
+class _AvisoProblemasTransposicao extends StatelessWidget {
+  const _AvisoProblemasTransposicao({
+    required this.problemas,
+    required this.aoRevisar,
   });
 
+  final List<AcordeNaoTransponivelVisualizacao> problemas;
+  final ValueChanged<AcordeNaoTransponivelVisualizacao> aoRevisar;
+
+  @override
+  Widget build(BuildContext context) {
+    final quantidade = problemas.length;
+    return Card(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_outlined),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '$quantidade ${quantidade == 1 ? 'trecho impede' : 'trechos impedem'} a transposição.',
+              ),
+            ),
+            TextButton(
+              key: const ValueKey('revisar-problema-transposicao'),
+              onPressed: () => aoRevisar(problemas.first),
+              child: const Text('Revisar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BarraNavegacaoListaCulto extends StatelessWidget {
+  const _BarraNavegacaoListaCulto({required this.contexto});
+
   final ContextoNavegacaoListaCulto contexto;
-  final VoidCallback aoAnterior;
-  final VoidCallback aoProximo;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -407,32 +655,12 @@ class _BarraNavegacaoListaCulto extends StatelessWidget {
       color: Theme.of(context).colorScheme.surfaceContainer,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const ValueKey('navegacao-lista-anterior'),
-                onPressed: contexto.possuiAnterior ? aoAnterior : null,
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Anterior'),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                '${contexto.indiceAtual + 1} de ${contexto.itens.length}',
-                key: const ValueKey('navegacao-lista-posicao'),
-              ),
-            ),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const ValueKey('navegacao-lista-proxima'),
-                onPressed: contexto.possuiProximo ? aoProximo : null,
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text('Próxima'),
-              ),
-            ),
-          ],
+        child: Center(
+          heightFactor: 1,
+          child: Text(
+            '${contexto.indiceAtual + 1} de ${contexto.itens.length}',
+            key: const ValueKey('navegacao-lista-posicao'),
+          ),
         ),
       ),
     ),
@@ -444,19 +672,24 @@ class _LinhaDaMusica extends StatelessWidget {
     super.key,
     required this.elemento,
     required this.emRefrao,
+    required this.escalaCifra,
   });
 
   final ElementoDocumentoChordPro elemento;
   final bool emRefrao;
+  final EscalaVisualizacaoCifra escalaCifra;
 
   @override
   Widget build(BuildContext context) {
-    final estiloLetra = Theme.of(context).textTheme.bodyLarge
-        ?.copyWith(fontFamily: 'monospace');
+    final estiloBase = Theme.of(context).textTheme.bodyLarge;
+    final estiloLetra = estiloBase?.copyWith(
+      fontFamily: 'monospace',
+      fontSize: (estiloBase.fontSize ?? 16) * escalaCifra.valor,
+    );
     final conteudo = switch (elemento) {
       LinhaChordPro linha when linha.elementos.isEmpty => SizedBox(
         key: const ValueKey('linha-vazia'),
-        height: 16,
+        height: 16 * escalaCifra.valor,
       ),
       LinhaChordPro linha => _LinhaInterpretada(
         linha: linha,

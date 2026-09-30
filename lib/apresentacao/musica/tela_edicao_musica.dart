@@ -13,10 +13,12 @@ class TelaEdicaoMusica extends StatefulWidget {
     super.key,
     required this.musica,
     required this.atualizarMusica,
+    this.textoParaLocalizacao,
   });
 
   final Musica musica;
   final AtualizarMusica atualizarMusica;
+  final String? textoParaLocalizacao;
 
   @override
   State<TelaEdicaoMusica> createState() => _TelaEdicaoMusicaState();
@@ -28,6 +30,8 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   late final TextEditingController _artista;
   late final TextEditingController _tom;
   late final TextEditingController _conteudo;
+  final _focoConteudo = FocusNode();
+  final _rolagem = ScrollController();
   late final String _tomInicial;
   var _salvando = false;
   String? _erroTom;
@@ -47,6 +51,27 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
         widget.musica.documento.conteudoOriginal,
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final texto = widget.textoParaLocalizacao;
+      if (texto == null || texto.isEmpty || !mounted) {
+        return;
+      }
+      final indice = _conteudo.text.indexOf('[$texto]');
+      if (indice < 0) {
+        return;
+      }
+      _conteudo.selection = TextSelection.collapsed(offset: indice);
+      _focoConteudo.requestFocus();
+      final linhasAntesDoTrecho = RegExp(r'\r\n|\n|\r')
+          .allMatches(_conteudo.text.substring(0, indice))
+          .length;
+      if (_rolagem.hasClients) {
+        final alvo = (224 + linhasAntesDoTrecho * 24.0)
+            .clamp(0.0, _rolagem.position.maxScrollExtent)
+            .toDouble();
+        _rolagem.jumpTo(alvo);
+      }
+    });
   }
 
   @override
@@ -55,6 +80,8 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     _artista.dispose();
     _tom.dispose();
     _conteudo.dispose();
+    _focoConteudo.dispose();
+    _rolagem.dispose();
     super.dispose();
   }
 
@@ -174,6 +201,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       child: Form(
         key: _formulario,
         child: SingleChildScrollView(
+          controller: _rolagem,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -208,7 +236,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                key: const ValueKey('conteudo-edicao'),
                 controller: _conteudo,
+                focusNode: _focoConteudo,
                 enabled: !_salvando,
                 decoration: const InputDecoration(
                   alignLabelWithHint: true,

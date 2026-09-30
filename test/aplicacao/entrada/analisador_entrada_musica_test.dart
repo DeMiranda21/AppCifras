@@ -116,6 +116,33 @@ void main() {
       );
     });
 
+    test('não classifica rótulos e frases como linha de acordes provável', () {
+      for (final texto in [
+        'Refrão',
+        'Refrão:',
+        '[Refrão]',
+        'VERSO 1',
+        'Ponte',
+        'Pre-Refrão',
+        'Segunda Parte',
+        'Volta ao refrão',
+        '2x',
+        'Repete',
+        'Só voz',
+      ]) {
+        final resultado = analisador.analisar(texto);
+
+        expect(resultado.possuiLinhaDeAcordesProvavel, isFalse);
+        expect(
+          resultado.avisos.where(
+            (aviso) =>
+                aviso.tipo == TipoAvisoAnaliseEntrada.acordeNaoInterpretavel,
+          ),
+          isEmpty,
+        );
+      }
+    });
+
     for (final rotulo in [
       'Intro',
       'Primeira Parte',
