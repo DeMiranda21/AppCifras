@@ -7,8 +7,10 @@ implementação.
   essenciais funcionam sem internet.
 - **Biblioteca antes de arquivos isolados.** O usuário trabalha com repertório;
   arquivos externos são fontes de importação.
-- **ChordPro canônico.** O conteúdo musical tem fonte preservada; leitura,
-  transposição e graus são representações derivadas.
+- **ChordPro canônico, sintaxe opcional na UX.** O conteúdo musical tem fonte
+  preservada; leitura, transposição e graus são representações derivadas. Nas
+  tarefas comuns, a interface deve preferir ações semânticas a exigir que o
+  usuário escreva a sintaxe ChordPro.
 - **Poucos toques e uso real.** Em ensaios e cultos, rapidez, legibilidade,
   estabilidade e baixa distração superam efeitos visuais.
 - **Domínio independente.** Regras musicais não dependem de Flutter, banco,

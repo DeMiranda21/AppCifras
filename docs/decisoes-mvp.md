@@ -20,7 +20,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   Ausência, duplicidade ou valor inválido preservam o documento, mas bloqueiam
   criar Música.
 - ChordPro é canônico e preservado sem reescrita; interpretação para leitura,
-  transposição e graus é derivada.
+  transposição e graus é derivada. A futura edição assistida traduz ações
+  semânticas do usuário em alterações controladas do documento, sem criar um
+  segundo formato persistido concorrente.
 - Entrada textual usa análise e revisão conservadoras. ChordPro completo usa
   as próprias diretivas: sem cabeçalhos duplicados, metadados paralelos ou
   deduplicação silenciosa. Na dúvida entre converter e preservar, preserva.

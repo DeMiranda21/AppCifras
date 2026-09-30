@@ -35,48 +35,53 @@ consolidada, a especificacao-funcional.md.
 
 5. **Reconhecimento estrutural:** Intro, Verso, Pré-Refrão, Refrão, Ponte,
    Instrumental, Final e outros rótulos, sempre preservando o original.
-6. **Editor por blocos:** criar, excluir, duplicar, arrastar e ocultar blocos
-   para reorganização rápida. Não criar entidade Arranjo/Versão nesta fase.
-7. **Tags, classificação e metadados:** energia (muito calma, calma,
+6. **Edição assistida básica:** oferecer ações semânticas, sem exigir sintaxe
+   ChordPro, para marcar ou remover marcação de acorde, editar acorde e marcar
+   linha ou bloco como seção. Evoluir de forma incremental: criação, troca de
+   tipo, movimento, duplicação e exclusão de seções não precisam entrar juntas.
+7. **Editor por blocos:** criar, excluir, duplicar, arrastar e ocultar blocos
+   para reorganização rápida, após a edição assistida estabelecer sua camada de
+   transformação para ChordPro. Não criar entidade Arranjo/Versão nesta fase.
+8. **Tags, classificação e metadados:** energia (muito calma, calma,
    moderada, animada e muito animada), tema, momento/tipo (celebração,
    adoração, abertura, ceia, oferta e encerramento) e tags livres; BPM,
    compasso, duração, dificuldade, ministério, compositor, álbum, idioma,
    instrumentação e observações, de forma gradual.
-8. **Pesquisa ampliada e filtros:** letra, tags, tema, categoria e ministério,
+9. **Pesquisa ampliada e filtros:** letra, tags, tema, categoria e ministério,
    conforme os metadados disponíveis.
-9. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
+10. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
    histórico de tons por Música + Ministrante e histórico de cultos/listas.
 
 ## Prioridade 2 — Apoio ao ministrante e evoluções locais
 
-10. **Descoberta e uso recente:** repertório por classificação, BPM,
+11. **Descoberta e uso recente:** repertório por classificação, BPM,
     tonalidade, ministrante, histórico e tempo desde última execução;
     recorrência e prevenção de repetição.
-11. **BPM e compasso:** BPM por música, indicador luminoso discreto e
+12. **BPM e compasso:** BPM por música, indicador luminoso discreto e
     compasso. Sem tap tempo ou metrônomo sonoro.
-12. **Listas de Culto:** duplicar, data opcional, responsável, status derivado
+13. **Listas de Culto:** duplicar, data opcional, responsável, status derivado
     da data (futura, hoje ou passada/executada) e histórico após definir como
     confirmar execução real.
-13. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
+14. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
     em baixa prioridade.
-14. **Seleção direta de tom** e **graus na interface** (cifras, graus ou
+15. **Seleção direta de tom** e **graus na interface** (cifras, graus ou
     ambos; romano ou numérico).
-15. **Importação:** colagem melhorada, lote, fontes externas/APIs e detecção
+16. **Importação:** colagem melhorada, lote, fontes externas/APIs e detecção
     explícita de metadados e estrutura. Sem importação automática de PDF.
 
 ## Prioridade 3 — Compartilhamento, backup e estatísticas
 
-16. Compartilhamento de músicas/Listas, equipe, versão oficial, distribuição,
+17. Compartilhamento de músicas/Listas, equipe, versão oficial, distribuição,
     atualização e conflitos; sem antecipar entidade Arranjo/Versão.
-17. Backup, importação/exportação, sincronização entre aparelhos e resolução de
+18. Backup, importação/exportação, sincronização entre aparelhos e resolução de
     conflitos.
-18. Estatísticas derivadas do histórico real: execuções, frequência, tons,
+19. Estatísticas derivadas do histórico real: execuções, frequência, tons,
     ministrantes, cultos e classificações.
 
 ## Prioridade 4 — Interface e plataforma
 
-19. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
-20. iOS como evolução posterior; Android continua principal.
+20. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
+21. iOS como evolução posterior; Android continua principal.
 
 ## Última etapa — IA
 
@@ -87,7 +92,7 @@ transições.
 
 ## Dependências principais
 
-    Correção de cifra → reconhecimento estrutural → editor por blocos
+    Correção de cifra → reconhecimento estrutural → edição assistida → editor por blocos
     Tags/metadados → pesquisa/filtros → descoberta de repertório
     Histórico → ministrantes/histórico de tons → descoberta e estatísticas
     BPM → indicador luminoso

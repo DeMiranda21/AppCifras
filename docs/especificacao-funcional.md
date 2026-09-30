@@ -36,8 +36,15 @@ na ordem preparada. A Lista atual não possui tom próprio por item.
 
 ## Visão de evolução
 
-Reconhecimento estrutural, edição por blocos, classificação, metadados,
-pesquisa ampliada, histórico, BPM, backup, compartilhamento e estatísticas
-evoluirão em etapas. Ordem, dependências e prioridades estão em
+O editor assistido será a experiência principal para alterações comuns: o
+usuário poderá atuar sobre um token, linha ou bloco para indicar acorde, texto
+ou seção, e o aplicativo produzirá a alteração correspondente no ChordPro.
+Exemplos incluem marcar texto como acorde, remover sua marcação, editar um
+acorde e marcar ou trocar o tipo de uma seção. A edição textual ChordPro
+permanece como modo avançado e fallback; ela não será removida nesta etapa.
+
+Reconhecimento estrutural, edição assistida, edição por blocos, classificação,
+metadados, pesquisa ampliada, histórico, BPM, backup, compartilhamento e
+estatísticas evoluirão em etapas. Ordem, dependências e prioridades estão em
 roadmap-desenvolvimento.md. Sincronização, colaboração e IA não fazem parte da
 experiência atual.
