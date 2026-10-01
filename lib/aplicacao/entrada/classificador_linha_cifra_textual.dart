@@ -1,4 +1,5 @@
 import '../../dominio/servicos/parser_acorde.dart';
+import '../estrutura/reconhecedor_secao_musica.dart';
 
 /// Classifica somente os casos inequívocos de uma linha colada pelo usuário.
 ///
@@ -6,34 +7,17 @@ import '../../dominio/servicos/parser_acorde.dart';
 /// quando todos os seus tokens são acordes que o parser consegue interpretar.
 /// Isso evita converter palavras parecidas com cifras em acordes inválidos.
 class ClassificadorLinhaCifraTextual {
-  ClassificadorLinhaCifraTextual({ParserAcorde? parserAcorde})
-    : _parserAcorde = parserAcorde ?? ParserAcorde();
+  ClassificadorLinhaCifraTextual({
+    ParserAcorde? parserAcorde,
+    ReconhecedorSecaoMusica? reconhecedorSecao,
+  }) : _parserAcorde = parserAcorde ?? ParserAcorde(),
+       _reconhecedorSecao = reconhecedorSecao ?? ReconhecedorSecaoMusica();
 
   final ParserAcorde _parserAcorde;
+  final ReconhecedorSecaoMusica _reconhecedorSecao;
 
-  bool ehRotuloDeSecao(String linha) {
-    var texto = linha.trim();
-    if (texto.startsWith('[') && texto.endsWith(']')) {
-      texto = texto.substring(1, texto.length - 1).trim();
-    }
-    if (texto.endsWith(':')) {
-      texto = texto.substring(0, texto.length - 1).trim();
-    }
-    final normalizado = _normalizar(texto);
-    return normalizado == 'intro' ||
-        normalizado == 'introducao' ||
-        normalizado == 'primeira parte' ||
-        normalizado == 'segunda parte' ||
-        normalizado == 'pre-refrao' ||
-        normalizado == 'refrao' ||
-        normalizado == 'coro' ||
-        normalizado == 'ponte' ||
-        normalizado == 'instrumental' ||
-        normalizado == 'solo' ||
-        normalizado == 'final' ||
-        RegExp(r'^verso\s+\d+$').hasMatch(normalizado) ||
-        normalizado == 'verso';
-  }
+  bool ehRotuloDeSecao(String linha) =>
+      _reconhecedorSecao.reconhecerRotulo(linha) != null;
 
   bool ehNomeDeSecao(String texto) => ehRotuloDeSecao(texto);
 
@@ -50,20 +34,4 @@ class ClassificadorLinhaCifraTextual {
           (token) => _parserAcorde.interpretar(token) is AcordeInterpretado,
         );
   }
-
-  String _normalizar(String texto) => texto
-      .toLowerCase()
-      .replaceAll('á', 'a')
-      .replaceAll('à', 'a')
-      .replaceAll('â', 'a')
-      .replaceAll('ã', 'a')
-      .replaceAll('ç', 'c')
-      .replaceAll('é', 'e')
-      .replaceAll('ê', 'e')
-      .replaceAll('í', 'i')
-      .replaceAll('ó', 'o')
-      .replaceAll('ô', 'o')
-      .replaceAll('õ', 'o')
-      .replaceAll('ú', 'u')
-      .replaceAll(RegExp(r'\s+'), ' ');
 }

@@ -18,6 +18,14 @@ não interpretáveis são preservados.
 O arquivo ChordPro é a fonte canônica do conteúdo musical. Metadados internos
 do AppCifras e estado local derivado não criam segunda fonte de verdade.
 
+EstruturaMusica é uma representação derivada do DocumentoChordPro para leitura
+e futuras operações assistidas. Suas SecoesMusica mantêm tipo semântico, rótulo
+original e faixa de elementos no documento, inclusive seções vazias e conteúdo
+anterior ao primeiro marcador. Ela não é persistida separadamente nem altera o
+ChordPro. Rótulos inequívocos e marcadores estruturais conhecidos podem ser
+reconhecidos; conteúdo ambíguo ou desconhecido permanece fora de uma seção
+explícita, em faixa genérica derivada.
+
 ## Conceitos musicais
 
 Nota representa nome natural e alteração simples (natural, sustenido ou bemol),
