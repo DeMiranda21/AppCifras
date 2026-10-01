@@ -106,6 +106,123 @@ void main() {
     expect(find.text('Nenhuma conversão necessária.'), findsOneWidget);
     expect(repositorio.atualizacoes, 0);
   });
+
+  testWidgets('marca acorde válido no editor e só persiste ao salvar', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const conteudo = '{title: T}\n{artist: A}\n{key: C}\n[C]Existente\nAm7';
+    final inicioDoAcorde = conteudo.lastIndexOf('Am7');
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection(
+        baseOffset: inicioDoAcorde,
+        extentOffset: inicioDoAcorde + 3,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Marcar como acorde'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    await tester.pump();
+    expect(controlador.text, '${conteudo.substring(0, inicioDoAcorde)}[Am7]');
+    expect(repositorio.atualizacoes, 0);
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(repositorio.atualizacoes, 1);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      contains('[Am7]'),
+    );
+  });
+
+  testWidgets('não oferece ação assistida para seleção inválida', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: 'XYZ',
+      selection: TextSelection(baseOffset: 0, extentOffset: 3),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('acao-assistida-acorde')), findsNothing);
+  });
+
+  testWidgets('trata acorde selecionado entre colchetes como texto', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: '[Am7]',
+      selection: TextSelection(baseOffset: 1, extentOffset: 4),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Tratar como texto'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    await tester.pump();
+    expect(controlador.text, 'Am7');
+  });
+
+  testWidgets('sair sem salvar descarta a marcação assistida', (tester) async {
+    final repositorio = _Repositorio()..salvar(musica());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TelaEdicaoMusica(
+                    musica: musica(),
+                    atualizarMusica: AtualizarMusica(
+                      repositorio: repositorio,
+                      parserDocumento: parser,
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Abrir edição'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Abrir edição'));
+    await tester.pumpAndSettle();
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: 'Am7',
+      selection: TextSelection(baseOffset: 0, extentOffset: 3),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(repositorio.atualizacoes, 0);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      isNot(contains('[Am7]')),
+    );
+  });
 }
 
 class _Repositorio implements RepositorioMusicas {

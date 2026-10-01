@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
 import '../../aplicacao/entrada/conteudo_chordpro_editavel.dart';
 import '../../aplicacao/entrada/reanalisador_conteudo_chordpro.dart';
@@ -32,6 +33,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   late final TextEditingController _conteudo;
   final _focoConteudo = FocusNode();
   final _rolagem = ScrollController();
+  final _transformarSelecaoChordPro = TransformarSelecaoChordPro();
   late final String _tomInicial;
   var _salvando = false;
   String? _erroTom;
@@ -51,6 +53,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
         widget.musica.documento.conteudoOriginal,
       ),
     );
+    _conteudo.addListener(_atualizarAcaoAssistida);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final texto = widget.textoParaLocalizacao;
       if (texto == null || texto.isEmpty || !mounted) {
@@ -79,10 +82,54 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     _titulo.dispose();
     _artista.dispose();
     _tom.dispose();
+    _conteudo.removeListener(_atualizarAcaoAssistida);
     _conteudo.dispose();
     _focoConteudo.dispose();
     _rolagem.dispose();
     super.dispose();
+  }
+
+  void _atualizarAcaoAssistida() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  SelecaoTextoChordPro get _selecaoDoConteudo {
+    final selecao = _conteudo.selection;
+    return SelecaoTextoChordPro(inicio: selecao.start, fim: selecao.end);
+  }
+
+  AcaoSelecaoChordPro? get _acaoAssistidaDisponivel =>
+      _transformarSelecaoChordPro.acaoDisponivel(
+        _conteudo.text,
+        _selecaoDoConteudo,
+      );
+
+  void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
+    final resultado = switch (acao) {
+      AcaoSelecaoChordPro.marcarComoAcorde =>
+        _transformarSelecaoChordPro.marcarComoAcorde(
+          _conteudo.text,
+          _selecaoDoConteudo,
+        ),
+      AcaoSelecaoChordPro.tratarComoTexto =>
+        _transformarSelecaoChordPro.tratarComoTexto(
+          _conteudo.text,
+          _selecaoDoConteudo,
+        ),
+    };
+    if (!resultado.foiTransformado) {
+      return;
+    }
+    _conteudo.value = TextEditingValue(
+      text: resultado.conteudo,
+      selection: TextSelection(
+        baseOffset: resultado.selecao.inicio,
+        extentOffset: resultado.selecao.fim,
+      ),
+    );
+    _focoConteudo.requestFocus();
   }
 
   String? _obrigatorio(String? valor, String nome) =>
@@ -196,7 +243,24 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Editar música')),
+    appBar: AppBar(
+      title: const Text('Editar música'),
+      actions: [
+        if (_acaoAssistidaDisponivel case final acao?)
+          IconButton(
+            key: const ValueKey('acao-assistida-acorde'),
+            onPressed: _salvando ? null : () => _aplicarAcaoAssistida(acao),
+            icon: Icon(
+              acao == AcaoSelecaoChordPro.marcarComoAcorde
+                  ? Icons.music_note_outlined
+                  : Icons.text_fields,
+            ),
+            tooltip: acao == AcaoSelecaoChordPro.marcarComoAcorde
+                ? 'Marcar como acorde'
+                : 'Tratar como texto',
+          ),
+      ],
+    ),
     body: SafeArea(
       child: Form(
         key: _formulario,
