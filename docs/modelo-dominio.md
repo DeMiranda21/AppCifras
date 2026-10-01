@@ -26,6 +26,11 @@ ChordPro. Rótulos inequívocos e marcadores estruturais conhecidos podem ser
 reconhecidos; conteúdo ambíguo ou desconhecido permanece fora de uma seção
 explícita, em faixa genérica derivada.
 
+Para seções escritas futuramente pelo AppCifras, o tipo deriva do ambiente
+ChordPro e o rótulo exibido deriva de seu atributo `label`; ambos permanecem
+distintos. A leitura também aceita aliases e rótulos legados sem alterar sua
+fonte.
+
 ## Conceitos musicais
 
 Nota representa nome natural e alteração simples (natural, sustenido ou bemol),

@@ -23,6 +23,12 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   transposição e graus é derivada. A futura edição assistida traduz ações
   semânticas do usuário em alterações controladas do documento, sem criar um
   segundo formato persistido concorrente.
+- Quando a futura edição semântica escrever uma seção, usará ambiente ChordPro
+  de nome longo, par explícito `start_of_*`/`end_of_*` e `label="..."`.
+  O ambiente define o tipo (`verse`, `chorus`, `bridge`, `intro`,
+  `pre_chorus`, `instrumental`, `solo` ou `final`); `section` representa tipo
+  genérico. Leitura aceita aliases e rótulos legados, mas não os reescreve ao
+  abrir ou importar documento externo.
 - Entrada textual usa análise e revisão conservadoras. ChordPro completo usa
   as próprias diretivas: sem cabeçalhos duplicados, metadados paralelos ou
   deduplicação silenciosa. Na dúvida entre converter e preservar, preserva.

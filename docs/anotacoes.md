@@ -18,9 +18,3 @@ predefinidos, configuráveis ou combinados, e quais categorias têm valor real.
 Definir a interação mais simples para selecionar token/palavra, linha e
 bloco/seção em telas pequenas, sem transformar a edição em um editor de texto
 complexo.
-
-## Representação estrutural de seções em ChordPro
-
-Definir a transformação exata para Verso, Refrão, Pré-Refrão, Ponte, Intro,
-Instrumental e Final, incluindo preservação do rótulo original e limites de
-início/fim quando aplicáveis.

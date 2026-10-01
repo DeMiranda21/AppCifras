@@ -21,15 +21,17 @@ class MarcadorSecaoChordPro {
   const MarcadorSecaoChordPro.inicio({
     required this.tipo,
     required this.rotuloOriginal,
+    required this.ambiente,
   }) : ehInicio = true;
 
-  const MarcadorSecaoChordPro.fim({required this.tipo})
+  const MarcadorSecaoChordPro.fim({required this.tipo, required this.ambiente})
     : ehInicio = false,
       rotuloOriginal = null;
 
   final bool ehInicio;
   final TipoSecaoMusica tipo;
   final String? rotuloOriginal;
+  final String ambiente;
 }
 
 /// Centraliza os rótulos inequívocos reconhecidos pelo AppCifras.
@@ -38,8 +40,9 @@ class MarcadorSecaoChordPro {
 /// grafia original para apresentação e futuras edições assistidas.
 class ReconhecedorSecaoMusica {
   static final _diretivaSecao = RegExp(
-    r'^\{(start_of_[A-Za-z_]+|end_of_[A-Za-z_]+)(?::(.*))?\}$',
+    r'^\{(start_of_[A-Za-z_]+|end_of_[A-Za-z_]+|soc|eoc|sov|eov|sob|eob)(?::(.*))?\}$',
   );
+  static final _label = RegExp(r'^\s*label\s*=\s*"([^"]*)"\s*$');
 
   RotuloSecaoMusica? reconhecerRotulo(String texto) {
     final original = texto.trim();
@@ -57,7 +60,7 @@ class ReconhecedorSecaoMusica {
     final tipo = switch (normalizado) {
       'intro' || 'introducao' => TipoSecaoMusica.intro,
       'primeira parte' || 'segunda parte' || 'verso' => TipoSecaoMusica.verso,
-      'pre-refrao' => TipoSecaoMusica.preRefrao,
+      'pre-refrao' || 'pre chorus' => TipoSecaoMusica.preRefrao,
       'refrao' || 'coro' => TipoSecaoMusica.refrao,
       'ponte' => TipoSecaoMusica.ponte,
       'instrumental' => TipoSecaoMusica.instrumental,
@@ -80,24 +83,85 @@ class ReconhecedorSecaoMusica {
       return null;
     }
     final nome = correspondencia.group(1)!;
-    final valor = (correspondencia.group(2) ?? '').trim();
+    final valor = correspondencia.group(2) ?? '';
+    final diretiva = _interpretarNomeDiretiva(nome);
+    if (diretiva == null) {
+      return null;
+    }
+    if (!diretiva.ehInicio) {
+      return MarcadorSecaoChordPro.fim(
+        tipo: diretiva.tipo,
+        ambiente: diretiva.ambiente,
+      );
+    }
+    return MarcadorSecaoChordPro.inicio(
+      tipo: diretiva.tipo,
+      ambiente: diretiva.ambiente,
+      rotuloOriginal: _extrairRotulo(valor) ?? conteudoOriginal,
+    );
+  }
+
+  _DiretivaSecao? _interpretarNomeDiretiva(String nome) {
+    final longas = switch (nome) {
+      'soc' => _DiretivaSecao(
+        ehInicio: true,
+        ambiente: 'chorus',
+        tipo: TipoSecaoMusica.refrao,
+      ),
+      'eoc' => _DiretivaSecao(
+        ehInicio: false,
+        ambiente: 'chorus',
+        tipo: TipoSecaoMusica.refrao,
+      ),
+      'sov' => _DiretivaSecao(
+        ehInicio: true,
+        ambiente: 'verse',
+        tipo: TipoSecaoMusica.verso,
+      ),
+      'eov' => _DiretivaSecao(
+        ehInicio: false,
+        ambiente: 'verse',
+        tipo: TipoSecaoMusica.verso,
+      ),
+      'sob' => _DiretivaSecao(
+        ehInicio: true,
+        ambiente: 'bridge',
+        tipo: TipoSecaoMusica.ponte,
+      ),
+      'eob' => _DiretivaSecao(
+        ehInicio: false,
+        ambiente: 'bridge',
+        tipo: TipoSecaoMusica.ponte,
+      ),
+      _ => null,
+    };
+    if (longas != null) {
+      return longas;
+    }
     final ehInicio = nome.startsWith('start_of_');
-    final sufixo = nome.substring(
+    final ambiente = nome.substring(
       ehInicio ? 'start_of_'.length : 'end_of_'.length,
     );
-    final tipoPadrao = _tipoDaDiretiva(sufixo);
-    if (!ehInicio) {
-      return MarcadorSecaoChordPro.fim(tipo: tipoPadrao);
+    return _DiretivaSecao(
+      ehInicio: ehInicio,
+      ambiente: ambiente,
+      tipo: _tipoDaDiretiva(ambiente),
+    );
+  }
+
+  String? _extrairRotulo(String valor) {
+    if (valor.trim().isEmpty) {
+      return null;
     }
-    final rotulo = valor.isEmpty ? conteudoOriginal : valor;
-    final tipo = reconhecerRotulo(valor)?.tipo ?? tipoPadrao;
-    return MarcadorSecaoChordPro.inicio(tipo: tipo, rotuloOriginal: rotulo);
+    final label = _label.firstMatch(valor);
+    return label == null ? valor.trim() : label.group(1)!;
   }
 
   TipoSecaoMusica _tipoDaDiretiva(String sufixo) =>
       switch (_normalizar(sufixo)) {
         'chorus' || 'refrao' => TipoSecaoMusica.refrao,
         'verse' || 'verso' => TipoSecaoMusica.verso,
+        'pre chorus' || 'pre-refrao' => TipoSecaoMusica.preRefrao,
         'bridge' || 'ponte' => TipoSecaoMusica.ponte,
         'intro' || 'introducao' => TipoSecaoMusica.intro,
         'instrumental' => TipoSecaoMusica.instrumental,
@@ -122,4 +186,16 @@ class ReconhecedorSecaoMusica {
       .replaceAll('õ', 'o')
       .replaceAll('ú', 'u')
       .replaceAll(RegExp(r'\s+'), ' ');
+}
+
+class _DiretivaSecao {
+  const _DiretivaSecao({
+    required this.ehInicio,
+    required this.ambiente,
+    required this.tipo,
+  });
+
+  final bool ehInicio;
+  final String ambiente;
+  final TipoSecaoMusica tipo;
 }

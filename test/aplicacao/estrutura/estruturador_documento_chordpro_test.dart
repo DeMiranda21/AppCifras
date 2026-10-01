@@ -90,6 +90,77 @@ void main() {
       expect(_conteudo(secao), '[C]Grande é o Senhor');
     });
 
+    test('extrai label explícito sem normalizar sua grafia', () {
+      final estrutura = estruturar(
+        '{start_of_verse: label="VERSO II"}\n[C]Letra\n{end_of_verse}',
+      );
+
+      expect(estrutura.secoes.single.tipo, TipoSecaoMusica.verso);
+      expect(estrutura.secoes.single.rotuloOriginal, 'VERSO II');
+      expect(_conteudo(estrutura.secoes.single), '[C]Letra');
+    });
+
+    test('aceita label legado preservando o valor exibido', () {
+      final estrutura = estruturar(
+        '{start_of_verse: Verso 2}\n[D]Letra\n{end_of_verse}',
+      );
+
+      expect(estrutura.secoes.single.tipo, TipoSecaoMusica.verso);
+      expect(estrutura.secoes.single.rotuloOriginal, 'Verso 2');
+    });
+
+    test('reconhece aliases oficiais sem reescrever o documento', () {
+      const conteudo =
+          '{sov: label="Verso 2"}\n[C]V\n{eov}\n'
+          '{soc: label="Refrão"}\n[G]R\n{eoc}\n'
+          '{sob: label="Ponte"}\n[Am]P\n{eob}';
+      final estrutura = estruturar(conteudo);
+
+      expect(estrutura.documento.conteudoOriginal, conteudo);
+      expect(
+        estrutura.secoes.map((secao) => secao.tipo),
+        orderedEquals([
+          TipoSecaoMusica.verso,
+          TipoSecaoMusica.refrao,
+          TipoSecaoMusica.ponte,
+        ]),
+      );
+      expect(
+        estrutura.secoes.map((secao) => secao.rotuloOriginal),
+        orderedEquals(['Verso 2', 'Refrão', 'Ponte']),
+      );
+    });
+
+    test('reconhece os ambientes canônicos escritos pelo AppCifras', () {
+      final estrutura = estruturar(
+        '{start_of_intro: label="Intro"}\nI\n{end_of_intro}\n'
+        '{start_of_pre_chorus: label="Pré-Refrão"}\nP\n{end_of_pre_chorus}\n'
+        '{start_of_instrumental: label="Instrumental"}\nN\n{end_of_instrumental}\n'
+        '{start_of_solo: label="Solo"}\nS\n{end_of_solo}\n'
+        '{start_of_final: label="Final"}\nF\n{end_of_final}',
+      );
+
+      expect(
+        estrutura.secoes.map((secao) => secao.tipo),
+        orderedEquals([
+          TipoSecaoMusica.intro,
+          TipoSecaoMusica.preRefrao,
+          TipoSecaoMusica.instrumental,
+          TipoSecaoMusica.solo,
+          TipoSecaoMusica.encerramento,
+        ]),
+      );
+    });
+
+    test('dá precedência ao ambiente sobre um label semanticamente conhecido', () {
+      final estrutura = estruturar(
+        '{start_of_section: label="Verso 3"}\n[C]Ministração\n{end_of_section}',
+      );
+
+      expect(estrutura.secoes.single.tipo, TipoSecaoMusica.outro);
+      expect(estrutura.secoes.single.rotuloOriginal, 'Verso 3');
+    });
+
     test(
       'reconhece diretiva estrutural conhecida ainda tolerada pelo parser',
       () {
@@ -111,6 +182,38 @@ void main() {
       expect(estrutura.secoes.single.tipo, TipoSecaoMusica.outro);
       expect(estrutura.secoes.single.rotuloOriginal, 'Interlúdio');
       expect(_conteudo(estrutura.secoes.single), '[C]Passagem');
+    });
+
+    test('fecha somente no delimitador correspondente', () {
+      final estrutura = estruturar(
+        '{start_of_verse: label="Verso 1"}\n[C]A\n'
+        '{end_of_bridge}\n[D]B\n{end_of_verse}\n[E]Depois',
+      );
+
+      expect(estrutura.secoes, hasLength(2));
+      expect(_conteudo(estrutura.secoes.first), '[C]A\n{end_of_bridge}\n[D]B');
+      expect(estrutura.secoes.last.ehImplicita, isTrue);
+      expect(_conteudo(estrutura.secoes.last), '[E]Depois');
+    });
+
+    test('aceita seção vazia e início sem fim sem invalidar o documento', () {
+      final vazia = estruturar(
+        '{start_of_intro: label="Intro"}\n{end_of_intro}',
+      );
+      final semFim = estruturar('{start_of_solo: label="Solo"}\n[Am]Improviso');
+
+      expect(vazia.secoes.single.elementos, isEmpty);
+      expect(semFim.secoes.single.tipo, TipoSecaoMusica.solo);
+      expect(_conteudo(semFim.secoes.single), '[Am]Improviso');
+    });
+
+    test('preserva end sem start como conteúdo de faixa implícita', () {
+      const conteudo = '{end_of_chorus}\n[C]Letra';
+      final estrutura = estruturar(conteudo);
+
+      expect(estrutura.documento.conteudoOriginal, conteudo);
+      expect(estrutura.secoes.single.ehImplicita, isTrue);
+      expect(_conteudo(estrutura.secoes.single), conteudo);
     });
 
     test('não transforma texto comum ou rótulo desconhecido em seção', () {

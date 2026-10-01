@@ -99,13 +99,17 @@ class EstruturadorDocumentoChordPro {
         aberta = _SecaoAberta(
           tipo: marcador.tipo,
           rotuloOriginal: marcador.rotuloOriginal!,
+          ambiente: marcador.ambiente,
           indiceMarcador: indice,
           inicioConteudo: indice + 1,
         );
         inicioLivre = indice + 1;
-      } else if (aberta != null) {
-        concluirAberta(indice);
-        inicioLivre = indice + 1;
+      } else {
+        final secaoAberta = aberta;
+        if (secaoAberta != null && secaoAberta.ambiente == marcador.ambiente) {
+          concluirAberta(indice);
+          inicioLivre = indice + 1;
+        }
       }
     }
 
@@ -134,6 +138,7 @@ class EstruturadorDocumentoChordPro {
           : MarcadorSecaoChordPro.inicio(
               tipo: rotulo.tipo,
               rotuloOriginal: rotulo.rotuloOriginal,
+              ambiente: '',
             );
     }
     if (elemento is LinhaChordPro || elemento is LinhaNaoInterpretadaChordPro) {
@@ -143,6 +148,7 @@ class EstruturadorDocumentoChordPro {
           : MarcadorSecaoChordPro.inicio(
               tipo: rotulo.tipo,
               rotuloOriginal: rotulo.rotuloOriginal,
+              ambiente: '',
             );
     }
     return null;
@@ -153,12 +159,14 @@ class _SecaoAberta {
   const _SecaoAberta({
     required this.tipo,
     required this.rotuloOriginal,
+    required this.ambiente,
     required this.indiceMarcador,
     required this.inicioConteudo,
   });
 
   final TipoSecaoMusica tipo;
   final String rotuloOriginal;
+  final String ambiente;
   final int indiceMarcador;
   final int inicioConteudo;
 }
