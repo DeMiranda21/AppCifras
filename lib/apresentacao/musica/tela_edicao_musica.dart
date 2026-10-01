@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
+import '../../aplicacao/edicao/transformar_secao_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
 import '../../aplicacao/entrada/conteudo_chordpro_editavel.dart';
 import '../../aplicacao/entrada/reanalisador_conteudo_chordpro.dart';
+import '../../aplicacao/estrutura/reconhecedor_secao_musica.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
@@ -34,6 +36,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _focoConteudo = FocusNode();
   final _rolagem = ScrollController();
   final _transformarSelecaoChordPro = TransformarSelecaoChordPro();
+  final _transformarSecaoChordPro = TransformarSecaoChordPro();
   late final String _tomInicial;
   var _salvando = false;
   String? _erroTom;
@@ -106,6 +109,11 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
         _selecaoDoConteudo,
       );
 
+  bool get _podeMarcarComoSecao => _transformarSecaoChordPro.podeTransformar(
+    _conteudo.text,
+    _selecaoDoConteudo,
+  );
+
   void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
     final resultado = switch (acao) {
       AcaoSelecaoChordPro.marcarComoAcorde =>
@@ -122,11 +130,47 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     if (!resultado.foiTransformado) {
       return;
     }
+    _atualizarConteudo(resultado.conteudo, resultado.selecao);
+  }
+
+  Future<void> _escolherTipoDeSecao() async {
+    final tipo = await showModalBottomSheet<TipoSecaoMusica>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.6,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final opcao in _opcoesDeSecao)
+                ListTile(
+                  title: Text(opcao.titulo),
+                  onTap: () => Navigator.pop(context, opcao.tipo),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (tipo == null || !mounted) {
+      return;
+    }
+    final resultado = _transformarSecaoChordPro.transformar(
+      conteudo: _conteudo.text,
+      selecao: _selecaoDoConteudo,
+      tipo: tipo,
+    );
+    if (resultado.foiTransformado) {
+      _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+  }
+
+  void _atualizarConteudo(String conteudo, SelecaoTextoChordPro selecao) {
     _conteudo.value = TextEditingValue(
-      text: resultado.conteudo,
+      text: conteudo,
       selection: TextSelection(
-        baseOffset: resultado.selecao.inicio,
-        extentOffset: resultado.selecao.fim,
+        baseOffset: selecao.inicio,
+        extentOffset: selecao.fim,
       ),
     );
     _focoConteudo.requestFocus();
@@ -259,6 +303,13 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                 ? 'Marcar como acorde'
                 : 'Tratar como texto',
           ),
+        if (_podeMarcarComoSecao)
+          IconButton(
+            key: const ValueKey('acao-assistida-secao'),
+            onPressed: _salvando ? null : _escolherTipoDeSecao,
+            icon: const Icon(Icons.view_agenda_outlined),
+            tooltip: 'Marcar como seção',
+          ),
       ],
     ),
     body: SafeArea(
@@ -343,4 +394,23 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       ),
     ),
   );
+}
+
+const _opcoesDeSecao = [
+  _OpcaoDeSecao(TipoSecaoMusica.intro, 'Intro'),
+  _OpcaoDeSecao(TipoSecaoMusica.verso, 'Verso'),
+  _OpcaoDeSecao(TipoSecaoMusica.preRefrao, 'Pré-Refrão'),
+  _OpcaoDeSecao(TipoSecaoMusica.refrao, 'Refrão'),
+  _OpcaoDeSecao(TipoSecaoMusica.ponte, 'Ponte'),
+  _OpcaoDeSecao(TipoSecaoMusica.instrumental, 'Instrumental'),
+  _OpcaoDeSecao(TipoSecaoMusica.solo, 'Solo'),
+  _OpcaoDeSecao(TipoSecaoMusica.encerramento, 'Final'),
+  _OpcaoDeSecao(TipoSecaoMusica.outro, 'Outro'),
+];
+
+class _OpcaoDeSecao {
+  const _OpcaoDeSecao(this.tipo, this.titulo);
+
+  final TipoSecaoMusica tipo;
+  final String titulo;
 }

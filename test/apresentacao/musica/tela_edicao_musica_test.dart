@@ -223,6 +223,114 @@ void main() {
       isNot(contains('[Am7]')),
     );
   });
+
+  testWidgets('marca linha como seção, escolhe tipo e persiste ao salvar', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const conteudo =
+        '{title: T}\n{artist: A}\n{key: C}\nRefrão\n[C]Tu és Senhor';
+    final inicioDoRotulo = conteudo.indexOf('Refrão');
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection(
+        baseOffset: inicioDoRotulo,
+        extentOffset: inicioDoRotulo + 'Refrão'.length,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Marcar como seção'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-secao')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Refrão'));
+    await tester.pump();
+    expect(
+      controlador.text,
+      '{title: T}\n{artist: A}\n{key: C}\n'
+      '{start_of_chorus: label="Refrão"}\n[C]Tu és Senhor\n{end_of_chorus}',
+    );
+    expect(repositorio.atualizacoes, 0);
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(repositorio.atualizacoes, 1);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      contains('{start_of_chorus: label="Refrão"}'),
+    );
+  });
+
+  testWidgets('não oferece seção para seleção parcial da linha', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: 'Refrão',
+      selection: TextSelection(baseOffset: 1, extentOffset: 6),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('acao-assistida-secao')), findsNothing);
+  });
+
+  testWidgets('sair sem salvar descarta a seção marcada', (tester) async {
+    final repositorio = _Repositorio()..salvar(musica());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TelaEdicaoMusica(
+                    musica: musica(),
+                    atualizarMusica: AtualizarMusica(
+                      repositorio: repositorio,
+                      parserDocumento: parser,
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Abrir edição'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Abrir edição'));
+    await tester.pumpAndSettle();
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: 'Refrão\n[C]Letra',
+      selection: TextSelection(baseOffset: 0, extentOffset: 6),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-secao')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Refrão'));
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(repositorio.atualizacoes, 0);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      isNot(contains('{start_of_chorus:')),
+    );
+  });
 }
 
 class _Repositorio implements RepositorioMusicas {

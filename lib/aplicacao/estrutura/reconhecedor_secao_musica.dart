@@ -42,7 +42,7 @@ class ReconhecedorSecaoMusica {
   static final _diretivaSecao = RegExp(
     r'^\{(start_of_[A-Za-z_]+|end_of_[A-Za-z_]+|soc|eoc|sov|eov|sob|eob)(?::(.*))?\}$',
   );
-  static final _label = RegExp(r'^\s*label\s*=\s*"([^"]*)"\s*$');
+  static final _label = RegExp(r'^\s*label\s*=\s*"((?:\\.|[^"\\])*)"\s*$');
 
   RotuloSecaoMusica? reconhecerRotulo(String texto) {
     final original = texto.trim();
@@ -154,7 +154,24 @@ class ReconhecedorSecaoMusica {
       return null;
     }
     final label = _label.firstMatch(valor);
-    return label == null ? valor.trim() : label.group(1)!;
+    return label == null ? valor.trim() : _desescaparLabel(label.group(1)!);
+  }
+
+  String _desescaparLabel(String valor) {
+    final resultado = StringBuffer();
+    for (var indice = 0; indice < valor.length; indice += 1) {
+      final caractere = valor[indice];
+      if (caractere == r'\' && indice + 1 < valor.length) {
+        final proximo = valor[indice + 1];
+        if (proximo == r'\' || proximo == '"') {
+          resultado.write(proximo);
+          indice += 1;
+          continue;
+        }
+      }
+      resultado.write(caractere);
+    }
+    return resultado.toString();
   }
 
   TipoSecaoMusica _tipoDaDiretiva(String sufixo) =>
