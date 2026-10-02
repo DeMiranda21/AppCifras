@@ -537,6 +537,66 @@ void main() {
     );
   });
 
+  testWidgets('reordena blocos movíveis e persiste somente ao salvar', (
+    tester,
+  ) async {
+    final repositorio = await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\nObservação\n'
+          '{start_of_verse: label="Verso"}\n[C]Verso\n{end_of_verse}\n'
+          '{start_of_chorus: label="Refrão"}\n[D]Refrão\n{end_of_chorus}\n'
+          '{start_of_bridge: label="Ponte"}\n[E]Ponte\n{end_of_bridge}',
+    );
+
+    final handles = find.byType(ReorderableDragStartListener);
+    expect(handles, findsNWidgets(3));
+    expect(tester.widget<ReorderableDragStartListener>(handles.first).index, 1);
+    expect(tester.widget<ReorderableDragStartListener>(handles.at(1)).index, 2);
+    expect(tester.widget<ReorderableDragStartListener>(handles.at(2)).index, 3);
+    final lista = tester.widget<ReorderableListView>(
+      find.byType(ReorderableListView),
+    );
+    lista.onReorderItem!(2, 1);
+    await tester.pump();
+
+    expect(
+      tester.getTopLeft(find.text('Refrão')).dy,
+      lessThan(tester.getTopLeft(find.text('Verso')).dy),
+    );
+    expect(repositorio.atualizacoes, 0);
+
+    await tester.tap(find.text('ChordPro'));
+    await tester.pump();
+    final conteudo = tester
+        .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+        .controller!
+        .text;
+    expect(
+      conteudo.indexOf('{start_of_chorus'),
+      lessThan(conteudo.indexOf('{start_of_verse')),
+    );
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(repositorio.atualizacoes, 1);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal
+          .indexOf('{start_of_chorus'),
+      lessThan(
+        (await repositorio.obterPorId(IdMusica('musica-1')))!
+            .documento
+            .conteudoOriginal
+            .indexOf('{start_of_verse'),
+      ),
+    );
+  });
+
   testWidgets('duplica bloco e só persiste ao salvar', (tester) async {
     final repositorio = await montar(
       tester,
@@ -610,6 +670,7 @@ void main() {
 
     expect(find.text('Verso'), findsOneWidget);
     expect(find.byKey(const ValueKey('acoes-bloco-3')), findsNothing);
+    expect(find.byKey(const ValueKey('arrastar-bloco-3')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
     await tester.pumpAndSettle();
     expect(find.text('Editar seção'), findsOneWidget);

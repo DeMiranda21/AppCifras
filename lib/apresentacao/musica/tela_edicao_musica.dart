@@ -5,6 +5,7 @@ import '../../aplicacao/edicao/duplicar_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/excluir_secao_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
+import '../../aplicacao/edicao/reordenar_secoes_chordpro.dart';
 import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/edicao/transformar_secao_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
@@ -47,6 +48,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _duplicarSecaoChordPro = DuplicarSecaoChordPro();
   final _excluirSecaoChordPro = ExcluirSecaoChordPro();
   final _localizadorSecaoChordPro = LocalizadorSecaoChordPro();
+  final _reordenarSecoesChordPro = ReordenarSecoesChordPro();
   final _parserDocumento = ParserDocumentoChordPro();
   final _estruturadorDocumento = EstruturadorDocumentoChordPro();
   late final String _tomInicial;
@@ -301,6 +303,17 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     }
   }
 
+  void _reordenarSecoes(int indiceOrigem, int indiceDestino) {
+    final resultado = _reordenarSecoesChordPro.reordenar(
+      conteudo: _conteudo.text,
+      indiceOrigem: indiceOrigem,
+      indiceDestino: indiceDestino,
+    );
+    if (resultado.foiReordenada) {
+      _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+  }
+
   Future<void> _confirmarExclusaoSecao(FaixaSecaoChordPro faixa) async {
     final titulo = _tituloDaSecao(faixa.secao);
     final confirmar = await showDialog<bool>(
@@ -485,8 +498,16 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
-        for (var indice = 0; indice < secoes.length; indice += 1)
-          _blocoDaSecao(secoes[indice], indice),
+        ReorderableListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          onReorderItem: _reordenarSecoes,
+          children: [
+            for (var indice = 0; indice < secoes.length; indice += 1)
+              _blocoDaSecao(secoes[indice], indice),
+          ],
+        ),
       ],
     );
   }
@@ -520,6 +541,18 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (faixa != null)
+                ReorderableDragStartListener(
+                  key: ValueKey('arrastar-bloco-$indiceMarcador'),
+                  index: indice,
+                  child: const Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: Tooltip(
+                      message: 'Arrastar seção',
+                      child: Icon(Icons.drag_handle),
+                    ),
+                  ),
+                ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
