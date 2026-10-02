@@ -41,6 +41,45 @@ void main() {
     return repositorio;
   }
 
+  Future<_Repositorio> montarEmRota(
+    WidgetTester tester, {
+    bool estrutural = true,
+    String? conteudo,
+  }) async {
+    final musicaAtual = musica(conteudo);
+    final repositorio = _Repositorio()..salvar(musicaAtual);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              key: const ValueKey('abrir-edicao'),
+              onPressed: () => Navigator.of(context).push<bool>(
+                MaterialPageRoute<bool>(
+                  builder: (_) => TelaEdicaoMusica(
+                    musica: musicaAtual,
+                    atualizarMusica: AtualizarMusica(
+                      repositorio: repositorio,
+                      parserDocumento: parser,
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Abrir edição'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('abrir-edicao')));
+    await tester.pumpAndSettle();
+    if (!estrutural) {
+      await tester.tap(find.text('ChordPro'));
+      await tester.pump();
+    }
+    return repositorio;
+  }
+
   testWidgets('cancelar prévia preserva editor e não persiste', (tester) async {
     final repositorio = await montar(tester);
     final campo = find.byType(TextFormField).at(3);
@@ -751,6 +790,167 @@ void main() {
           .onPressed,
       isNull,
     );
+  });
+
+  testWidgets('sair sem mudança não pede confirmação', (tester) async {
+    await montarEmRota(tester);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+  });
+
+  testWidgets('alterar título pede confirmação e continuar preserva edição', (
+    tester,
+  ) async {
+    await montarEmRota(tester);
+    await tester.enterText(find.byType(TextFormField).at(0), 'Título novo');
+    await tester.pump();
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Descartar alterações?'), findsOneWidget);
+    await tester.tap(find.text('Continuar editando'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsNothing);
+    expect(
+      tester
+          .widget<TextFormField>(find.byType(TextFormField).at(0))
+          .controller!
+          .text,
+      'Título novo',
+    );
+  });
+
+  testWidgets('alterar ChordPro pede confirmação ao voltar pelo sistema', (
+    tester,
+  ) async {
+    await montarEmRota(tester, estrutural: false);
+    final conteudo = find.byKey(const ValueKey('conteudo-edicao'));
+    await tester.enterText(
+      conteudo,
+      '${tester.widget<TextFormField>(conteudo).controller!.text}\n[D]Novo',
+    );
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Descartar alterações?'), findsOneWidget);
+  });
+
+  testWidgets(
+    'alteração no modo Blocos pede confirmação e descartar não salva',
+    (tester) async {
+      final repositorio = await montarEmRota(tester);
+      final adicionar = find.byKey(const ValueKey('adicionar-secao'));
+      await tester.ensureVisible(adicionar);
+      await tester.tap(adicionar);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('rotulo-nova-secao-TipoSecaoMusica.verso')),
+        'Verso novo',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+      await tester.pump();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Descartar alterações?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Descartar'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+      expect(repositorio.atualizacoes, 0);
+      expect(
+        (await repositorio.obterPorId(IdMusica('musica-1')))!
+            .documento
+            .conteudoOriginal,
+        isNot(contains('Verso novo')),
+      );
+    },
+  );
+
+  testWidgets('alterações restauradas ao original não pedem confirmação', (
+    tester,
+  ) async {
+    await montarEmRota(tester, estrutural: false);
+    final titulo = find.byType(TextFormField).at(0);
+    await tester.enterText(titulo, 'Título novo');
+    await tester.enterText(titulo, 'T');
+    final conteudo = find.byKey(const ValueKey('conteudo-edicao'));
+    final original = tester.widget<TextFormField>(conteudo).controller!.text;
+    await tester.enterText(conteudo, '$original\n[D]Novo');
+    await tester.enterText(conteudo, original);
+    await tester.pump();
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+  });
+
+  testWidgets('duplicar e remover a seção restaura o snapshot original', (
+    tester,
+  ) async {
+    await montarEmRota(
+      tester,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_chorus: label="Refrão"}\n[C]Coro\n{end_of_chorus}',
+    );
+    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Duplicar'));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Excluir').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Excluir'));
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+  });
+
+  testWidgets('alternar Blocos e ChordPro não pede confirmação', (
+    tester,
+  ) async {
+    await montarEmRota(tester);
+    await tester.tap(find.text('ChordPro'));
+    await tester.pump();
+    await tester.tap(find.text('Blocos'));
+    await tester.pump();
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+  });
+
+  testWidgets('salvar fecha sem confirmação de descarte', (tester) async {
+    final repositorio = await montarEmRota(tester);
+    await tester.enterText(find.byType(TextFormField).at(0), 'Título salvo');
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+    expect(repositorio.atualizacoes, 1);
   });
 }
 

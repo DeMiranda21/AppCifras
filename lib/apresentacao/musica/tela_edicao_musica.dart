@@ -54,7 +54,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _parserDocumento = ParserDocumentoChordPro();
   final _estruturadorDocumento = EstruturadorDocumentoChordPro();
   late final String _tomInicial;
+  late final _SnapshotEdicaoMusica _snapshotInicial;
   var _salvando = false;
+  var _saidaPermitida = false;
   var _modoEditor = _ModoEditor.estrutural;
   String? _erroTom;
   String? _erroGeral;
@@ -73,7 +75,16 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
         widget.musica.documento.conteudoOriginal,
       ),
     );
-    _conteudo.addListener(_atualizarAcaoAssistida);
+    _snapshotInicial = _SnapshotEdicaoMusica(
+      titulo: _titulo.text,
+      artista: _artista.text,
+      tom: _tom.text,
+      conteudo: _conteudo.text,
+    );
+    _titulo.addListener(_atualizarEstadoDoEditor);
+    _artista.addListener(_atualizarEstadoDoEditor);
+    _tom.addListener(_atualizarEstadoDoEditor);
+    _conteudo.addListener(_atualizarEstadoDoEditor);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final texto = widget.textoParaLocalizacao;
       if (texto == null || texto.isEmpty || !mounted) {
@@ -99,20 +110,66 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
   @override
   void dispose() {
+    _titulo.removeListener(_atualizarEstadoDoEditor);
     _titulo.dispose();
+    _artista.removeListener(_atualizarEstadoDoEditor);
     _artista.dispose();
+    _tom.removeListener(_atualizarEstadoDoEditor);
     _tom.dispose();
-    _conteudo.removeListener(_atualizarAcaoAssistida);
+    _conteudo.removeListener(_atualizarEstadoDoEditor);
     _conteudo.dispose();
     _focoConteudo.dispose();
     _rolagem.dispose();
     super.dispose();
   }
 
-  void _atualizarAcaoAssistida() {
+  void _atualizarEstadoDoEditor() {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  bool get _temAlteracoesPendentes =>
+      _titulo.text != _snapshotInicial.titulo ||
+      _artista.text != _snapshotInicial.artista ||
+      _tom.text != _snapshotInicial.tom ||
+      _conteudo.text != _snapshotInicial.conteudo;
+
+  Future<void> _aoTentarSair(bool didPop, Object? _) async {
+    if (didPop || _saidaPermitida || _salvando || !_temAlteracoesPendentes) {
+      return;
+    }
+    final descartar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descartar alterações?'),
+        content: const Text(
+          'As alterações feitas nesta música não foram salvas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Continuar editando'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descartar'),
+          ),
+        ],
+      ),
+    );
+    if (descartar == true && mounted) {
+      _sairPermitindoPop();
+    }
+  }
+
+  void _sairPermitindoPop([bool? resultado]) {
+    setState(() => _saidaPermitida = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.of(context).pop(resultado);
+      }
+    });
   }
 
   SelecaoTextoChordPro get _selecaoDoConteudo {
@@ -504,9 +561,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
           ),
         ),
       );
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
+      if (mounted) _sairPermitindoPop(true);
     } on RascunhoNaoPodeSerFinalizado catch (erro) {
       if (!mounted) {
         return;
@@ -712,151 +767,170 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     final acaoAssistida = _modoEditor == _ModoEditor.textual
         ? _acaoAssistidaDisponivel
         : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar música'),
-        actions: [
-          if (acaoAssistida case final acao?)
-            IconButton(
-              key: const ValueKey('acao-assistida-acorde'),
-              onPressed: _salvando ? null : () => _aplicarAcaoAssistida(acao),
-              icon: Icon(
-                acao == AcaoSelecaoChordPro.marcarComoAcorde
-                    ? Icons.music_note_outlined
-                    : Icons.text_fields,
+    return PopScope<bool>(
+      canPop: _saidaPermitida || !_temAlteracoesPendentes,
+      onPopInvokedWithResult: _aoTentarSair,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Editar música'),
+          actions: [
+            if (acaoAssistida case final acao?)
+              IconButton(
+                key: const ValueKey('acao-assistida-acorde'),
+                onPressed: _salvando ? null : () => _aplicarAcaoAssistida(acao),
+                icon: Icon(
+                  acao == AcaoSelecaoChordPro.marcarComoAcorde
+                      ? Icons.music_note_outlined
+                      : Icons.text_fields,
+                ),
+                tooltip: acao == AcaoSelecaoChordPro.marcarComoAcorde
+                    ? 'Marcar como acorde'
+                    : 'Tratar como texto',
               ),
-              tooltip: acao == AcaoSelecaoChordPro.marcarComoAcorde
-                  ? 'Marcar como acorde'
-                  : 'Tratar como texto',
-            ),
-          if (_modoEditor == _ModoEditor.textual && _podeMarcarComoSecao)
-            IconButton(
-              key: const ValueKey('acao-assistida-secao'),
-              onPressed: _salvando ? null : _escolherTipoDeSecao,
-              icon: const Icon(Icons.view_agenda_outlined),
-              tooltip: 'Marcar como seção',
-            ),
-          if (_modoEditor == _ModoEditor.textual && _secaoEditavelAtual != null)
-            IconButton(
-              key: const ValueKey('acao-assistida-editar-secao'),
-              onPressed: _salvando ? null : _editarSecao,
-              icon: const Icon(Icons.edit_note_outlined),
-              tooltip: 'Editar seção',
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formulario,
-          child: SingleChildScrollView(
-            controller: _rolagem,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _titulo,
-                  enabled: !_salvando,
-                  decoration: const InputDecoration(labelText: 'Título'),
-                  textInputAction: TextInputAction.next,
-                  validator: (valor) => _obrigatorio(valor, 'Título'),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _artista,
-                  enabled: !_salvando,
-                  decoration: const InputDecoration(labelText: 'Artista'),
-                  textInputAction: TextInputAction.next,
-                  validator: (valor) => _obrigatorio(valor, 'Artista'),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _tom,
-                  enabled: !_salvando,
-                  decoration: InputDecoration(
-                    labelText: 'Tom original',
-                    hintText: 'Ex.: C, Eb, F# ou Am',
-                    errorText: _erroTom,
+            if (_modoEditor == _ModoEditor.textual && _podeMarcarComoSecao)
+              IconButton(
+                key: const ValueKey('acao-assistida-secao'),
+                onPressed: _salvando ? null : _escolherTipoDeSecao,
+                icon: const Icon(Icons.view_agenda_outlined),
+                tooltip: 'Marcar como seção',
+              ),
+            if (_modoEditor == _ModoEditor.textual &&
+                _secaoEditavelAtual != null)
+              IconButton(
+                key: const ValueKey('acao-assistida-editar-secao'),
+                onPressed: _salvando ? null : _editarSecao,
+                icon: const Icon(Icons.edit_note_outlined),
+                tooltip: 'Editar seção',
+              ),
+          ],
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formulario,
+            child: SingleChildScrollView(
+              controller: _rolagem,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _titulo,
+                    enabled: !_salvando,
+                    decoration: const InputDecoration(labelText: 'Título'),
+                    textInputAction: TextInputAction.next,
+                    validator: (valor) => _obrigatorio(valor, 'Título'),
                   ),
-                  textInputAction: TextInputAction.next,
-                  validator: (valor) => _obrigatorio(valor, 'Tom original'),
-                ),
-                const SizedBox(height: 16),
-                SegmentedButton<_ModoEditor>(
-                  key: const ValueKey('modo-editor-musica'),
-                  segments: const [
-                    ButtonSegment(
-                      value: _ModoEditor.estrutural,
-                      icon: Icon(Icons.view_agenda_outlined),
-                      label: Text('Blocos'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _artista,
+                    enabled: !_salvando,
+                    decoration: const InputDecoration(labelText: 'Artista'),
+                    textInputAction: TextInputAction.next,
+                    validator: (valor) => _obrigatorio(valor, 'Artista'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _tom,
+                    enabled: !_salvando,
+                    decoration: InputDecoration(
+                      labelText: 'Tom original',
+                      hintText: 'Ex.: C, Eb, F# ou Am',
+                      errorText: _erroTom,
                     ),
-                    ButtonSegment(
-                      value: _ModoEditor.textual,
-                      icon: Icon(Icons.code_outlined),
-                      label: Text('ChordPro'),
+                    textInputAction: TextInputAction.next,
+                    validator: (valor) => _obrigatorio(valor, 'Tom original'),
+                  ),
+                  const SizedBox(height: 16),
+                  SegmentedButton<_ModoEditor>(
+                    key: const ValueKey('modo-editor-musica'),
+                    segments: const [
+                      ButtonSegment(
+                        value: _ModoEditor.estrutural,
+                        icon: Icon(Icons.view_agenda_outlined),
+                        label: Text('Blocos'),
+                      ),
+                      ButtonSegment(
+                        value: _ModoEditor.textual,
+                        icon: Icon(Icons.code_outlined),
+                        label: Text('ChordPro'),
+                      ),
+                    ],
+                    selected: {_modoEditor},
+                    onSelectionChanged: _salvando
+                        ? null
+                        : (selecionados) {
+                            setState(() => _modoEditor = selecionados.first);
+                          },
+                  ),
+                  const SizedBox(height: 16),
+                  if (_modoEditor == _ModoEditor.estrutural)
+                    _editorEstrutural()
+                  else ...[
+                    TextFormField(
+                      key: const ValueKey('conteudo-edicao'),
+                      controller: _conteudo,
+                      focusNode: _focoConteudo,
+                      enabled: !_salvando,
+                      decoration: const InputDecoration(
+                        alignLabelWithHint: true,
+                        labelText: 'Conteúdo ChordPro',
+                      ),
+                      keyboardType: TextInputType.multiline,
+                      minLines: 12,
+                      maxLines: null,
+                      textInputAction: TextInputAction.newline,
+                      validator: (valor) =>
+                          _obrigatorio(valor, 'Conteúdo ChordPro'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _salvando ? null : _analisarAlteracoes,
+                      child: const Text('Analisar alterações'),
                     ),
                   ],
-                  selected: {_modoEditor},
-                  onSelectionChanged: _salvando
-                      ? null
-                      : (selecionados) {
-                          setState(() => _modoEditor = selecionados.first);
-                        },
-                ),
-                const SizedBox(height: 16),
-                if (_modoEditor == _ModoEditor.estrutural)
-                  _editorEstrutural()
-                else ...[
-                  TextFormField(
-                    key: const ValueKey('conteudo-edicao'),
-                    controller: _conteudo,
-                    focusNode: _focoConteudo,
-                    enabled: !_salvando,
-                    decoration: const InputDecoration(
-                      alignLabelWithHint: true,
-                      labelText: 'Conteúdo ChordPro',
+                  if (_erroGeral != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _erroGeral!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
-                    keyboardType: TextInputType.multiline,
-                    minLines: 12,
-                    maxLines: null,
-                    textInputAction: TextInputAction.newline,
-                    validator: (valor) =>
-                        _obrigatorio(valor, 'Conteúdo ChordPro'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: _salvando ? null : _analisarAlteracoes,
-                    child: const Text('Analisar alterações'),
+                  ],
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: _salvando ? null : _salvar,
+                    child: _salvando
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Salvar alterações'),
                   ),
                 ],
-                if (_erroGeral != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _erroGeral!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _salvando ? null : _salvar,
-                  child: _salvando
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salvar alterações'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _SnapshotEdicaoMusica {
+  const _SnapshotEdicaoMusica({
+    required this.titulo,
+    required this.artista,
+    required this.tom,
+    required this.conteudo,
+  });
+
+  final String titulo;
+  final String artista;
+  final String tom;
+  final String conteudo;
 }
 
 const _opcoesDeSecao = [
