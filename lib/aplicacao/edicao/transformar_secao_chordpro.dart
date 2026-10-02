@@ -37,9 +37,11 @@ class TransformarSecaoChordPro {
       );
     }
 
-    final abertura =
-        '{start_of_${_ambiente(tipo)}: label="${_escaparLabel(contexto.rotulo)}"}';
-    final fechamento = '{end_of_${_ambiente(tipo)}}';
+    final abertura = _reconhecedor.escreverInicioCanonico(
+      tipo,
+      contexto.rotulo,
+    );
+    final fechamento = _reconhecedor.escreverFimCanonico(tipo);
     final antesDoMarcador = conteudo.substring(0, contexto.linha.inicio);
     final separador = _separadorDoDocumento(conteudo);
     final inicioDoLimite = contexto.limiteDoConteudo;
@@ -137,21 +139,6 @@ class TransformarSecaoChordPro {
     final aparada = linha.trim();
     return aparada.startsWith('{') && aparada.endsWith('}');
   }
-
-  String _ambiente(TipoSecaoMusica tipo) => switch (tipo) {
-    TipoSecaoMusica.intro => 'intro',
-    TipoSecaoMusica.verso => 'verse',
-    TipoSecaoMusica.preRefrao => 'pre_chorus',
-    TipoSecaoMusica.refrao => 'chorus',
-    TipoSecaoMusica.ponte => 'bridge',
-    TipoSecaoMusica.instrumental => 'instrumental',
-    TipoSecaoMusica.solo => 'solo',
-    TipoSecaoMusica.encerramento => 'final',
-    TipoSecaoMusica.outro => 'section',
-  };
-
-  String _escaparLabel(String label) =>
-      label.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
 
   String _separadorDoDocumento(String conteudo) => conteudo.contains('\r\n')
       ? '\r\n'

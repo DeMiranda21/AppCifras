@@ -35,10 +35,11 @@ consolidada, a especificacao-funcional.md.
 
 5. **Reconhecimento estrutural:** Intro, Verso, Pré-Refrão, Refrão, Ponte,
    Instrumental, Final e outros rótulos, sempre preservando o original.
-6. **Edição assistida básica:** duas fatias entregues no editor textual: marcar
-   uma seleção válida como acorde/tratar acorde entre colchetes como texto e
-   transformar uma linha selecionada em seção ChordPro com tipo escolhido.
-   Permanecem futuras: editar acorde e operações sobre seções já explícitas.
+6. **Edição assistida básica:** três fatias entregues no editor textual: marcar
+   uma seleção válida como acorde/tratar acorde entre colchetes como texto,
+   transformar uma linha selecionada em seção ChordPro e editar tipo/rótulo de
+   uma seção explícita. Permanecem futuras: editar acorde e operações de
+   movimento, duplicação e exclusão sobre seções.
    Evoluir de forma incremental: criação, troca de tipo, movimento, duplicação
    e exclusão de seções não precisam entrar juntas.
 7. **Editor por blocos:** criar, excluir, duplicar, arrastar e ocultar blocos

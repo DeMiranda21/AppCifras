@@ -101,6 +101,42 @@ class ReconhecedorSecaoMusica {
     );
   }
 
+  /// Extrai apenas o label declarado em uma diretiva de abertura.
+  ///
+  /// Retorna nulo quando a diretiva não é um início reconhecível ou não
+  /// declara valor. Isso permite que a edição assistida preserve documentos
+  /// externos sem label até uma alteração explícita do usuário.
+  String? extrairLabelDaDiretiva(String conteudoOriginal) {
+    final correspondencia = _diretivaSecao.firstMatch(conteudoOriginal);
+    if (correspondencia == null ||
+        !correspondencia.group(1)!.startsWith('start_of_') &&
+            !const {'soc', 'sov', 'sob'}.contains(correspondencia.group(1))) {
+      return null;
+    }
+    return _extrairRotulo(correspondencia.group(2) ?? '');
+  }
+
+  String escreverInicioCanonico(TipoSecaoMusica tipo, String label) =>
+      '{start_of_${ambienteCanonico(tipo)}: label="${escaparLabel(label)}"}';
+
+  String escreverFimCanonico(TipoSecaoMusica tipo) =>
+      '{end_of_${ambienteCanonico(tipo)}}';
+
+  String ambienteCanonico(TipoSecaoMusica tipo) => switch (tipo) {
+    TipoSecaoMusica.intro => 'intro',
+    TipoSecaoMusica.verso => 'verse',
+    TipoSecaoMusica.preRefrao => 'pre_chorus',
+    TipoSecaoMusica.refrao => 'chorus',
+    TipoSecaoMusica.ponte => 'bridge',
+    TipoSecaoMusica.instrumental => 'instrumental',
+    TipoSecaoMusica.solo => 'solo',
+    TipoSecaoMusica.encerramento => 'final',
+    TipoSecaoMusica.outro => 'section',
+  };
+
+  String escaparLabel(String label) =>
+      label.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+
   _DiretivaSecao? _interpretarNomeDiretiva(String nome) {
     final longas = switch (nome) {
       'soc' => _DiretivaSecao(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/edicao/transformar_secao_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
@@ -37,6 +38,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _rolagem = ScrollController();
   final _transformarSelecaoChordPro = TransformarSelecaoChordPro();
   final _transformarSecaoChordPro = TransformarSecaoChordPro();
+  final _editarSecaoChordPro = EditarSecaoChordPro();
   late final String _tomInicial;
   var _salvando = false;
   String? _erroTom;
@@ -114,6 +116,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     _selecaoDoConteudo,
   );
 
+  ContextoEdicaoSecaoChordPro? get _secaoEditavelAtual => _editarSecaoChordPro
+      .contextoAtual(conteudo: _conteudo.text, selecao: _selecaoDoConteudo);
+
   void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
     final resultado = switch (acao) {
       AcaoSelecaoChordPro.marcarComoAcorde =>
@@ -162,6 +167,95 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     );
     if (resultado.foiTransformado) {
       _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+  }
+
+  Future<void> _editarSecao() async {
+    final contexto = _secaoEditavelAtual;
+    if (contexto == null) {
+      return;
+    }
+    var tipo = contexto.tipo;
+    var label = contexto.label ?? '';
+    final aplicar = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, atualizar) => SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Editar seção', style: TextStyle(fontSize: 20)),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<TipoSecaoMusica>(
+                  key: const ValueKey('tipo-edicao-secao'),
+                  initialValue: tipo,
+                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  items: [
+                    for (final opcao in _opcoesDeSecao)
+                      DropdownMenuItem(
+                        value: opcao.tipo,
+                        child: Text(opcao.titulo),
+                      ),
+                  ],
+                  onChanged: (novoTipo) {
+                    if (novoTipo != null) {
+                      atualizar(() => tipo = novoTipo);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: const ValueKey('rotulo-edicao-secao'),
+                  initialValue: label,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Rótulo'),
+                  onChanged: (novoLabel) => atualizar(() => label = novoLabel),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: label.trim().isEmpty
+                          ? null
+                          : () => Navigator.pop(context, true),
+                      child: const Text('Aplicar'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (aplicar == true) {
+      final resultado = _editarSecaoChordPro.editar(
+        conteudo: _conteudo.text,
+        selecao: _selecaoDoConteudo,
+        novoTipo: tipo,
+        novoLabel: label,
+      );
+      if (resultado.foiAlterado) {
+        _atualizarConteudo(resultado.conteudo, resultado.selecao);
+      }
     }
   }
 
@@ -309,6 +403,13 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             onPressed: _salvando ? null : _escolherTipoDeSecao,
             icon: const Icon(Icons.view_agenda_outlined),
             tooltip: 'Marcar como seção',
+          ),
+        if (_secaoEditavelAtual != null)
+          IconButton(
+            key: const ValueKey('acao-assistida-editar-secao'),
+            onPressed: _salvando ? null : _editarSecao,
+            icon: const Icon(Icons.edit_note_outlined),
+            tooltip: 'Editar seção',
           ),
       ],
     ),

@@ -331,6 +331,141 @@ void main() {
       isNot(contains('{start_of_chorus:')),
     );
   });
+
+  testWidgets('edita tipo e rótulo da seção e só persiste ao salvar', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const conteudo =
+        '{title: T}\n{artist: A}\n{key: C}\n'
+        '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}';
+    final inicioLetra = conteudo.indexOf('[C]Letra');
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection.collapsed(offset: inicioLetra),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Editar seção'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-editar-secao')));
+    await tester.pumpAndSettle();
+    expect(find.text('Editar seção'), findsOneWidget);
+    expect(find.text('Verso'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const ValueKey('rotulo-edicao-secao')),
+          )
+          .initialValue,
+      'Verso 1',
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tipo-edicao-secao')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Refrão').last);
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const ValueKey('rotulo-edicao-secao')),
+      'Refrão 1',
+    );
+    await tester.tap(find.text('Aplicar'));
+    await tester.pump();
+
+    expect(
+      controlador.text,
+      '{title: T}\n{artist: A}\n{key: C}\n'
+      '{start_of_chorus: label="Refrão 1"}\n[C]Letra\n{end_of_chorus}',
+    );
+    expect(repositorio.atualizacoes, 0);
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(repositorio.atualizacoes, 1);
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      contains('{start_of_chorus: label="Refrão 1"}'),
+    );
+  });
+
+  testWidgets('reconhece marcador de seção e cancelar não altera o editor', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const conteudo =
+        '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}';
+    final inicioMarcador = conteudo.indexOf('start_of_verse');
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection.collapsed(offset: inicioMarcador),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-editar-secao')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancelar'));
+    await tester.pump();
+
+    expect(controlador.text, conteudo);
+    expect(repositorio.atualizacoes, 0);
+  });
+
+  testWidgets('não oferece edição de seção fora dela ou em seleção cruzada', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const fora = 'Texto livre\n[C]Letra';
+    controlador.value = const TextEditingValue(
+      text: fora,
+      selection: TextSelection.collapsed(offset: 0),
+    );
+    await tester.pump();
+    expect(find.byTooltip('Editar seção'), findsNothing);
+
+    const conteudo =
+        '{start_of_verse: label="V"}\n[C]A\n{end_of_verse}\n'
+        '{start_of_chorus: label="R"}\n[D]B\n{end_of_chorus}';
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection(
+        baseOffset: conteudo.indexOf('[C]A'),
+        extentOffset: conteudo.indexOf('[D]B') + 5,
+      ),
+    );
+    await tester.pump();
+    expect(find.byTooltip('Editar seção'), findsNothing);
+  });
+
+  testWidgets('aplicar sem mudança preserva o documento externo byte a byte', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester);
+    final campo = find.byType(TextFormField).at(3);
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    const conteudo = '{sov: label="Verso 1"}\n[C]Letra\n{eov}';
+    controlador.value = TextEditingValue(
+      text: conteudo,
+      selection: TextSelection.collapsed(offset: conteudo.indexOf('[C]Letra')),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-editar-secao')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aplicar'));
+    await tester.pump();
+
+    expect(controlador.text, conteudo);
+    expect(repositorio.atualizacoes, 0);
+  });
 }
 
 class _Repositorio implements RepositorioMusicas {
