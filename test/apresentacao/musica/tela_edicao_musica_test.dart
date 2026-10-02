@@ -4,6 +4,7 @@ import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
+import 'package:appcifras/aplicacao/estrutura/reconhecedor_secao_musica.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -674,6 +675,82 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
     await tester.pumpAndSettle();
     expect(find.text('Editar seção'), findsOneWidget);
+  });
+
+  testWidgets('adiciona seção no modo Blocos e só persiste ao salvar', (
+    tester,
+  ) async {
+    final repositorio = await montar(tester, estrutural: true);
+    final adicionar = find.byKey(const ValueKey('adicionar-secao'));
+    await tester.ensureVisible(adicionar);
+    await tester.tap(adicionar);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<DropdownButtonFormField<TipoSecaoMusica>>(
+            find.byKey(const ValueKey('tipo-nova-secao')),
+          )
+          .initialValue,
+      TipoSecaoMusica.verso,
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(
+              const ValueKey('rotulo-nova-secao-TipoSecaoMusica.verso'),
+            ),
+          )
+          .initialValue,
+      'Verso',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('rotulo-nova-secao-TipoSecaoMusica.verso')),
+      'Verso 2',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+    await tester.pump();
+
+    expect(
+      find.descendant(of: find.byType(Card), matching: find.text('Verso 2')),
+      findsOneWidget,
+    );
+    expect(repositorio.atualizacoes, 0);
+    await tester.tap(find.text('ChordPro'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+          .controller!
+          .text,
+      contains('{start_of_verse: label="Verso 2"}\n{end_of_verse}'),
+    );
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(repositorio.atualizacoes, 1);
+  });
+
+  testWidgets('não permite aplicar nova seção com label vazio', (tester) async {
+    await montar(tester, estrutural: true);
+    final adicionar = find.byKey(const ValueKey('adicionar-secao'));
+    await tester.ensureVisible(adicionar);
+    await tester.tap(adicionar);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('rotulo-nova-secao-TipoSecaoMusica.verso')),
+      '',
+    );
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Aplicar'))
+          .onPressed,
+      isNull,
+    );
   });
 }
 

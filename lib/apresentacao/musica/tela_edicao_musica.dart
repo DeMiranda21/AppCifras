@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/edicao/criar_secao_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/excluir_secao_chordpro.dart';
@@ -44,6 +45,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _rolagem = ScrollController();
   final _transformarSelecaoChordPro = TransformarSelecaoChordPro();
   final _transformarSecaoChordPro = TransformarSecaoChordPro();
+  final _criarSecaoChordPro = CriarSecaoChordPro();
   final _editarSecaoChordPro = EditarSecaoChordPro();
   final _duplicarSecaoChordPro = DuplicarSecaoChordPro();
   final _excluirSecaoChordPro = ExcluirSecaoChordPro();
@@ -303,6 +305,96 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     }
   }
 
+  Future<void> _adicionarSecao() async {
+    var tipo = TipoSecaoMusica.verso;
+    var label = _labelSugeridoParaNovoTipo(tipo);
+    final aplicar = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, atualizar) => SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Adicionar seção', style: TextStyle(fontSize: 20)),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<TipoSecaoMusica>(
+                  key: const ValueKey('tipo-nova-secao'),
+                  initialValue: tipo,
+                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  items: [
+                    for (final opcao in _opcoesDeSecao)
+                      DropdownMenuItem(
+                        value: opcao.tipo,
+                        child: Text(opcao.titulo),
+                      ),
+                  ],
+                  onChanged: (novoTipo) {
+                    if (novoTipo == null) {
+                      return;
+                    }
+                    final labelEraSugestao =
+                        label == _labelSugeridoParaNovoTipo(tipo);
+                    atualizar(() {
+                      tipo = novoTipo;
+                      if (labelEraSugestao) {
+                        label = _labelSugeridoParaNovoTipo(tipo);
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: ValueKey('rotulo-nova-secao-$tipo'),
+                  initialValue: label,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Rótulo'),
+                  onChanged: (novoLabel) => atualizar(() => label = novoLabel),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: label.trim().isEmpty
+                          ? null
+                          : () => Navigator.pop(context, true),
+                      child: const Text('Aplicar'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (aplicar != true || !mounted) {
+      return;
+    }
+    final resultado = _criarSecaoChordPro.criar(
+      conteudo: _conteudo.text,
+      tipo: tipo,
+      label: label,
+    );
+    if (resultado.foiCriada) {
+      _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+  }
+
   void _reordenarSecoes(int indiceOrigem, int indiceDestino) {
     final resultado = _reordenarSecoesChordPro.reordenar(
       conteudo: _conteudo.text,
@@ -368,6 +460,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
   String _tituloDoTipo(TipoSecaoMusica tipo) =>
       _opcoesDeSecao.firstWhere((opcao) => opcao.tipo == tipo).titulo;
+
+  String _labelSugeridoParaNovoTipo(TipoSecaoMusica tipo) =>
+      tipo == TipoSecaoMusica.outro ? 'Seção' : _tituloDoTipo(tipo);
 
   String _previaDaSecao(SecaoMusica secao) {
     final linhas = secao.elementos
@@ -507,6 +602,13 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             for (var indice = 0; indice < secoes.length; indice += 1)
               _blocoDaSecao(secoes[indice], indice),
           ],
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const ValueKey('adicionar-secao'),
+          onPressed: _salvando ? null : _adicionarSecao,
+          icon: const Icon(Icons.add),
+          label: const Text('Adicionar seção'),
         ),
       ],
     );

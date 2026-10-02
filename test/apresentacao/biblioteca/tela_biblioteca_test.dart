@@ -219,16 +219,24 @@ void main() {
       tester.widget<TextFormField>(campos.at(0)).controller!.text,
       'Nome antigo',
     );
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('modo-editor-musica')),
+        matching: find.text('ChordPro'),
+      ),
+    );
+    await tester.pump();
+    final conteudo = find.byKey(const ValueKey('conteudo-edicao'));
     expect(
-      tester.widget<TextFormField>(campos.at(3)).controller!.text,
+      tester.widget<TextFormField>(conteudo).controller!.text,
       contains('[C]Letra antiga'),
     );
     expect(
-      tester.widget<TextFormField>(campos.at(3)).controller!.text,
+      tester.widget<TextFormField>(conteudo).controller!.text,
       isNot(contains('appcifras_id')),
     );
     expect(
-      tester.widget<TextFormField>(campos.at(3)).controller!.text,
+      tester.widget<TextFormField>(conteudo).controller!.text,
       isNot(contains('appcifras_schema')),
     );
     await tester.enterText(campos.at(0), 'Nome revisado');
