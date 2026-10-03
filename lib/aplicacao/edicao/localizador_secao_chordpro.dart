@@ -76,6 +76,37 @@ class LocalizadorSecaoChordPro {
     );
   }
 
+  FaixaTrechoNaoIdentificadoChordPro? localizarTrechoNaoIdentificado({
+    required String conteudo,
+    required int inicioConteudo,
+  }) {
+    final documento = _parserDocumento.interpretar(conteudo);
+    final estrutura = _estruturador.estruturar(documento);
+    final secao = estrutura.secoes.where(
+      (secao) => secao.ehImplicita && secao.inicioConteudo == inicioConteudo,
+    );
+    if (secao.isEmpty) return null;
+    final trecho = secao.first;
+    if (trecho.fimConteudoExclusivo <= trecho.inicioConteudo) return null;
+    final linhas = _linhas(conteudo);
+    if (trecho.inicioConteudo >= linhas.length ||
+        trecho.fimConteudoExclusivo > linhas.length) {
+      return null;
+    }
+    final linhaInicio = linhas[trecho.inicioConteudo];
+    final linhaFim = linhas[trecho.fimConteudoExclusivo - 1];
+    return FaixaTrechoNaoIdentificadoChordPro(
+      trecho: trecho,
+      inicio: linhaInicio.inicio,
+      fim: linhaFim.fim,
+      fimComSeparador: linhaFim.fimComSeparador,
+      selecaoNoInicio: SelecaoTextoChordPro(
+        inicio: linhaInicio.inicio,
+        fim: linhaInicio.inicio,
+      ),
+    );
+  }
+
   List<_LinhaChordPro> _linhas(String conteudo) {
     final linhas = <_LinhaChordPro>[];
     var inicio = 0;
@@ -119,6 +150,22 @@ class FaixaSecaoChordPro {
   final int inicioConteudo;
   final int fimConteudo;
   final String separadorAposInicio;
+  final SelecaoTextoChordPro selecaoNoInicio;
+}
+
+class FaixaTrechoNaoIdentificadoChordPro {
+  const FaixaTrechoNaoIdentificadoChordPro({
+    required this.trecho,
+    required this.inicio,
+    required this.fim,
+    required this.fimComSeparador,
+    required this.selecaoNoInicio,
+  });
+
+  final SecaoMusica trecho;
+  final int inicio;
+  final int fim;
+  final int fimComSeparador;
   final SelecaoTextoChordPro selecaoNoInicio;
 }
 

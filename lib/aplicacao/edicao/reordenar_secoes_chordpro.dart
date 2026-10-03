@@ -15,11 +15,12 @@ class ResultadoReordenacaoSecoesChordPro {
   final bool foiReordenada;
 }
 
-/// Reordena literalmente seções explícitas dentro de uma mesma faixa segura.
+/// Reordena literalmente blocos explícitos ou trechos musicais livres dentro
+/// de uma mesma faixa segura.
 ///
-/// Uma faixa segura é uma sequência contígua de blocos com abertura e
-/// fechamento correspondentes. Conteúdo implícito e seções malformadas formam
-/// limites: uma seção nunca é movida através deles nesta primeira versão.
+/// Uma faixa segura é uma sequência contígua sem diretivas ou conteúdo não
+/// musical entre os blocos. A operação preserva o conteúdo interno de cada
+/// bloco e normaliza somente o separador criado entre eles.
 class ReordenarSecoesChordPro {
   ReordenarSecoesChordPro({
     LocalizadorSecaoChordPro? localizador,
@@ -53,18 +54,18 @@ class ReordenarSecoesChordPro {
     if (faixaOrigem == null) {
       return _semReordenacao(conteudo);
     }
-    final inicioDoGrupo = _inicioDoGrupo(faixas, indiceOrigem);
-    final fimDoGrupo = _fimDoGrupo(faixas, indiceOrigem);
+    final inicioDoGrupo = _inicioDoGrupo(conteudo, faixas, indiceOrigem);
+    final fimDoGrupo = _fimDoGrupo(conteudo, faixas, indiceOrigem);
     if (indiceDestino < inicioDoGrupo || indiceDestino > fimDoGrupo) {
       return _semReordenacao(conteudo);
     }
 
     final grupo = faixas
         .sublist(inicioDoGrupo, fimDoGrupo + 1)
-        .cast<FaixaSecaoChordPro>();
+        .cast<_FaixaBlocoChordPro>();
     final origemNoGrupo = indiceOrigem - inicioDoGrupo;
     final destinoNoGrupo = indiceDestino - inicioDoGrupo;
-    final novaOrdem = List<FaixaSecaoChordPro>.from(grupo);
+    final novaOrdem = List<_FaixaBlocoChordPro>.from(grupo);
     final movida = novaOrdem.removeAt(origemNoGrupo);
     novaOrdem.insert(destinoNoGrupo, movida);
 
@@ -102,33 +103,61 @@ class ReordenarSecoesChordPro {
   EstruturaMusica _estruturar(String conteudo) =>
       _estruturador.estruturar(_parserDocumento.interpretar(conteudo));
 
-  FaixaSecaoChordPro? _faixaDo(String conteudo, SecaoMusica secao) {
+  _FaixaBlocoChordPro? _faixaDo(String conteudo, SecaoMusica secao) {
     final indiceMarcador = secao.indiceMarcador;
-    return indiceMarcador == null
-        ? null
-        : _localizador.localizar(
-            conteudo: conteudo,
-            indiceMarcador: indiceMarcador,
-          );
+    if (indiceMarcador != null) {
+      final faixa = _localizador.localizar(
+        conteudo: conteudo,
+        indiceMarcador: indiceMarcador,
+      );
+      return faixa == null ? null : _FaixaBlocoChordPro.deSecao(faixa);
+    }
+    final faixa = _localizador.localizarTrechoNaoIdentificado(
+      conteudo: conteudo,
+      inicioConteudo: secao.inicioConteudo,
+    );
+    return faixa == null ? null : _FaixaBlocoChordPro.deTrecho(faixa);
   }
 
-  int _inicioDoGrupo(List<FaixaSecaoChordPro?> faixas, int indice) {
+  int _inicioDoGrupo(
+    String conteudo,
+    List<_FaixaBlocoChordPro?> faixas,
+    int indice,
+  ) {
     var atual = indice;
-    while (atual > 0 && faixas[atual - 1] != null) {
+    while (atual > 0 &&
+        _faixasSaoVizinhasSeguras(conteudo, faixas[atual - 1], faixas[atual])) {
       atual -= 1;
     }
     return atual;
   }
 
-  int _fimDoGrupo(List<FaixaSecaoChordPro?> faixas, int indice) {
+  int _fimDoGrupo(
+    String conteudo,
+    List<_FaixaBlocoChordPro?> faixas,
+    int indice,
+  ) {
     var atual = indice;
-    while (atual + 1 < faixas.length && faixas[atual + 1] != null) {
+    while (atual + 1 < faixas.length &&
+        _faixasSaoVizinhasSeguras(conteudo, faixas[atual], faixas[atual + 1])) {
       atual += 1;
     }
     return atual;
   }
 
-  String _separadorDoGrupo(String conteudo, List<FaixaSecaoChordPro> grupo) {
+  bool _faixasSaoVizinhasSeguras(
+    String conteudo,
+    _FaixaBlocoChordPro? anterior,
+    _FaixaBlocoChordPro? posterior,
+  ) {
+    if (anterior == null || posterior == null) return false;
+    return conteudo
+        .substring(anterior.fimComSeparador, posterior.inicio)
+        .trim()
+        .isEmpty;
+  }
+
+  String _separadorDoGrupo(String conteudo, List<_FaixaBlocoChordPro> grupo) {
     for (final faixa in grupo) {
       final separador = conteudo.substring(faixa.fim, faixa.fimComSeparador);
       if (separador.isNotEmpty) {
@@ -148,4 +177,31 @@ class ReordenarSecoesChordPro {
         selecao: SelecaoTextoChordPro(inicio: 0, fim: 0),
         foiReordenada: false,
       );
+}
+
+class _FaixaBlocoChordPro {
+  const _FaixaBlocoChordPro({
+    required this.inicio,
+    required this.fim,
+    required this.fimComSeparador,
+  });
+
+  factory _FaixaBlocoChordPro.deSecao(FaixaSecaoChordPro faixa) =>
+      _FaixaBlocoChordPro(
+        inicio: faixa.inicio,
+        fim: faixa.fim,
+        fimComSeparador: faixa.fimComSeparador,
+      );
+
+  factory _FaixaBlocoChordPro.deTrecho(
+    FaixaTrechoNaoIdentificadoChordPro faixa,
+  ) => _FaixaBlocoChordPro(
+    inicio: faixa.inicio,
+    fim: faixa.fim,
+    fimComSeparador: faixa.fimComSeparador,
+  );
+
+  final int inicio;
+  final int fim;
+  final int fimComSeparador;
 }

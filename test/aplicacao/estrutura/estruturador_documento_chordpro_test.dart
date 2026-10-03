@@ -207,13 +207,13 @@ void main() {
       expect(_conteudo(semFim.secoes.single), '[Am]Improviso');
     });
 
-    test('preserva end sem start como conteúdo de faixa implícita', () {
+    test('não deriva trecho de diretiva end sem conteúdo musical', () {
       const conteudo = '{end_of_chorus}\n[C]Letra';
       final estrutura = estruturar(conteudo);
 
       expect(estrutura.documento.conteudoOriginal, conteudo);
       expect(estrutura.secoes.single.ehImplicita, isTrue);
-      expect(_conteudo(estrutura.secoes.single), conteudo);
+      expect(_conteudo(estrutura.secoes.single), '[C]Letra');
     });
 
     test('não transforma texto comum ou rótulo desconhecido em seção', () {
@@ -237,12 +237,42 @@ void main() {
       final abertura = estrutura.secoes.first;
       expect(abertura.ehImplicita, isTrue);
       expect(abertura.indiceMarcador, isNull);
-      expect(abertura.inicioConteudo, 0);
+      expect(abertura.inicioConteudo, 3);
       expect(abertura.fimConteudoExclusivo, 4);
       expect(_conteudo(abertura), contains('[G]Abertura'));
       expect(estrutura.secoes.last.tipo, TipoSecaoMusica.verso);
       expect(_conteudo(estrutura.secoes.last), '[D]Letra');
     });
+
+    test('deriva trechos livres antes, entre e depois de seções', () {
+      final estrutura = estruturar(
+        '{title: T}\n{artist: A}\n{key: C}\n\n'
+        '[C]Introdução\n\n'
+        '{start_of_verse: label="Verso"}\n[D]Letra\n{end_of_verse}\n\n'
+        '[G]Passagem\n\n'
+        '{start_of_chorus: label="Refrão"}\n[A]Coro\n{end_of_chorus}\n\n'
+        '[E]Final',
+      );
+
+      expect(estrutura.secoes, hasLength(5));
+      expect(estrutura.secoes[0].ehImplicita, isTrue);
+      expect(_conteudo(estrutura.secoes[0]), '[C]Introdução');
+      expect(estrutura.secoes[1].tipo, TipoSecaoMusica.verso);
+      expect(estrutura.secoes[2].ehImplicita, isTrue);
+      expect(_conteudo(estrutura.secoes[2]), '[G]Passagem');
+      expect(estrutura.secoes[3].tipo, TipoSecaoMusica.refrao);
+      expect(estrutura.secoes[4].ehImplicita, isTrue);
+      expect(_conteudo(estrutura.secoes[4]), '[E]Final');
+    });
+
+    test(
+      'não deriva cartão para documento composto só por diretivas e vazios',
+      () {
+        final estrutura = estruturar('{title: T}\n\n{artist: A}\n{key: C}\n');
+
+        expect(estrutura.secoes, isEmpty);
+      },
+    );
 
     test('mantém seções consecutivas como seções vazias válidas', () {
       final estrutura = estruturar('Intro\nRefrão\n[C]Letra');

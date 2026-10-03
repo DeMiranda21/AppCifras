@@ -48,7 +48,10 @@ consolidada, a especificacao-funcional.md.
    marcar como acorde/tratar como texto. ChordPro textual segue como modo
    avançado/fallback. A saída da edição protege alterações não salvas.
    Permanecem futuras: edição avançada de acordes dentro do bloco e ocultação
-   de blocos para reorganização rápida. Não criar entidade Arranjo/Versão
+   de blocos para reorganização rápida. Trechos musicais fora de seção também
+   aparecem como blocos derivados, editáveis e reordenáveis quando não cruzam
+   diretivas; metadados, diretivas e espaçadores isolados não viram blocos.
+   Não criar entidade Arranjo/Versão
    nesta fase.
 8. **Tags, classificação e metadados:** energia (muito calma, calma,
    moderada, animada e muito animada), tema, momento/tipo (celebração,

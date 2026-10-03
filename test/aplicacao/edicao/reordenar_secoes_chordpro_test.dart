@@ -116,7 +116,7 @@ void main() {
       expect(resultado.conteudo, conteudo);
     });
 
-    test('preserva conteúdo implícito e rejeita atravessá-lo', () {
+    test('reordena trecho não identificado entre seções contíguas', () {
       const conteudo =
           'Observação\n'
           '{start_of_verse: label="V"}\n[C]Verso\n{end_of_verse}\n'
@@ -125,8 +125,28 @@ void main() {
 
       final resultado = reordenar.reordenar(
         conteudo: conteudo,
-        indiceOrigem: 1,
-        indiceDestino: 3,
+        indiceOrigem: 0,
+        indiceDestino: 2,
+      );
+
+      expect(resultado.foiReordenada, isTrue);
+      expect(
+        resultado.conteudo,
+        '{start_of_verse: label="V"}\n[C]Verso\n{end_of_verse}\n'
+        '{start_of_chorus: label="R"}\n[D]Refrão\n{end_of_chorus}\n'
+        'Observação',
+      );
+    });
+
+    test('não move trecho através de diretiva não estrutural', () {
+      const conteudo =
+          'Antes\n{tempo: 72}\nDepois\n'
+          '{start_of_verse: label="V"}\n[C]Verso\n{end_of_verse}';
+
+      final resultado = reordenar.reordenar(
+        conteudo: conteudo,
+        indiceOrigem: 0,
+        indiceDestino: 1,
       );
 
       expect(resultado.foiReordenada, isFalse);

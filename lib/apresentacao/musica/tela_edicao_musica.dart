@@ -4,6 +4,7 @@ import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_conteudo_secao_chordpro.dart';
+import '../../aplicacao/edicao/editar_trecho_nao_identificado_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/excluir_secao_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
@@ -49,6 +50,8 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _transformarSecaoChordPro = TransformarSecaoChordPro();
   final _criarSecaoChordPro = CriarSecaoChordPro();
   final _editarConteudoSecaoChordPro = EditarConteudoSecaoChordPro();
+  final _editarTrechoNaoIdentificadoChordPro =
+      EditarTrechoNaoIdentificadoChordPro();
   final _editarSecaoChordPro = EditarSecaoChordPro();
   final _duplicarSecaoChordPro = DuplicarSecaoChordPro();
   final _excluirSecaoChordPro = ExcluirSecaoChordPro();
@@ -378,6 +381,38 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     if (resultadoDaFolha.acao == _AcaoEdicaoConteudoSecao.editarSecao &&
         mounted) {
       await _editarSecao(selecao: resultado.selecao);
+    }
+  }
+
+  Future<void> _editarTrechoNaoIdentificado(SecaoMusica trecho) async {
+    final contexto = _editarTrechoNaoIdentificadoChordPro.contextoAtual(
+      conteudo: _conteudo.text,
+      inicioConteudo: trecho.inicioConteudo,
+    );
+    if (contexto == null) {
+      return;
+    }
+    final resultadoDaFolha =
+        await showModalBottomSheet<_ResultadoFolhaEdicaoConteudoSecao>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => _FolhaEdicaoConteudoSecao(
+            titulo: 'Trecho não identificado',
+            conteudoInicial: contexto.conteudo,
+            transformarSelecao: _transformarSelecaoChordPro,
+            podeEditarSecao: false,
+          ),
+        );
+    if (resultadoDaFolha == null || !mounted) {
+      return;
+    }
+    final resultado = _editarTrechoNaoIdentificadoChordPro.editar(
+      conteudo: _conteudo.text,
+      inicioConteudo: trecho.inicioConteudo,
+      novoConteudo: resultadoDaFolha.conteudo,
+    );
+    if (resultado.foiAlterado) {
+      _atualizarConteudo(resultado.conteudo, resultado.selecao);
     }
   }
 
@@ -724,34 +759,49 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             indiceMarcador: indiceMarcador,
           );
     final ehExplicita = indiceMarcador != null;
+    final trechoNaoIdentificado = ehExplicita
+        ? null
+        : _localizadorSecaoChordPro.localizarTrechoNaoIdentificado(
+            conteudo: _conteudo.text,
+            inicioConteudo: secao.inicioConteudo,
+          );
+    final podeMover = faixa != null || trechoNaoIdentificado != null;
     final titulo = ehExplicita
         ? _tituloDaSecao(secao)
-        : 'Conteúdo fora de seção';
+        : 'Trecho não identificado';
     final previa = _previaDaSecao(secao);
     return Card(
       key: ValueKey(
-        ehExplicita ? 'bloco-secao-$indiceMarcador' : 'bloco-implicito-$indice',
+        ehExplicita
+            ? 'bloco-secao-$indiceMarcador'
+            : 'bloco-trecho-${secao.inicioConteudo}',
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: _salvando || !ehExplicita
+        onTap: _salvando
             ? null
-            : faixa == null
+            : ehExplicita && faixa == null
             ? () => _editarSecao(selecao: _selecaoDoMarcador(indiceMarcador))
-            : () => _editarConteudoSecao(faixa),
+            : faixa != null
+            ? () => _editarConteudoSecao(faixa)
+            : trechoNaoIdentificado == null
+            ? null
+            : () => _editarTrechoNaoIdentificado(secao),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (faixa != null)
+              if (podeMover)
                 ReorderableDragStartListener(
-                  key: ValueKey('arrastar-bloco-$indiceMarcador'),
+                  key: ValueKey(
+                    'arrastar-bloco-${indiceMarcador ?? secao.inicioConteudo}',
+                  ),
                   index: indice,
                   child: const Padding(
                     padding: EdgeInsets.only(right: 8),
                     child: Tooltip(
-                      message: 'Arrastar seção',
+                      message: 'Arrastar bloco',
                       child: Icon(Icons.drag_handle),
                     ),
                   ),
@@ -763,7 +813,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                     Text(titulo, style: const TextStyle(fontSize: 16)),
                     if (!ehExplicita)
                       Text(
-                        'Este conteúdo não pertence a uma seção estruturada.',
+                        'Parte ainda não classificada.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     if (ehExplicita && titulo != _tituloDoTipo(secao.tipo))
@@ -1017,11 +1067,13 @@ class _FolhaEdicaoConteudoSecao extends StatefulWidget {
     required this.titulo,
     required this.conteudoInicial,
     required this.transformarSelecao,
+    this.podeEditarSecao = true,
   });
 
   final String titulo;
   final String conteudoInicial;
   final TransformarSelecaoChordPro transformarSelecao;
+  final bool podeEditarSecao;
 
   @override
   State<_FolhaEdicaoConteudoSecao> createState() =>
@@ -1107,12 +1159,14 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancelar'),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () =>
-                    _concluir(context, _AcaoEdicaoConteudoSecao.editarSecao),
-                child: const Text('Editar seção'),
-              ),
+              if (widget.podeEditarSecao) ...[
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () =>
+                      _concluir(context, _AcaoEdicaoConteudoSecao.editarSecao),
+                  child: const Text('Editar seção'),
+                ),
+              ],
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: () =>

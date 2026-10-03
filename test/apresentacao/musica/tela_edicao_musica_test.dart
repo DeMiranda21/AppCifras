@@ -520,7 +520,7 @@ void main() {
     expect(repositorio.atualizacoes, 0);
   });
 
-  testWidgets('mostra blocos estruturais na ordem e conteúdo implícito', (
+  testWidgets('mostra trechos não identificados sem metadados na prévia', (
     tester,
   ) async {
     await montar(
@@ -533,12 +533,9 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('modo-editor-musica')), findsOneWidget);
-    final blocoImplicito = find.byKey(const ValueKey('bloco-implicito-0'));
-    expect(find.text('Conteúdo fora de seção'), findsOneWidget);
-    expect(
-      find.text('Este conteúdo não pertence a uma seção estruturada.'),
-      findsOneWidget,
-    );
+    final blocoImplicito = find.byKey(const ValueKey('bloco-trecho-3'));
+    expect(find.text('Trecho não identificado'), findsOneWidget);
+    expect(find.text('Parte ainda não classificada.'), findsOneWidget);
     expect(
       find.descendant(
         of: blocoImplicito,
@@ -575,6 +572,77 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('edita trecho não identificado sem alterar diretivas ou seções', (
+    tester,
+  ) async {
+    final repositorio = await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n[C]Introdução\n'
+          '{start_of_verse: label="Verso"}\n[D]Letra\n{end_of_verse}',
+    );
+
+    await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+    await tester.pumpAndSettle();
+
+    final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
+    expect(campo, findsOneWidget);
+    expect(
+      tester.widget<TextFormField>(campo).controller!.text,
+      '[C]Introdução',
+    );
+    expect(find.text('Editar seção'), findsNothing);
+
+    await tester.enterText(campo, '[G]Alterada');
+    await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+    await tester.pump();
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+          .controller!
+          .text,
+      '{title: T}\n{artist: A}\n{key: C}\n[G]Alterada\n'
+      '{start_of_verse: label="Verso"}\n[D]Letra\n{end_of_verse}',
+    );
+    expect(repositorio.atualizacoes, 0);
+  });
+
+  testWidgets(
+    'cancelar edição de trecho não identificado não altera o editor',
+    (tester) async {
+      await montar(
+        tester,
+        estrutural: true,
+        conteudo: '{title: T}\n{artist: A}\n{key: C}\n[C]Original',
+      );
+
+      await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('conteudo-edicao-secao')),
+        '[D]Cancelado',
+      );
+      await tester.tap(find.text('Cancelar'));
+      await tester.pump();
+      await tester.tap(find.text('ChordPro avançado'));
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const ValueKey('conteudo-edicao')),
+            )
+            .controller!
+            .text,
+        '{title: T}\n{artist: A}\n{key: C}\n[C]Original',
+      );
+    },
+  );
 
   testWidgets('alterna da edição por blocos para ChordPro avançado textual', (
     tester,
@@ -917,10 +985,11 @@ void main() {
     );
 
     final handles = find.byType(ReorderableDragStartListener);
-    expect(handles, findsNWidgets(3));
-    expect(tester.widget<ReorderableDragStartListener>(handles.first).index, 1);
-    expect(tester.widget<ReorderableDragStartListener>(handles.at(1)).index, 2);
-    expect(tester.widget<ReorderableDragStartListener>(handles.at(2)).index, 3);
+    expect(handles, findsNWidgets(4));
+    expect(tester.widget<ReorderableDragStartListener>(handles.first).index, 0);
+    expect(tester.widget<ReorderableDragStartListener>(handles.at(1)).index, 1);
+    expect(tester.widget<ReorderableDragStartListener>(handles.at(2)).index, 2);
+    expect(tester.widget<ReorderableDragStartListener>(handles.at(3)).index, 3);
     final lista = tester.widget<ReorderableListView>(
       find.byType(ReorderableListView),
     );
@@ -960,6 +1029,42 @@ void main() {
             .conteudoOriginal
             .indexOf('{start_of_verse'),
       ),
+    );
+  });
+
+  testWidgets('reordena trecho não identificado sem mover metadados', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\nAntes\n'
+          '{start_of_verse: label="Verso"}\n[C]Verso\n{end_of_verse}\n'
+          '{start_of_chorus: label="Refrão"}\n[D]Refrão\n{end_of_chorus}',
+    );
+
+    expect(find.byKey(const ValueKey('arrastar-bloco-3')), findsOneWidget);
+    final lista = tester.widget<ReorderableListView>(
+      find.byType(ReorderableListView),
+    );
+    lista.onReorderItem!(0, 2);
+    await tester.pump();
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+
+    final conteudo = tester
+        .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+        .controller!
+        .text;
+    expect(conteudo, startsWith('{title: T}\n{artist: A}\n{key: C}\n'));
+    expect(
+      conteudo.indexOf('{start_of_verse'),
+      lessThan(conteudo.indexOf('Antes')),
+    );
+    expect(
+      conteudo.indexOf('{start_of_chorus'),
+      lessThan(conteudo.indexOf('Antes')),
     );
   });
 

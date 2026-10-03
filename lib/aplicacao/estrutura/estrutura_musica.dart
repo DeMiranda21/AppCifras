@@ -69,19 +69,35 @@ class EstruturadorDocumentoChordPro {
     }
 
     void concluirLivre(int fimExclusivo) {
-      if (inicioLivre >= fimExclusivo) {
-        return;
+      int? inicioTrecho;
+      var fimTrechoExclusivo = inicioLivre;
+
+      void concluirTrecho() {
+        final inicio = inicioTrecho;
+        if (inicio == null) return;
+        secoes.add(
+          SecaoMusica(
+            tipo: TipoSecaoMusica.outro,
+            rotuloOriginal: null,
+            indiceMarcador: null,
+            inicioConteudo: inicio,
+            fimConteudoExclusivo: fimTrechoExclusivo,
+            elementos: documento.elementos.sublist(inicio, fimTrechoExclusivo),
+          ),
+        );
+        inicioTrecho = null;
       }
-      secoes.add(
-        SecaoMusica(
-          tipo: TipoSecaoMusica.outro,
-          rotuloOriginal: null,
-          indiceMarcador: null,
-          inicioConteudo: inicioLivre,
-          fimConteudoExclusivo: fimExclusivo,
-          elementos: documento.elementos.sublist(inicioLivre, fimExclusivo),
-        ),
-      );
+
+      for (var indice = inicioLivre; indice < fimExclusivo; indice += 1) {
+        final elemento = documento.elementos[indice];
+        if (_ehConteudoMusicalLivre(elemento)) {
+          inicioTrecho ??= indice;
+          fimTrechoExclusivo = indice + 1;
+        } else if (!_ehLinhaVazia(elemento)) {
+          concluirTrecho();
+        }
+      }
+      concluirTrecho();
     }
 
     for (var indice = 0; indice < documento.elementos.length; indice += 1) {
@@ -153,6 +169,14 @@ class EstruturadorDocumentoChordPro {
     }
     return null;
   }
+
+  bool _ehConteudoMusicalLivre(ElementoDocumentoChordPro elemento) =>
+      (elemento is LinhaChordPro || elemento is LinhaNaoInterpretadaChordPro) &&
+      elemento.conteudoOriginal.trim().isNotEmpty;
+
+  bool _ehLinhaVazia(ElementoDocumentoChordPro elemento) =>
+      (elemento is LinhaChordPro || elemento is LinhaNaoInterpretadaChordPro) &&
+      elemento.conteudoOriginal.trim().isEmpty;
 }
 
 class _SecaoAberta {
