@@ -15,6 +15,7 @@ import '../../aplicacao/entrada/conteudo_chordpro_editavel.dart';
 import '../../aplicacao/entrada/reanalisador_conteudo_chordpro.dart';
 import '../../aplicacao/estrutura/estrutura_musica.dart';
 import '../../aplicacao/estrutura/reconhecedor_secao_musica.dart';
+import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
@@ -564,6 +565,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
   String _previaDaSecao(SecaoMusica secao) {
     final linhas = secao.elementos
+        .where(_ehConteudoRelevanteNaPrevia)
         .map((elemento) => elemento.conteudoOriginal.trim())
         .where((linha) => linha.isNotEmpty)
         .take(2)
@@ -571,6 +573,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     final previa = linhas.join(' · ');
     return previa.length <= 96 ? previa : '${previa.substring(0, 93)}...';
   }
+
+  bool _ehConteudoRelevanteNaPrevia(ElementoDocumentoChordPro elemento) =>
+      elemento is LinhaChordPro || elemento is LinhaNaoInterpretadaChordPro;
 
   String? _obrigatorio(String? valor, String nome) =>
       valor == null || valor.trim().isEmpty ? '$nome é obrigatório.' : null;
@@ -719,7 +724,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             indiceMarcador: indiceMarcador,
           );
     final ehExplicita = indiceMarcador != null;
-    final titulo = ehExplicita ? _tituloDaSecao(secao) : 'Sem seção';
+    final titulo = ehExplicita
+        ? _tituloDaSecao(secao)
+        : 'Conteúdo fora de seção';
     final previa = _previaDaSecao(secao);
     return Card(
       key: ValueKey(
@@ -754,6 +761,11 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(titulo, style: const TextStyle(fontSize: 16)),
+                    if (!ehExplicita)
+                      Text(
+                        'Este conteúdo não pertence a uma seção estruturada.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     if (ehExplicita && titulo != _tituloDoTipo(secao.tipo))
                       Text(
                         _tituloDoTipo(secao.tipo),
@@ -892,7 +904,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                       ButtonSegment(
                         value: _ModoEditor.textual,
                         icon: Icon(Icons.code_outlined),
-                        label: Text('ChordPro'),
+                        label: Text('ChordPro avançado'),
                       ),
                     ],
                     selected: {_modoEditor},

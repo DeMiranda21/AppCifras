@@ -222,7 +222,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byKey(const ValueKey('modo-editor-musica')),
-        matching: find.text('ChordPro'),
+        matching: find.text('ChordPro avançado'),
       ),
     );
     await tester.pump();

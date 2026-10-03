@@ -35,7 +35,7 @@ void main() {
       ),
     );
     if (!estrutural) {
-      await tester.tap(find.text('ChordPro'));
+      await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
     }
     return repositorio;
@@ -74,7 +74,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('abrir-edicao')));
     await tester.pumpAndSettle();
     if (!estrutural) {
-      await tester.tap(find.text('ChordPro'));
+      await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
     }
     return repositorio;
@@ -251,7 +251,7 @@ void main() {
     );
     await tester.tap(find.text('Abrir edição'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
     final campo = find.byType(TextFormField).at(3);
     final controlador = tester.widget<TextFormField>(campo).controller!;
@@ -359,7 +359,7 @@ void main() {
     );
     await tester.tap(find.text('Abrir edição'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
     final campo = find.byType(TextFormField).at(3);
     final controlador = tester.widget<TextFormField>(campo).controller!;
@@ -533,25 +533,69 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('modo-editor-musica')), findsOneWidget);
-    expect(find.text('Sem seção'), findsOneWidget);
+    final blocoImplicito = find.byKey(const ValueKey('bloco-implicito-0'));
+    expect(find.text('Conteúdo fora de seção'), findsOneWidget);
+    expect(
+      find.text('Este conteúdo não pertence a uma seção estruturada.'),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: blocoImplicito,
+        matching: find.textContaining('{title: T}'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: blocoImplicito,
+        matching: find.textContaining('{artist: A}'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: blocoImplicito,
+        matching: find.textContaining('{key: C}'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: blocoImplicito,
+        matching: find.text('Introdução livre'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Verso 1'), findsOneWidget);
     expect(find.text('Refrão'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Verso 1')).dy,
       lessThan(tester.getTopLeft(find.text('Refrão')).dy),
     );
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('alterna da edição por blocos para ChordPro textual', (
+  testWidgets('alterna da edição por blocos para ChordPro avançado textual', (
     tester,
   ) async {
-    await montar(tester, estrutural: true);
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const conteudo =
+        '{title: T}\n{artist: A}\n{key: C}\n[C]Conteúdo preservado';
+    await montar(tester, estrutural: true, conteudo: conteudo);
 
     expect(find.byKey(const ValueKey('conteudo-edicao')), findsNothing);
-    await tester.tap(find.text('ChordPro'));
+    expect(find.text('ChordPro avançado'), findsOneWidget);
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
 
     expect(find.byKey(const ValueKey('conteudo-edicao')), findsOneWidget);
+    final campo = tester.widget<TextFormField>(
+      find.byKey(const ValueKey('conteudo-edicao')),
+    );
+    expect(campo.controller!.text, conteudo);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('tocar bloco abre o editor do conteúdo interno da seção', (
@@ -608,7 +652,7 @@ void main() {
         findsOneWidget,
       );
       expect(repositorio.atualizacoes, 0);
-      await tester.tap(find.text('ChordPro'));
+      await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
       final conteudo = tester
           .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
@@ -640,7 +684,7 @@ void main() {
     );
     await tester.tap(find.text('Cancelar'));
     await tester.pump();
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
 
     expect(
@@ -798,7 +842,7 @@ void main() {
 
       await tester.tap(find.text('Cancelar'));
       await tester.pump();
-      await tester.tap(find.text('ChordPro'));
+      await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
       expect(
         tester
@@ -842,7 +886,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
       await tester.pump();
-      await tester.tap(find.text('ChordPro'));
+      await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
 
       expect(
@@ -889,7 +933,7 @@ void main() {
     );
     expect(repositorio.atualizacoes, 0);
 
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
     final conteudo = tester
         .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
@@ -1063,7 +1107,7 @@ void main() {
       findsOneWidget,
     );
     expect(repositorio.atualizacoes, 0);
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
     expect(
       tester
@@ -1236,7 +1280,7 @@ void main() {
     tester,
   ) async {
     await montarEmRota(tester);
-    await tester.tap(find.text('ChordPro'));
+    await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
     await tester.tap(find.text('Blocos'));
     await tester.pump();

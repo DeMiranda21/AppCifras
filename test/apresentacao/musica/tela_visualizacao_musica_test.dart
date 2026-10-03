@@ -536,7 +536,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Editar música'), findsOneWidget);
-    final campoConteudo = find.byType(TextFormField).at(3);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('modo-editor-musica')),
+        matching: find.text('ChordPro avançado'),
+      ),
+    );
+    await tester.pump();
+    final campoConteudo = find.byKey(const ValueKey('conteudo-edicao'));
     final editor = tester.widget<EditableText>(
       find.descendant(of: campoConteudo, matching: find.byType(EditableText)),
     );
