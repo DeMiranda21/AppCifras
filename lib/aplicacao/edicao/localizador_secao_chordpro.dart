@@ -76,15 +76,32 @@ class LocalizadorSecaoChordPro {
     );
   }
 
+  /// Localiza conteúdo derivado que não possui delimitadores ChordPro.
+  ///
+  /// Inclui tanto texto livre quanto o conteúdo posterior a um rótulo textual
+  /// reconhecido, como `[Refrão]`. O rótulo permanece fora da faixa para ser
+  /// preservado literalmente durante a edição.
   FaixaTrechoNaoIdentificadoChordPro? localizarTrechoNaoIdentificado({
     required String conteudo,
     required int inicioConteudo,
   }) {
     final documento = _parserDocumento.interpretar(conteudo);
     final estrutura = _estruturador.estruturar(documento);
-    final secao = estrutura.secoes.where(
-      (secao) => secao.ehImplicita && secao.inicioConteudo == inicioConteudo,
-    );
+    final secao = estrutura.secoes.where((secao) {
+      if (secao.inicioConteudo != inicioConteudo) {
+        return false;
+      }
+      final indiceMarcador = secao.indiceMarcador;
+      if (indiceMarcador == null) {
+        return true;
+      }
+      final marcador = indiceMarcador < documento.elementos.length
+          ? _reconhecedor.reconhecerDiretiva(
+              documento.elementos[indiceMarcador].conteudoOriginal,
+            )
+          : null;
+      return marcador == null || !marcador.ehInicio;
+    });
     if (secao.isEmpty) return null;
     final trecho = secao.first;
     if (trecho.fimConteudoExclusivo <= trecho.inicioConteudo) return null;
@@ -104,6 +121,43 @@ class LocalizadorSecaoChordPro {
         inicio: linhaInicio.inicio,
         fim: linhaInicio.inicio,
       ),
+    );
+  }
+
+  /// Localiza a faixa literal completa de qualquer bloco que possa sofrer
+  /// operações estruturais sem alcançar conteúdo vizinho.
+  ///
+  /// Para seções delimitadas, inclui os delimitadores. Para rótulos textuais,
+  /// inclui o próprio rótulo e o conteúdo seguinte. Para texto livre, inclui
+  /// somente o trecho musical derivado.
+  FaixaBlocoChordPro? localizarBlocoSeguro({
+    required String conteudo,
+    required SecaoMusica secao,
+  }) {
+    final indiceMarcador = secao.indiceMarcador;
+    if (indiceMarcador != null) {
+      final faixaSecao = localizar(
+        conteudo: conteudo,
+        indiceMarcador: indiceMarcador,
+      );
+      if (faixaSecao != null) {
+        return FaixaBlocoChordPro.deSecao(faixaSecao);
+      }
+    }
+    final trecho = localizarTrechoNaoIdentificado(
+      conteudo: conteudo,
+      inicioConteudo: secao.inicioConteudo,
+    );
+    if (trecho == null) return null;
+    final linhas = _linhas(conteudo);
+    final inicio = indiceMarcador != null && indiceMarcador < linhas.length
+        ? linhas[indiceMarcador].inicio
+        : trecho.inicio;
+    return FaixaBlocoChordPro(
+      bloco: secao,
+      inicio: inicio,
+      fim: trecho.fim,
+      fimComSeparador: trecho.fimComSeparador,
     );
   }
 
@@ -167,6 +221,29 @@ class FaixaTrechoNaoIdentificadoChordPro {
   final int fim;
   final int fimComSeparador;
   final SelecaoTextoChordPro selecaoNoInicio;
+}
+
+/// Faixa literal segura para editar, mover, duplicar ou excluir um bloco.
+class FaixaBlocoChordPro {
+  const FaixaBlocoChordPro({
+    required this.bloco,
+    required this.inicio,
+    required this.fim,
+    required this.fimComSeparador,
+  });
+
+  factory FaixaBlocoChordPro.deSecao(FaixaSecaoChordPro faixa) =>
+      FaixaBlocoChordPro(
+        bloco: faixa.secao,
+        inicio: faixa.inicio,
+        fim: faixa.fim,
+        fimComSeparador: faixa.fimComSeparador,
+      );
+
+  final SecaoMusica bloco;
+  final int inicio;
+  final int fim;
+  final int fimComSeparador;
 }
 
 class _LinhaChordPro {

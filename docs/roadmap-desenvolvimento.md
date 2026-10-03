@@ -39,7 +39,11 @@ consolidada, a especificacao-funcional.md.
    acorde entre colchetes como texto, transformar uma linha selecionada em
    seção ChordPro e editar tipo/rótulo de uma seção explícita. A edição por
    blocos reutiliza essas transformações e mantém o ChordPro como fonte de
-   verdade. Permanecem futuras: editar acorde e movimento de seções.
+   verdade. As ações de acorde são oferecidas no menu contextual nativo da
+   seleção; a descoberta/onboarding dessa interação permanece futura.
+   `Tratar como texto` deverá ganhar uma apresentação mais encontrável, sem
+   depender da posição variável do menu nativo. Permanecem futuras: editar
+   acorde e movimento de seções.
 7. **Editor por blocos:** fundação entregue com alternância entre blocos e
    ChordPro textual, visualização estrutural derivada, criação canônica,
    duplicação literal, exclusão confirmada e reordenação por arraste de
@@ -47,10 +51,13 @@ consolidada, a especificacao-funcional.md.
    editável sem expor seus delimitadores estruturais e reutiliza as ações de
    marcar como acorde/tratar como texto. ChordPro textual segue como modo
    avançado/fallback. A saída da edição protege alterações não salvas.
-   Permanecem futuras: edição avançada de acordes dentro do bloco e ocultação
-   de blocos para reorganização rápida. Trechos musicais fora de seção também
-   aparecem como blocos derivados, editáveis e reordenáveis quando não cruzam
-   diretivas; metadados, diretivas e espaçadores isolados não viram blocos.
+   Permanecem futuras: edição avançada de acordes dentro do bloco, dividir um
+   bloco/trecho em nova seção a partir de uma linha ou posição e ocultação de
+   blocos para reorganização rápida. Trechos musicais fora de seção também
+   aparecem como blocos derivados. As operações básicas de editar, mover,
+   duplicar e excluir usam a mesma regra de faixa segura para seções ChordPro
+   explícitas, rótulos textuais reconhecidos e trechos livres; metadados,
+   diretivas e espaçadores isolados não viram blocos.
    Não criar entidade Arranjo/Versão
    nesta fase.
 8. **Tags, classificação e metadados:** energia (muito calma, calma,

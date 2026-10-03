@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
-import '../../aplicacao/edicao/duplicar_secao_chordpro.dart';
+import '../../aplicacao/edicao/duplicar_bloco_chordpro.dart';
 import '../../aplicacao/edicao/editar_conteudo_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_trecho_nao_identificado_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
-import '../../aplicacao/edicao/excluir_secao_chordpro.dart';
+import '../../aplicacao/edicao/excluir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
 import '../../aplicacao/edicao/reordenar_secoes_chordpro.dart';
 import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
@@ -53,8 +53,8 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _editarTrechoNaoIdentificadoChordPro =
       EditarTrechoNaoIdentificadoChordPro();
   final _editarSecaoChordPro = EditarSecaoChordPro();
-  final _duplicarSecaoChordPro = DuplicarSecaoChordPro();
-  final _excluirSecaoChordPro = ExcluirSecaoChordPro();
+  final _duplicarBlocoChordPro = DuplicarBlocoChordPro();
+  final _excluirBlocoChordPro = ExcluirBlocoChordPro();
   final _localizadorSecaoChordPro = LocalizadorSecaoChordPro();
   final _reordenarSecoesChordPro = ReordenarSecoesChordPro();
   final _parserDocumento = ParserDocumentoChordPro();
@@ -183,12 +183,6 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     return SelecaoTextoChordPro(inicio: selecao.start, fim: selecao.end);
   }
 
-  AcaoSelecaoChordPro? get _acaoAssistidaDisponivel =>
-      _transformarSelecaoChordPro.acaoDisponivel(
-        _conteudo.text,
-        _selecaoDoConteudo,
-      );
-
   bool get _podeMarcarComoSecao => _transformarSecaoChordPro.podeTransformar(
     _conteudo.text,
     _selecaoDoConteudo,
@@ -201,18 +195,15 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     _parserDocumento.interpretar(_conteudo.text),
   );
 
-  void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
+  void _aplicarAcaoAssistida(
+    AcaoSelecaoChordPro acao,
+    SelecaoTextoChordPro selecao,
+  ) {
     final resultado = switch (acao) {
       AcaoSelecaoChordPro.marcarComoAcorde =>
-        _transformarSelecaoChordPro.marcarComoAcorde(
-          _conteudo.text,
-          _selecaoDoConteudo,
-        ),
+        _transformarSelecaoChordPro.marcarComoAcorde(_conteudo.text, selecao),
       AcaoSelecaoChordPro.tratarComoTexto =>
-        _transformarSelecaoChordPro.tratarComoTexto(
-          _conteudo.text,
-          _selecaoDoConteudo,
-        ),
+        _transformarSelecaoChordPro.tratarComoTexto(_conteudo.text, selecao),
     };
     if (!resultado.foiTransformado) {
       return;
@@ -429,12 +420,12 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     }
   }
 
-  void _duplicarSecao(FaixaSecaoChordPro faixa) {
-    final resultado = _duplicarSecaoChordPro.duplicar(
+  void _duplicarBloco(FaixaBlocoChordPro faixa) {
+    final resultado = _duplicarBlocoChordPro.duplicar(
       conteudo: _conteudo.text,
-      indiceMarcador: faixa.secao.indiceMarcador!,
+      faixa: faixa,
     );
-    if (resultado.foiDuplicada) {
+    if (resultado.foiDuplicado) {
       _atualizarConteudo(resultado.conteudo, resultado.selecao);
     }
   }
@@ -540,13 +531,20 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     }
   }
 
-  Future<void> _confirmarExclusaoSecao(FaixaSecaoChordPro faixa) async {
-    final titulo = _tituloDaSecao(faixa.secao);
+  Future<void> _confirmarExclusaoBloco(
+    FaixaBlocoChordPro faixa, {
+    required String titulo,
+    required bool ehTrechoNaoIdentificado,
+  }) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Excluir "$titulo"?'),
-        content: const Text('A seção e todo o seu conteúdo serão removidos.'),
+        title: Text(
+          ehTrechoNaoIdentificado
+              ? 'Excluir trecho não identificado?'
+              : 'Excluir "$titulo"?',
+        ),
+        content: const Text('O bloco e todo o seu conteúdo serão removidos.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -562,11 +560,11 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     if (confirmar != true || !mounted) {
       return;
     }
-    final resultado = _excluirSecaoChordPro.excluir(
+    final resultado = _excluirBlocoChordPro.excluir(
       conteudo: _conteudo.text,
-      indiceMarcador: faixa.secao.indiceMarcador!,
+      faixa: faixa,
     );
-    if (resultado.foiExcluida) {
+    if (resultado.foiExcluido) {
       _atualizarConteudo(resultado.conteudo, resultado.selecao);
     }
   }
@@ -590,6 +588,14 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       return rotulo;
     }
     return _tituloDoTipo(secao.tipo);
+  }
+
+  String _tituloParaExclusao(SecaoMusica secao) {
+    final titulo = _tituloDaSecao(secao);
+    if (titulo.startsWith('[') && titulo.endsWith(']')) {
+      return titulo.substring(1, titulo.length - 1).trim();
+    }
+    return titulo;
   }
 
   String _tituloDoTipo(TipoSecaoMusica tipo) =>
@@ -759,13 +765,17 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             indiceMarcador: indiceMarcador,
           );
     final ehExplicita = indiceMarcador != null;
-    final trechoNaoIdentificado = ehExplicita
-        ? null
-        : _localizadorSecaoChordPro.localizarTrechoNaoIdentificado(
+    final trechoNaoIdentificado = faixa == null
+        ? _localizadorSecaoChordPro.localizarTrechoNaoIdentificado(
             conteudo: _conteudo.text,
             inicioConteudo: secao.inicioConteudo,
-          );
-    final podeMover = faixa != null || trechoNaoIdentificado != null;
+          )
+        : null;
+    final faixaSegura = _localizadorSecaoChordPro.localizarBlocoSeguro(
+      conteudo: _conteudo.text,
+      secao: secao,
+    );
+    final podeMover = faixaSegura != null;
     final titulo = ehExplicita
         ? _tituloDaSecao(secao)
         : 'Trecho não identificado';
@@ -780,13 +790,13 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       child: InkWell(
         onTap: _salvando
             ? null
-            : ehExplicita && faixa == null
-            ? () => _editarSecao(selecao: _selecaoDoMarcador(indiceMarcador))
             : faixa != null
             ? () => _editarConteudoSecao(faixa)
-            : trechoNaoIdentificado == null
-            ? null
-            : () => _editarTrechoNaoIdentificado(secao),
+            : trechoNaoIdentificado != null
+            ? () => _editarTrechoNaoIdentificado(secao)
+            : ehExplicita
+            ? () => _editarSecao(selecao: _selecaoDoMarcador(indiceMarcador))
+            : null,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
@@ -833,16 +843,22 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                   ],
                 ),
               ),
-              if (faixa != null)
+              if (faixaSegura != null)
                 PopupMenuButton<_AcaoBloco>(
-                  key: ValueKey('acoes-bloco-$indiceMarcador'),
-                  tooltip: 'Ações da seção',
+                  key: ValueKey(
+                    'acoes-bloco-${indiceMarcador ?? secao.inicioConteudo}',
+                  ),
+                  tooltip: 'Ações do bloco',
                   onSelected: (acao) {
                     switch (acao) {
                       case _AcaoBloco.duplicar:
-                        _duplicarSecao(faixa);
+                        _duplicarBloco(faixaSegura);
                       case _AcaoBloco.excluir:
-                        _confirmarExclusaoSecao(faixa);
+                        _confirmarExclusaoBloco(
+                          faixaSegura,
+                          titulo: _tituloParaExclusao(secao),
+                          ehTrechoNaoIdentificado: !ehExplicita,
+                        );
                     }
                   },
                   itemBuilder: (context) => const [
@@ -865,9 +881,6 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
   @override
   Widget build(BuildContext context) {
-    final acaoAssistida = _modoEditor == _ModoEditor.textual
-        ? _acaoAssistidaDisponivel
-        : null;
     return PopScope<bool>(
       canPop: _saidaPermitida || !_temAlteracoesPendentes,
       onPopInvokedWithResult: _aoTentarSair,
@@ -875,19 +888,6 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
         appBar: AppBar(
           title: const Text('Editar música'),
           actions: [
-            if (acaoAssistida case final acao?)
-              IconButton(
-                key: const ValueKey('acao-assistida-acorde'),
-                onPressed: _salvando ? null : () => _aplicarAcaoAssistida(acao),
-                icon: Icon(
-                  acao == AcaoSelecaoChordPro.marcarComoAcorde
-                      ? Icons.music_note_outlined
-                      : Icons.text_fields,
-                ),
-                tooltip: acao == AcaoSelecaoChordPro.marcarComoAcorde
-                    ? 'Marcar como acorde'
-                    : 'Tratar como texto',
-              ),
             if (_modoEditor == _ModoEditor.textual && _podeMarcarComoSecao)
               IconButton(
                 key: const ValueKey('acao-assistida-secao'),
@@ -981,6 +981,12 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                       minLines: 12,
                       maxLines: null,
                       textInputAction: TextInputAction.newline,
+                      contextMenuBuilder: (context, editableTextState) =>
+                          _menuContextualComAcaoChordPro(
+                            editableTextState: editableTextState,
+                            transformarSelecao: _transformarSelecaoChordPro,
+                            aoAplicar: _aplicarAcaoAssistida,
+                          ),
                       validator: (valor) =>
                           _obrigatorio(valor, 'Conteúdo ChordPro'),
                     ),
@@ -1097,14 +1103,6 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
     super.dispose();
   }
 
-  SelecaoTextoChordPro get _selecao => SelecaoTextoChordPro(
-    inicio: _conteudo.selection.start,
-    fim: _conteudo.selection.end,
-  );
-
-  AcaoSelecaoChordPro? get _acaoAssistidaDisponivel =>
-      widget.transformarSelecao.acaoDisponivel(_conteudo.text, _selecao);
-
   @override
   Widget build(BuildContext context) => SafeArea(
     child: SingleChildScrollView(
@@ -1120,32 +1118,18 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
         children: [
           Text(widget.titulo, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: 16),
-          if (_acaoAssistidaDisponivel case final acao?) ...[
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                key: const ValueKey('acao-assistida-acorde-secao'),
-                onPressed: () => _aplicarAcaoAssistida(acao),
-                icon: Icon(
-                  acao == AcaoSelecaoChordPro.marcarComoAcorde
-                      ? Icons.music_note_outlined
-                      : Icons.text_fields,
-                ),
-                label: Text(
-                  acao == AcaoSelecaoChordPro.marcarComoAcorde
-                      ? 'Marcar como acorde'
-                      : 'Tratar como texto',
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
           TextFormField(
             key: const ValueKey('conteudo-edicao-secao'),
             controller: _conteudo,
             minLines: 8,
             maxLines: 12,
             keyboardType: TextInputType.multiline,
+            contextMenuBuilder: (context, editableTextState) =>
+                _menuContextualComAcaoChordPro(
+                  editableTextState: editableTextState,
+                  transformarSelecao: widget.transformarSelecao,
+                  aoAplicar: _aplicarAcaoAssistida,
+                ),
             decoration: const InputDecoration(
               labelText: 'Conteúdo da seção',
               alignLabelWithHint: true,
@@ -1193,12 +1177,15 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
     }
   }
 
-  void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
+  void _aplicarAcaoAssistida(
+    AcaoSelecaoChordPro acao,
+    SelecaoTextoChordPro selecao,
+  ) {
     final resultado = switch (acao) {
       AcaoSelecaoChordPro.marcarComoAcorde =>
-        widget.transformarSelecao.marcarComoAcorde(_conteudo.text, _selecao),
+        widget.transformarSelecao.marcarComoAcorde(_conteudo.text, selecao),
       AcaoSelecaoChordPro.tratarComoTexto =>
-        widget.transformarSelecao.tratarComoTexto(_conteudo.text, _selecao),
+        widget.transformarSelecao.tratarComoTexto(_conteudo.text, selecao),
     };
     if (!resultado.foiTransformado) {
       return;
@@ -1211,6 +1198,36 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
       ),
     );
   }
+}
+
+Widget _menuContextualComAcaoChordPro({
+  required EditableTextState editableTextState,
+  required TransformarSelecaoChordPro transformarSelecao,
+  required void Function(AcaoSelecaoChordPro, SelecaoTextoChordPro) aoAplicar,
+}) {
+  final valor = editableTextState.textEditingValue;
+  final selecao = SelecaoTextoChordPro(
+    inicio: valor.selection.start,
+    fim: valor.selection.end,
+  );
+  final acao = transformarSelecao.acaoDisponivel(valor.text, selecao);
+  final itens = <ContextMenuButtonItem>[
+    ...editableTextState.contextMenuButtonItems,
+    if (acao != null)
+      ContextMenuButtonItem(
+        label: acao == AcaoSelecaoChordPro.marcarComoAcorde
+            ? 'Marcar como acorde'
+            : 'Tratar como texto',
+        onPressed: () {
+          aoAplicar(acao, selecao);
+          ContextMenuController.removeAny();
+        },
+      ),
+  ];
+  return AdaptiveTextSelectionToolbar.buttonItems(
+    buttonItems: itens,
+    anchors: editableTextState.contextMenuAnchors,
+  );
 }
 
 class _OpcaoDeSecao {

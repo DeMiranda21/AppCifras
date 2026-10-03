@@ -277,6 +277,73 @@ void main() {
     expect(repositorio.musicas.single.titulo, 'Nome');
   });
 
+  testWidgets('abre a edição de blocos de músicas diferentes em sequência', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    Musica criarMusica(String id, String titulo, String conteudo) => Musica(
+      id: IdMusica(id),
+      documento: parser.interpretar(
+        '{title: $titulo}\n{artist: Artista}\n{key: C}\n$conteudo',
+      ),
+    );
+    repositorio.musicas.addAll([
+      criarMusica(
+        'musica-a',
+        'Música A',
+        '{start_of_verse: label="Verso"}\n[C]Letra A\n{end_of_verse}',
+      ),
+      criarMusica(
+        'musica-b',
+        'Música B',
+        '[Verso]\n[C]Letra B\n[Refrão]\n[G]Letra B2',
+      ),
+      criarMusica(
+        'musica-c',
+        'Música C',
+        '[C]Trecho livre\n{start_of_chorus: label="Refrão"}\n[G]Letra C\n{end_of_chorus}',
+      ),
+    ]);
+
+    await montar(tester, repositorio);
+    await tester.pumpAndSettle();
+
+    Future<void> abrirEEditarBloco(
+      String id,
+      Key bloco,
+      String identificadorBloco,
+    ) async {
+      await tester.tap(find.byKey(ValueKey(id)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Editar música'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(ValueKey('arrastar-bloco-$identificadorBloco')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey('acoes-bloco-$identificadorBloco')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(bloco));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('conteudo-edicao-secao')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    }
+
+    await abrirEEditarBloco('musica-a', const ValueKey('bloco-secao-3'), '3');
+    await abrirEEditarBloco('musica-b', const ValueKey('bloco-secao-3'), '3');
+    await abrirEEditarBloco('musica-c', const ValueKey('bloco-trecho-3'), '3');
+  });
+
   testWidgets('confirma exclusão e atualiza a Biblioteca', (tester) async {
     final repositorio = _RepositorioFake();
     repositorio.musicas.add(

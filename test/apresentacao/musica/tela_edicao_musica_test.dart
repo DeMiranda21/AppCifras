@@ -80,6 +80,22 @@ void main() {
     return repositorio;
   }
 
+  List<ContextMenuButtonItem> itensDoMenuContextual(
+    WidgetTester tester,
+    Finder campo,
+  ) {
+    final editable = find.descendant(
+      of: campo,
+      matching: find.byType(EditableText),
+    );
+    final estado = tester.state<EditableTextState>(editable);
+    final menu = estado.widget.contextMenuBuilder!(
+      tester.element(editable),
+      estado,
+    );
+    return (menu as AdaptiveTextSelectionToolbar).buttonItems!;
+  }
+
   testWidgets('cancelar prévia preserva editor e não persiste', (tester) async {
     final repositorio = await montar(tester);
     final campo = find.byType(TextFormField).at(3);
@@ -173,8 +189,11 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byTooltip('Marcar como acorde'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    final marcar = itensDoMenuContextual(
+      tester,
+      campo,
+    ).singleWhere((item) => item.label == 'Marcar como acorde');
+    marcar.onPressed!();
     await tester.pump();
     expect(controlador.text, '${conteudo.substring(0, inicioDoAcorde)}[Am7]');
     expect(repositorio.atualizacoes, 0);
@@ -204,7 +223,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('acao-assistida-acorde')), findsNothing);
+    final itens = itensDoMenuContextual(tester, campo);
+    expect(itens, isNotEmpty);
+    expect(itens.where((item) => item.label == 'Marcar como acorde'), isEmpty);
   });
 
   testWidgets('trata acorde selecionado entre colchetes como texto', (
@@ -219,8 +240,12 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byTooltip('Tratar como texto'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    final itens = itensDoMenuContextual(tester, campo);
+    expect(itens.where((item) => item.label == 'Marcar como acorde'), isEmpty);
+    final tratar = itens.singleWhere(
+      (item) => item.label == 'Tratar como texto',
+    );
+    tratar.onPressed!();
     await tester.pump();
     expect(controlador.text, 'Am7');
   });
@@ -260,7 +285,11 @@ void main() {
       selection: TextSelection(baseOffset: 0, extentOffset: 3),
     );
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde')));
+    final marcar = itensDoMenuContextual(
+      tester,
+      campo,
+    ).singleWhere((item) => item.label == 'Marcar como acorde');
+    marcar.onPressed!();
     await tester.pump();
 
     await tester.pageBack();
@@ -832,8 +861,11 @@ void main() {
       selection: TextSelection(baseOffset: 0, extentOffset: 3),
     );
     await tester.pump();
-    expect(find.text('Marcar como acorde'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde-secao')));
+    var marcar = itensDoMenuContextual(
+      tester,
+      campo,
+    ).singleWhere((item) => item.label == 'Marcar como acorde');
+    marcar.onPressed!();
     await tester.pump();
     expect(controlador.text, '[Am7] D/F#\n');
     expect(controlador.selection.baseOffset, 0);
@@ -844,7 +876,11 @@ void main() {
       extentOffset: 10,
     );
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde-secao')));
+    marcar = itensDoMenuContextual(
+      tester,
+      campo,
+    ).singleWhere((item) => item.label == 'Marcar como acorde');
+    marcar.onPressed!();
     await tester.pump();
     expect(controlador.text, '[Am7] [D/F#]\n');
     expect(repositorio.atualizacoes, 0);
@@ -873,10 +909,12 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      find.byKey(const ValueKey('acao-assistida-acorde-secao')),
-      findsNothing,
+    final itens = itensDoMenuContextual(
+      tester,
+      find.byKey(const ValueKey('conteudo-edicao-secao')),
     );
+    expect(itens, isNotEmpty);
+    expect(itens.where((item) => item.label == 'Marcar como acorde'), isEmpty);
   });
 
   testWidgets(
@@ -901,10 +939,14 @@ void main() {
         extentOffset: 4,
       );
       await tester.pump();
-      expect(find.text('Tratar como texto'), findsOneWidget);
-      await tester.tap(
-        find.byKey(const ValueKey('acao-assistida-acorde-secao')),
+      final itens = itensDoMenuContextual(
+        tester,
+        find.byKey(const ValueKey('conteudo-edicao-secao')),
       );
+      final tratar = itens.singleWhere(
+        (item) => item.label == 'Tratar como texto',
+      );
+      tratar.onPressed!();
       await tester.pump();
       expect(controlador.text, 'Am7Letra\n');
 
@@ -948,9 +990,11 @@ void main() {
         extentOffset: 3,
       );
       await tester.pump();
-      await tester.tap(
-        find.byKey(const ValueKey('acao-assistida-acorde-secao')),
-      );
+      final marcar = itensDoMenuContextual(
+        tester,
+        find.byKey(const ValueKey('conteudo-edicao-secao')),
+      ).singleWhere((item) => item.label == 'Marcar como acorde');
+      marcar.onPressed!();
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
       await tester.pump();
@@ -1092,6 +1136,97 @@ void main() {
     await tester.tap(salvar);
     await tester.pumpAndSettle();
     expect(repositorio.atualizacoes, 1);
+  });
+
+  testWidgets('duplica bloco de rótulo textual sem normalizá-lo', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '[Verso]\n[C]Linha 1\n[G]Linha 2\n[Refrão]\n[D]Vizinha',
+    );
+
+    final acoes = find.byKey(const ValueKey('acoes-bloco-3'));
+    expect(acoes, findsOneWidget);
+    await tester.tap(acoes);
+    await tester.pumpAndSettle();
+    expect(find.text('Duplicar'), findsOneWidget);
+    expect(find.text('Excluir'), findsOneWidget);
+    await tester.tap(find.text('Duplicar'));
+    await tester.pump();
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+
+    final conteudo = tester
+        .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+        .controller!
+        .text;
+    expect(RegExp(r'\[Verso\]').allMatches(conteudo), hasLength(2));
+    expect(conteudo, contains('[Refrão]\n[D]Vizinha'));
+  });
+
+  testWidgets('exclui rótulo textual sem tocar no próximo bloco', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '[Verso]\n[C]Linha 1\n[Refrão]\n[D]Vizinha',
+    );
+
+    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Excluir'));
+    await tester.pumpAndSettle();
+    expect(find.text('Excluir "Verso"?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Excluir'));
+    await tester.pump();
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+
+    final conteudo = tester
+        .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+        .controller!
+        .text;
+    expect(conteudo, isNot(contains('[Verso]')));
+    expect(conteudo, contains('[Refrão]\n[D]Vizinha'));
+  });
+
+  testWidgets('duplica trecho não identificado preservando metadados e seção', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '[C]Intro livre\n[G]Outra linha\n'
+          '{start_of_chorus: label="Refrão"}\n[D]Vizinha\n{end_of_chorus}',
+    );
+
+    final acoes = find.byKey(const ValueKey('acoes-bloco-3'));
+    expect(acoes, findsOneWidget);
+    await tester.tap(acoes);
+    await tester.pumpAndSettle();
+    expect(find.text('Duplicar'), findsOneWidget);
+    expect(find.text('Excluir'), findsOneWidget);
+    await tester.tap(find.text('Duplicar'));
+    await tester.pump();
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+
+    final conteudo = tester
+        .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+        .controller!
+        .text;
+    expect(RegExp(r'\[C\]Intro livre').allMatches(conteudo), hasLength(2));
+    expect(conteudo, startsWith('{title: T}\n{artist: A}\n{key: C}\n'));
+    expect(conteudo, contains('{start_of_chorus: label="Refrão"}'));
   });
 
   testWidgets('excluir bloco pede confirmação, cancela e depois remove', (

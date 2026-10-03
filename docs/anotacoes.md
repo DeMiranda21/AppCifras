@@ -15,6 +15,8 @@ predefinidos, configuráveis ou combinados, e quais categorias têm valor real.
 
 ## Interação móvel da edição assistida
 
-Definir a interação mais simples para selecionar token/palavra, linha e
-bloco/seção em telas pequenas, sem transformar a edição em um editor de texto
-complexo.
+Prioridade alta: toque em palavra ou acorde deve selecionar automaticamente o
+token completo, delimitado por espaço ou quebra de linha; acordes como `D/F#`
+e `Am7` continuam um único token. Definir também uma apresentação alternativa
+para `Tratar como texto`, que não dependa da posição variável do menu nativo,
+sem transformar a edição em um editor de texto complexo.

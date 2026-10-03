@@ -104,19 +104,11 @@ class ReordenarSecoesChordPro {
       _estruturador.estruturar(_parserDocumento.interpretar(conteudo));
 
   _FaixaBlocoChordPro? _faixaDo(String conteudo, SecaoMusica secao) {
-    final indiceMarcador = secao.indiceMarcador;
-    if (indiceMarcador != null) {
-      final faixa = _localizador.localizar(
-        conteudo: conteudo,
-        indiceMarcador: indiceMarcador,
-      );
-      return faixa == null ? null : _FaixaBlocoChordPro.deSecao(faixa);
-    }
-    final faixa = _localizador.localizarTrechoNaoIdentificado(
+    final faixa = _localizador.localizarBlocoSeguro(
       conteudo: conteudo,
-      inicioConteudo: secao.inicioConteudo,
+      secao: secao,
     );
-    return faixa == null ? null : _FaixaBlocoChordPro.deTrecho(faixa);
+    return faixa == null ? null : _FaixaBlocoChordPro.deBloco(faixa);
   }
 
   int _inicioDoGrupo(
@@ -186,20 +178,12 @@ class _FaixaBlocoChordPro {
     required this.fimComSeparador,
   });
 
-  factory _FaixaBlocoChordPro.deSecao(FaixaSecaoChordPro faixa) =>
+  factory _FaixaBlocoChordPro.deBloco(FaixaBlocoChordPro faixa) =>
       _FaixaBlocoChordPro(
         inicio: faixa.inicio,
         fim: faixa.fim,
         fimComSeparador: faixa.fimComSeparador,
       );
-
-  factory _FaixaBlocoChordPro.deTrecho(
-    FaixaTrechoNaoIdentificadoChordPro faixa,
-  ) => _FaixaBlocoChordPro(
-    inicio: faixa.inicio,
-    fim: faixa.fim,
-    fimComSeparador: faixa.fimComSeparador,
-  );
 
   final int inicio;
   final int fim;
