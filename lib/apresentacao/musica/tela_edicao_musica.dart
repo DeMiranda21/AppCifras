@@ -360,6 +360,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
           builder: (_) => _FolhaEdicaoConteudoSecao(
             titulo: _tituloDaSecao(faixa.secao),
             conteudoInicial: contexto.conteudoInterno,
+            transformarSelecao: _transformarSelecaoChordPro,
           ),
         );
     if (resultadoDaFolha == null || !mounted) {
@@ -1003,10 +1004,12 @@ class _FolhaEdicaoConteudoSecao extends StatefulWidget {
   const _FolhaEdicaoConteudoSecao({
     required this.titulo,
     required this.conteudoInicial,
+    required this.transformarSelecao,
   });
 
   final String titulo;
   final String conteudoInicial;
+  final TransformarSelecaoChordPro transformarSelecao;
 
   @override
   State<_FolhaEdicaoConteudoSecao> createState() =>
@@ -1020,13 +1023,23 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
   void initState() {
     super.initState();
     _conteudo = TextEditingController(text: widget.conteudoInicial);
+    _conteudo.addListener(_atualizarAcoes);
   }
 
   @override
   void dispose() {
+    _conteudo.removeListener(_atualizarAcoes);
     _conteudo.dispose();
     super.dispose();
   }
+
+  SelecaoTextoChordPro get _selecao => SelecaoTextoChordPro(
+    inicio: _conteudo.selection.start,
+    fim: _conteudo.selection.end,
+  );
+
+  AcaoSelecaoChordPro? get _acaoAssistidaDisponivel =>
+      widget.transformarSelecao.acaoDisponivel(_conteudo.text, _selecao);
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -1043,6 +1056,26 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
         children: [
           Text(widget.titulo, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: 16),
+          if (_acaoAssistidaDisponivel case final acao?) ...[
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const ValueKey('acao-assistida-acorde-secao'),
+                onPressed: () => _aplicarAcaoAssistida(acao),
+                icon: Icon(
+                  acao == AcaoSelecaoChordPro.marcarComoAcorde
+                      ? Icons.music_note_outlined
+                      : Icons.text_fields,
+                ),
+                label: Text(
+                  acao == AcaoSelecaoChordPro.marcarComoAcorde
+                      ? 'Marcar como acorde'
+                      : 'Tratar como texto',
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           TextFormField(
             key: const ValueKey('conteudo-edicao-secao'),
             controller: _conteudo,
@@ -1085,6 +1118,31 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
     Navigator.pop(
       context,
       _ResultadoFolhaEdicaoConteudoSecao(acao: acao, conteudo: _conteudo.text),
+    );
+  }
+
+  void _atualizarAcoes() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _aplicarAcaoAssistida(AcaoSelecaoChordPro acao) {
+    final resultado = switch (acao) {
+      AcaoSelecaoChordPro.marcarComoAcorde =>
+        widget.transformarSelecao.marcarComoAcorde(_conteudo.text, _selecao),
+      AcaoSelecaoChordPro.tratarComoTexto =>
+        widget.transformarSelecao.tratarComoTexto(_conteudo.text, _selecao),
+    };
+    if (!resultado.foiTransformado) {
+      return;
+    }
+    _conteudo.value = TextEditingValue(
+      text: resultado.conteudo,
+      selection: TextSelection(
+        baseOffset: resultado.selecao.inicio,
+        extentOffset: resultado.selecao.fim,
+      ),
     );
   }
 }

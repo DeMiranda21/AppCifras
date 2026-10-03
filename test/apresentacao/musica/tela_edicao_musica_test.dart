@@ -701,6 +701,164 @@ void main() {
     },
   );
 
+  testWidgets('marca acordes válidos localmente antes de aplicar o bloco', (
+    tester,
+  ) async {
+    final repositorio = await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{sov: label="V"}\nAm7 D/F#\n{eov}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.value = const TextEditingValue(
+      text: 'Am7 D/F#\n',
+      selection: TextSelection(baseOffset: 0, extentOffset: 3),
+    );
+    await tester.pump();
+    expect(find.text('Marcar como acorde'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde-secao')));
+    await tester.pump();
+    expect(controlador.text, '[Am7] D/F#\n');
+    expect(controlador.selection.baseOffset, 0);
+    expect(controlador.selection.extentOffset, 5);
+
+    controlador.selection = const TextSelection(
+      baseOffset: 6,
+      extentOffset: 10,
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('acao-assistida-acorde-secao')));
+    await tester.pump();
+    expect(controlador.text, '[Am7] [D/F#]\n');
+    expect(repositorio.atualizacoes, 0);
+  });
+
+  testWidgets('não oferece ação para token inválido no conteúdo do bloco', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_verse: label="V"}\nXYZ\n{end_of_verse}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    final controlador = tester
+        .widget<TextFormField>(
+          find.byKey(const ValueKey('conteudo-edicao-secao')),
+        )
+        .controller!;
+    controlador.value = const TextEditingValue(
+      text: 'XYZ\n',
+      selection: TextSelection(baseOffset: 0, extentOffset: 3),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('acao-assistida-acorde-secao')),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'trata acorde do bloco como texto e cancelar descarta o resultado',
+    (tester) async {
+      final repositorio = await montar(
+        tester,
+        estrutural: true,
+        conteudo:
+            '{title: T}\n{artist: A}\n{key: C}\n'
+            '{start_of_chorus: label="R"}\n[Am7]Letra\n{end_of_chorus}',
+      );
+      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tester.pumpAndSettle();
+      final controlador = tester
+          .widget<TextFormField>(
+            find.byKey(const ValueKey('conteudo-edicao-secao')),
+          )
+          .controller!;
+      controlador.selection = const TextSelection(
+        baseOffset: 1,
+        extentOffset: 4,
+      );
+      await tester.pump();
+      expect(find.text('Tratar como texto'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('acao-assistida-acorde-secao')),
+      );
+      await tester.pump();
+      expect(controlador.text, 'Am7Letra\n');
+
+      await tester.tap(find.text('Cancelar'));
+      await tester.pump();
+      await tester.tap(find.text('ChordPro'));
+      await tester.pump();
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const ValueKey('conteudo-edicao')),
+            )
+            .controller!
+            .text,
+        contains('[Am7]Letra'),
+      );
+      expect(repositorio.atualizacoes, 0);
+    },
+  );
+
+  testWidgets(
+    'aplicar ação assistida preserva alias, vizinha e delimitadores',
+    (tester) async {
+      await montar(
+        tester,
+        estrutural: true,
+        conteudo:
+            '{title: T}\n{artist: A}\n{key: C}\n'
+            '{sov: label="V"}\nAm7\n{eov}\n'
+            '{start_of_chorus: label="R"}\n[G]Vizinha\n{end_of_chorus}',
+      );
+      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tester.pumpAndSettle();
+      final controlador = tester
+          .widget<TextFormField>(
+            find.byKey(const ValueKey('conteudo-edicao-secao')),
+          )
+          .controller!;
+      controlador.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 3,
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('acao-assistida-acorde-secao')),
+      );
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+      await tester.pump();
+      await tester.tap(find.text('ChordPro'));
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const ValueKey('conteudo-edicao')),
+            )
+            .controller!
+            .text,
+        '{title: T}\n{artist: A}\n{key: C}\n'
+        '{sov: label="V"}\n[Am7]\n{eov}\n'
+        '{start_of_chorus: label="R"}\n[G]Vizinha\n{end_of_chorus}',
+      );
+    },
+  );
+
   testWidgets('reordena blocos movíveis e persiste somente ao salvar', (
     tester,
   ) async {

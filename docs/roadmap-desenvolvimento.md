@@ -44,11 +44,12 @@ consolidada, a especificacao-funcional.md.
    ChordPro textual, visualização estrutural derivada, criação canônica,
    duplicação literal, exclusão confirmada e reordenação por arraste de
    seções com limites confiáveis. O conteúdo interno de uma seção também é
-   editável sem expor seus delimitadores estruturais; ChordPro textual segue
-   como modo avançado/fallback. A saída da edição protege alterações não
-   salvas. Permanecem futuras: edição assistida de acordes dentro do bloco e
-   ocultação de blocos para reorganização rápida. Não criar entidade
-   Arranjo/Versão nesta fase.
+   editável sem expor seus delimitadores estruturais e reutiliza as ações de
+   marcar como acorde/tratar como texto. ChordPro textual segue como modo
+   avançado/fallback. A saída da edição protege alterações não salvas.
+   Permanecem futuras: edição avançada de acordes dentro do bloco e ocultação
+   de blocos para reorganização rápida. Não criar entidade Arranjo/Versão
+   nesta fase.
 8. **Tags, classificação e metadados:** energia (muito calma, calma,
    moderada, animada e muito animada), tema, momento/tipo (celebração,
    adoração, abertura, ceia, oferta e encerramento) e tags livres; BPM,
