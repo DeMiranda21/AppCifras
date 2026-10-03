@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_secao_chordpro.dart';
+import '../../aplicacao/edicao/editar_conteudo_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/excluir_secao_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
@@ -46,6 +47,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _transformarSelecaoChordPro = TransformarSelecaoChordPro();
   final _transformarSecaoChordPro = TransformarSecaoChordPro();
   final _criarSecaoChordPro = CriarSecaoChordPro();
+  final _editarConteudoSecaoChordPro = EditarConteudoSecaoChordPro();
   final _editarSecaoChordPro = EditarSecaoChordPro();
   final _duplicarSecaoChordPro = DuplicarSecaoChordPro();
   final _excluirSecaoChordPro = ExcluirSecaoChordPro();
@@ -336,6 +338,44 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       if (resultado.foiAlterado) {
         _atualizarConteudo(resultado.conteudo, resultado.selecao);
       }
+    }
+  }
+
+  Future<void> _editarConteudoSecao(FaixaSecaoChordPro faixa) async {
+    final indiceMarcador = faixa.secao.indiceMarcador;
+    if (indiceMarcador == null) {
+      return;
+    }
+    final contexto = _editarConteudoSecaoChordPro.contextoAtual(
+      conteudo: _conteudo.text,
+      indiceMarcador: indiceMarcador,
+    );
+    if (contexto == null) {
+      return;
+    }
+    final resultadoDaFolha =
+        await showModalBottomSheet<_ResultadoFolhaEdicaoConteudoSecao>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => _FolhaEdicaoConteudoSecao(
+            titulo: _tituloDaSecao(faixa.secao),
+            conteudoInicial: contexto.conteudoInterno,
+          ),
+        );
+    if (resultadoDaFolha == null || !mounted) {
+      return;
+    }
+    final resultado = _editarConteudoSecaoChordPro.editar(
+      conteudo: _conteudo.text,
+      indiceMarcador: indiceMarcador,
+      novoConteudoInterno: resultadoDaFolha.conteudo,
+    );
+    if (resultado.foiAlterado) {
+      _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+    if (resultadoDaFolha.acao == _AcaoEdicaoConteudoSecao.editarSecao &&
+        mounted) {
+      await _editarSecao(selecao: resultado.selecao);
     }
   }
 
@@ -688,11 +728,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       child: InkWell(
         onTap: _salvando || !ehExplicita
             ? null
-            : () => _editarSecao(
-                selecao:
-                    faixa?.selecaoNoInicio ??
-                    _selecaoDoMarcador(indiceMarcador),
-              ),
+            : faixa == null
+            ? () => _editarSecao(selecao: _selecaoDoMarcador(indiceMarcador))
+            : () => _editarConteudoSecao(faixa),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
@@ -948,6 +986,108 @@ const _opcoesDeSecao = [
 enum _ModoEditor { estrutural, textual }
 
 enum _AcaoBloco { duplicar, excluir }
+
+enum _AcaoEdicaoConteudoSecao { aplicar, editarSecao }
+
+class _ResultadoFolhaEdicaoConteudoSecao {
+  const _ResultadoFolhaEdicaoConteudoSecao({
+    required this.acao,
+    required this.conteudo,
+  });
+
+  final _AcaoEdicaoConteudoSecao acao;
+  final String conteudo;
+}
+
+class _FolhaEdicaoConteudoSecao extends StatefulWidget {
+  const _FolhaEdicaoConteudoSecao({
+    required this.titulo,
+    required this.conteudoInicial,
+  });
+
+  final String titulo;
+  final String conteudoInicial;
+
+  @override
+  State<_FolhaEdicaoConteudoSecao> createState() =>
+      _FolhaEdicaoConteudoSecaoState();
+}
+
+class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
+  late final TextEditingController _conteudo;
+
+  @override
+  void initState() {
+    super.initState();
+    _conteudo = TextEditingController(text: widget.conteudoInicial);
+  }
+
+  @override
+  void dispose() {
+    _conteudo.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        24 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(widget.titulo, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const ValueKey('conteudo-edicao-secao'),
+            controller: _conteudo,
+            minLines: 8,
+            maxLines: 12,
+            keyboardType: TextInputType.multiline,
+            decoration: const InputDecoration(
+              labelText: 'Conteúdo da seção',
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () =>
+                    _concluir(context, _AcaoEdicaoConteudoSecao.editarSecao),
+                child: const Text('Editar seção'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: () =>
+                    _concluir(context, _AcaoEdicaoConteudoSecao.aplicar),
+                child: const Text('Aplicar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  void _concluir(BuildContext context, _AcaoEdicaoConteudoSecao acao) {
+    Navigator.pop(
+      context,
+      _ResultadoFolhaEdicaoConteudoSecao(acao: acao, conteudo: _conteudo.text),
+    );
+  }
+}
 
 class _OpcaoDeSecao {
   const _OpcaoDeSecao(this.tipo, this.titulo);

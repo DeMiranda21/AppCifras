@@ -43,9 +43,12 @@ consolidada, a especificacao-funcional.md.
 7. **Editor por blocos:** fundação entregue com alternância entre blocos e
    ChordPro textual, visualização estrutural derivada, criação canônica,
    duplicação literal, exclusão confirmada e reordenação por arraste de
-   seções com limites confiáveis. A saída da edição protege alterações não
-   salvas. Permanece futura: ocultação de blocos para reorganização rápida.
-   Não criar entidade Arranjo/Versão nesta fase.
+   seções com limites confiáveis. O conteúdo interno de uma seção também é
+   editável sem expor seus delimitadores estruturais; ChordPro textual segue
+   como modo avançado/fallback. A saída da edição protege alterações não
+   salvas. Permanecem futuras: edição assistida de acordes dentro do bloco e
+   ocultação de blocos para reorganização rápida. Não criar entidade
+   Arranjo/Versão nesta fase.
 8. **Tags, classificação e metadados:** energia (muito calma, calma,
    moderada, animada e muito animada), tema, momento/tipo (celebração,
    adoração, abertura, ceia, oferta e encerramento) e tags livres; BPM,

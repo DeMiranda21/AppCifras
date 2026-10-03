@@ -554,7 +554,9 @@ void main() {
     expect(find.byKey(const ValueKey('conteudo-edicao')), findsOneWidget);
   });
 
-  testWidgets('tocar bloco abre a edição existente da seção', (tester) async {
+  testWidgets('tocar bloco abre o editor do conteúdo interno da seção', (
+    tester,
+  ) async {
     await montar(
       tester,
       estrutural: true,
@@ -566,16 +568,138 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Editar seção'), findsOneWidget);
+    final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
+    expect(campo, findsOneWidget);
+    expect(tester.widget<TextFormField>(campo).controller!.text, '[C]Letra\n');
     expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey('rotulo-edicao-secao')),
-          )
-          .initialValue,
-      'Verso 1',
+      tester.widget<TextFormField>(campo).controller!.text,
+      isNot(contains('start_of_verse')),
+    );
+    expect(
+      tester.widget<TextFormField>(campo).controller!.text,
+      isNot(contains('end_of_verse')),
     );
   });
+
+  testWidgets(
+    'aplica conteúdo de bloco sem persistir e preserva delimitadores',
+    (tester) async {
+      final repositorio = await montar(
+        tester,
+        estrutural: true,
+        conteudo:
+            '{title: T}\n{artist: A}\n{key: C}\n'
+            '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}',
+      );
+      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('conteudo-edicao-secao')),
+        '[D]Nova letra',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('bloco-secao-3')),
+          matching: find.text('[D]Nova letra'),
+        ),
+        findsOneWidget,
+      );
+      expect(repositorio.atualizacoes, 0);
+      await tester.tap(find.text('ChordPro'));
+      await tester.pump();
+      final conteudo = tester
+          .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+          .controller!
+          .text;
+      expect(
+        conteudo,
+        '{title: T}\n{artist: A}\n{key: C}\n'
+        '{start_of_verse: label="Verso 1"}\n[D]Nova letra\n{end_of_verse}',
+      );
+    },
+  );
+
+  testWidgets('cancelar conteúdo de bloco preserva editor e não persiste', (
+    tester,
+  ) async {
+    final repositorio = await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_chorus: label="Refrão"}\n[C]Original\n{end_of_chorus}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('conteudo-edicao-secao')),
+      '[D]Cancelado',
+    );
+    await tester.tap(find.text('Cancelar'));
+    await tester.pump();
+    await tester.tap(find.text('ChordPro'));
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const ValueKey('conteudo-edicao')))
+          .controller!
+          .text,
+      contains('[C]Original'),
+    );
+    expect(repositorio.atualizacoes, 0);
+  });
+
+  testWidgets('editar conteúdo, sair e salvar preserva o mesmo ID', (
+    tester,
+  ) async {
+    final repositorio = await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_verse: label="Verso"}\n[C]Original\n{end_of_verse}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('conteudo-edicao-secao')),
+      '[D]Salvo',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+    await tester.pump();
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+
+    final salva = await repositorio.obterPorId(IdMusica('musica-1'));
+    expect(repositorio.atualizacoes, 1);
+    expect(salva!.id, IdMusica('musica-1'));
+    expect(salva.documento.conteudoOriginal, contains('[D]Salvo'));
+  });
+
+  testWidgets(
+    'editar tipo e rótulo permanece acessível pelo editor de conteúdo',
+    (tester) async {
+      await montar(
+        tester,
+        estrutural: true,
+        conteudo:
+            '{title: T}\n{artist: A}\n{key: C}\n'
+            '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}',
+      );
+      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Editar seção'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('rotulo-edicao-secao')), findsOneWidget);
+    },
+  );
 
   testWidgets('reordena blocos movíveis e persiste somente ao salvar', (
     tester,
@@ -714,6 +838,32 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
     await tester.pumpAndSettle();
     expect(find.text('Editar seção'), findsOneWidget);
+    expect(find.byKey(const ValueKey('conteudo-edicao-secao')), findsNothing);
+  });
+
+  testWidgets('editar conteúdo no modo Blocos pede confirmação ao sair', (
+    tester,
+  ) async {
+    final repositorio = await montarEmRota(
+      tester,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_verse: label="Verso"}\n[C]Original\n{end_of_verse}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('conteudo-edicao-secao')),
+      '[D]Não salvo',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Aplicar'));
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Descartar alterações?'), findsOneWidget);
+    expect(repositorio.atualizacoes, 0);
   });
 
   testWidgets('adiciona seção no modo Blocos e só persiste ao salvar', (

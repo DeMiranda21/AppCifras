@@ -63,6 +63,12 @@ class LocalizadorSecaoChordPro {
       inicio: linhaInicio.inicio,
       fim: linhaFim.fim,
       fimComSeparador: linhaFim.fimComSeparador,
+      inicioConteudo: linhaInicio.fimComSeparador,
+      fimConteudo: linhaFim.inicio,
+      separadorAposInicio: conteudo.substring(
+        linhaInicio.fim,
+        linhaInicio.fimComSeparador,
+      ),
       selecaoNoInicio: SelecaoTextoChordPro(
         inicio: linhaInicio.inicio,
         fim: linhaInicio.inicio,
@@ -100,6 +106,9 @@ class FaixaSecaoChordPro {
     required this.inicio,
     required this.fim,
     required this.fimComSeparador,
+    required this.inicioConteudo,
+    required this.fimConteudo,
+    required this.separadorAposInicio,
     required this.selecaoNoInicio,
   });
 
@@ -107,6 +116,9 @@ class FaixaSecaoChordPro {
   final int inicio;
   final int fim;
   final int fimComSeparador;
+  final int inicioConteudo;
+  final int fimConteudo;
+  final String separadorAposInicio;
   final SelecaoTextoChordPro selecaoNoInicio;
 }
 
