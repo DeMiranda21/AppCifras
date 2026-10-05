@@ -50,3 +50,33 @@ necessidade real, a experiência de uso, o modelo de versionamento e conflitos e
 as alternativas técnicas. Não estão definidos neste momento servidor próprio,
 Google Drive, Firebase, Supabase, protocolo/API, arquitetura de sincronização ou
 modelo definitivo de resolução de conflitos.
+
+### Descoberta e comunidade
+
+Avaliar também uma possível evolução das bibliotecas compartilháveis para uma
+experiência de descoberta comunitária. Uma futura tela de bibliotecas poderia
+distinguir uma biblioteca oficial do AppCifras de bibliotecas publicadas por
+usuários, igrejas, ministérios ou equipes de louvor.
+
+Os usuários poderiam cadastrar e compartilhar suas próprias bibliotecas e
+pesquisar músicas dentro de uma biblioteca específica ou, eventualmente, entre
+múltiplas bibliotecas. Uma mesma música poderá existir em diferentes versões e
+fontes, devendo sua origem ficar clara para que o usuário possa escolher qual
+conteúdo deseja utilizar.
+
+Como hipóteses de descoberta e sinais de qualidade, avaliar futuramente recursos
+como seguir, adicionar ou utilizar bibliotecas, curtir músicas/cifras ou
+bibliotecas e apresentar indicadores simples de utilização. Esses sinais
+poderiam permitir que autores e bibliotecas reconhecidos pela comunidade por
+cifras completas, corretas ou bem estruturadas ganhassem reputação de forma
+orgânica.
+
+Não estão decididos sistema de ranking, pontuação, estrelas, algoritmo de
+reputação ou qualquer outro mecanismo específico. Antes de implementar, avaliar
+a necessidade real desses recursos e questões como identidade e autoria,
+moderação, duplicidade de conteúdo, pesquisa remota, privacidade, infraestrutura
+e direitos autorais relacionados ao compartilhamento público de letras e cifras.
+
+O objetivo a investigar é facilitar que o usuário encontre rapidamente versões
+confiáveis de músicas e descubra bibliotecas úteis, e não criar uma rede social
+como fim em si mesma.
