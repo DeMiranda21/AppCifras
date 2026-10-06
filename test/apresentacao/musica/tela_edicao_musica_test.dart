@@ -1,7 +1,11 @@
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
+import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
 import 'package:appcifras/apresentacao/musica/tela_edicao_musica.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tag_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/aplicacao/estrutura/reconhecedor_secao_musica.dart';
@@ -20,6 +24,7 @@ void main() {
     WidgetTester tester, {
     bool estrutural = false,
     String? conteudo,
+    _RepositorioClassificacao? classificacao,
   }) async {
     final musicaAtual = musica(conteudo);
     final repositorio = _Repositorio()..salvar(musicaAtual);
@@ -31,9 +36,16 @@ void main() {
             repositorio: repositorio,
             parserDocumento: parser,
           ),
+          obterClassificacaoMusica: classificacao == null
+              ? null
+              : ObterClassificacaoMusica(classificacao),
+          salvarClassificacaoMusica: classificacao == null
+              ? null
+              : SalvarClassificacaoMusica(classificacao),
         ),
       ),
     );
+    await tester.pump();
     if (!estrutural) {
       await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
@@ -45,6 +57,7 @@ void main() {
     WidgetTester tester, {
     bool estrutural = true,
     String? conteudo,
+    _RepositorioClassificacao? classificacao,
   }) async {
     final musicaAtual = musica(conteudo);
     final repositorio = _Repositorio()..salvar(musicaAtual);
@@ -62,6 +75,12 @@ void main() {
                       repositorio: repositorio,
                       parserDocumento: parser,
                     ),
+                    obterClassificacaoMusica: classificacao == null
+                        ? null
+                        : ObterClassificacaoMusica(classificacao),
+                    salvarClassificacaoMusica: classificacao == null
+                        ? null
+                        : SalvarClassificacaoMusica(classificacao),
                   ),
                 ),
               ),
@@ -101,6 +120,7 @@ void main() {
     Finder campo,
     int offset,
   ) async {
+    await tester.ensureVisible(campo);
     final campoDeTexto = tester.widget<TextFormField>(campo);
     final controlador = campoDeTexto.controller!;
     final editable = find.descendant(
@@ -121,6 +141,18 @@ void main() {
       ),
     );
     await tester.pump();
+  }
+
+  Future<void> tocarBloco(WidgetTester tester, String chave) async {
+    final bloco = find.byKey(ValueKey(chave));
+    await tester.ensureVisible(bloco);
+    await tester.tap(bloco);
+  }
+
+  Future<void> tocarAcoesDoBloco(WidgetTester tester, String chave) async {
+    final acoes = find.byKey(ValueKey(chave));
+    await tester.ensureVisible(acoes);
+    await tester.tap(acoes);
   }
 
   testWidgets('cancelar prévia preserva editor e não persiste', (tester) async {
@@ -736,7 +768,7 @@ void main() {
           '{start_of_verse: label="Verso"}\n[D]Letra\n{end_of_verse}',
     );
 
-    await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+    await tocarBloco(tester, 'bloco-trecho-3');
     await tester.pumpAndSettle();
 
     final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
@@ -773,7 +805,7 @@ void main() {
         conteudo: '{title: T}\n{artist: A}\n{key: C}\n[C]Original',
       );
 
-      await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+      await tocarBloco(tester, 'bloco-trecho-3');
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('conteudo-edicao-secao')),
@@ -831,7 +863,7 @@ void main() {
           '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}',
     );
 
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
 
     final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
@@ -857,7 +889,7 @@ void main() {
             '{title: T}\n{artist: A}\n{key: C}\n'
             '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}',
       );
-      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tocarBloco(tester, 'bloco-secao-3');
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('conteudo-edicao-secao')),
@@ -898,7 +930,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_chorus: label="Refrão"}\n[C]Original\n{end_of_chorus}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('conteudo-edicao-secao')),
@@ -931,7 +963,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_verse: label="Verso"}\n[C]Original\n{end_of_verse}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('conteudo-edicao-secao')),
@@ -960,7 +992,7 @@ void main() {
             '{title: T}\n{artist: A}\n{key: C}\n'
             '{start_of_verse: label="Verso 1"}\n[C]Letra\n{end_of_verse}',
       );
-      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tocarBloco(tester, 'bloco-secao-3');
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(OutlinedButton, 'Editar seção'));
       await tester.pumpAndSettle();
@@ -979,7 +1011,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{sov: label="V"}\nAm7 D/F#\n{eov}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
     final controlador = tester.widget<TextFormField>(campo).controller!;
@@ -1023,7 +1055,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_verse: label="V"}\nAm7 D/F#\n{end_of_verse}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
     final controlador = tester.widget<TextFormField>(campo).controller!;
@@ -1048,7 +1080,7 @@ void main() {
       estrutural: true,
       conteudo: '{title: T}\n{artist: A}\n{key: C}\nC Senhor',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+    await tocarBloco(tester, 'bloco-trecho-3');
     await tester.pumpAndSettle();
     final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
     final controlador = tester.widget<TextFormField>(campo).controller!;
@@ -1075,7 +1107,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_verse: label="V"}\nXYZ\n{end_of_verse}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     final controlador = tester
         .widget<TextFormField>(
@@ -1106,7 +1138,7 @@ void main() {
             '{title: T}\n{artist: A}\n{key: C}\n'
             '{start_of_chorus: label="R"}\n[Am7]Letra\n{end_of_chorus}',
       );
-      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tocarBloco(tester, 'bloco-secao-3');
       await tester.pumpAndSettle();
       final controlador = tester
           .widget<TextFormField>(
@@ -1159,7 +1191,7 @@ void main() {
             '{sov: label="V"}\nAm7\n{eov}\n'
             '{start_of_chorus: label="R"}\n[G]Vizinha\n{end_of_chorus}',
       );
-      await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+      await tocarBloco(tester, 'bloco-secao-3');
       await tester.pumpAndSettle();
       final controlador = tester
           .widget<TextFormField>(
@@ -1302,7 +1334,7 @@ void main() {
           '{start_of_chorus: label="Refrão"}\n[C]Coro\n{end_of_chorus}',
     );
 
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     final duplicar = find.text('Duplicar');
@@ -1330,9 +1362,8 @@ void main() {
           '[Verso]\n[C]Linha 1\n[G]Linha 2\n[Refrão]\n[D]Vizinha',
     );
 
-    final acoes = find.byKey(const ValueKey('acoes-bloco-3'));
-    expect(acoes, findsOneWidget);
-    await tester.tap(acoes);
+    expect(find.byKey(const ValueKey('acoes-bloco-3')), findsOneWidget);
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pumpAndSettle();
     expect(find.text('Duplicar'), findsOneWidget);
     expect(find.text('Excluir'), findsOneWidget);
@@ -1360,7 +1391,7 @@ void main() {
           '[Verso]\n[C]Linha 1\n[Refrão]\n[D]Vizinha',
     );
 
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();
@@ -1390,9 +1421,8 @@ void main() {
           '{start_of_chorus: label="Refrão"}\n[D]Vizinha\n{end_of_chorus}',
     );
 
-    final acoes = find.byKey(const ValueKey('acoes-bloco-3'));
-    expect(acoes, findsOneWidget);
-    await tester.tap(acoes);
+    expect(find.byKey(const ValueKey('acoes-bloco-3')), findsOneWidget);
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pumpAndSettle();
     expect(find.text('Duplicar'), findsOneWidget);
     expect(find.text('Excluir'), findsOneWidget);
@@ -1421,7 +1451,7 @@ void main() {
           '{start_of_chorus: label="Refrão"}\n[C]Coro\n{end_of_chorus}',
     );
 
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     final excluir = find.text('Excluir');
@@ -1433,7 +1463,7 @@ void main() {
     await tester.pump();
     expect(find.text('Refrão'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.ensureVisible(excluir);
@@ -1458,7 +1488,7 @@ void main() {
     expect(find.text('Verso'), findsOneWidget);
     expect(find.byKey(const ValueKey('acoes-bloco-3')), findsNothing);
     expect(find.byKey(const ValueKey('arrastar-bloco-3')), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     expect(find.text('Editar seção'), findsOneWidget);
     expect(find.byKey(const ValueKey('conteudo-edicao-secao')), findsNothing);
@@ -1473,7 +1503,7 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_verse: label="Verso"}\n[C]Original\n{end_of_verse}',
     );
-    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tocarBloco(tester, 'bloco-secao-3');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('conteudo-edicao-secao')),
@@ -1676,13 +1706,13 @@ void main() {
           '{title: T}\n{artist: A}\n{key: C}\n'
           '{start_of_chorus: label="Refrão"}\n[C]Coro\n{end_of_chorus}',
     );
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Duplicar'));
     await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey('acoes-bloco-3')));
+    await tocarAcoesDoBloco(tester, 'acoes-bloco-3');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Excluir').hitTestable());
@@ -1725,6 +1755,110 @@ void main() {
     expect(find.text('Descartar alterações?'), findsNothing);
     expect(repositorio.atualizacoes, 1);
   });
+
+  testWidgets('edita energia e tags e as salva junto com a música', (
+    tester,
+  ) async {
+    final classificacao = _RepositorioClassificacao();
+    final repositorio = await montar(tester, classificacao: classificacao);
+
+    final animada = find.text('Animada');
+    await tester.ensureVisible(animada);
+    await tester.tap(animada);
+    final botaoAdicionarTag = find.text('Adicionar tag');
+    await tester.ensureVisible(botaoAdicionarTag);
+    await tester.tap(botaoAdicionarTag);
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const ValueKey('nova-tag-musica')),
+      ' Ceia ',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Adicionar'));
+    await tester.pump();
+    expect(find.text('Ceia'), findsOneWidget);
+
+    final salvar = find.text('Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+
+    expect(repositorio.atualizacoes, 1);
+    final resultado = await classificacao.obter(IdMusica('musica-1'));
+    expect(resultado.energia, EnergiaMusica.animada);
+    expect(resultado.tags, [TagMusica('Ceia')]);
+  });
+
+  testWidgets(
+    'adiciona e remove tags em sequência sem descartar o diálogo cedo',
+    (tester) async {
+      await montar(tester, classificacao: _RepositorioClassificacao());
+
+      Future<void> adicionarTag(String valor) async {
+        final botaoAdicionarTag = find.text('Adicionar tag');
+        await tester.ensureVisible(botaoAdicionarTag);
+        await tester.tap(botaoAdicionarTag);
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('nova-tag-musica')),
+          valor,
+        );
+        await tester.tap(find.widgetWithText(FilledButton, 'Adicionar'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.takeException(), isNull);
+      }
+
+      await adicionarTag('Adoração');
+      await adicionarTag('Ceia');
+
+      expect(find.widgetWithText(InputChip, 'Adoração'), findsOneWidget);
+      expect(find.widgetWithText(InputChip, 'Ceia'), findsOneWidget);
+      expect(find.byKey(const ValueKey('energia-musica')), findsOneWidget);
+      expect(find.text('Adicionar tag'), findsOneWidget);
+
+      final tagAdoracao = find.widgetWithText(InputChip, 'Adoração');
+      final chipAdoracao = tester.widget<InputChip>(tagAdoracao);
+      chipAdoracao.onDeleted!();
+      await tester.pump();
+      expect(find.text('Adoração'), findsNothing);
+      expect(find.widgetWithText(InputChip, 'Ceia'), findsOneWidget);
+
+      final botaoAdicionarTag = find.text('Adicionar tag');
+      await tester.ensureVisible(botaoAdicionarTag);
+      await tester.tap(botaoAdicionarTag);
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Cancelar'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.widgetWithText(InputChip, 'Ceia'), findsOneWidget);
+
+      final seletorDeEnergia = find.byKey(const ValueKey('energia-musica'));
+      await tester.ensureVisible(seletorDeEnergia);
+      await tester.tap(
+        find.descendant(of: seletorDeEnergia, matching: find.text('Animada')),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('classificação restaurada não pede descarte ao voltar', (
+    tester,
+  ) async {
+    final classificacao = _RepositorioClassificacao()
+      ..dados[IdMusica('musica-1')] = ClassificacaoMusica(
+        energia: EnergiaMusica.calma,
+        tags: [TagMusica('Ceia')],
+      );
+    await montarEmRota(tester, classificacao: classificacao);
+    expect(find.text('Ceia'), findsOneWidget);
+    await tester.tap(find.text('Animada'));
+    await tester.tap(find.text('Calma'));
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
+    expect(find.text('Descartar alterações?'), findsNothing);
+  });
 }
 
 class _Repositorio implements RepositorioMusicas {
@@ -1744,4 +1878,30 @@ class _Repositorio implements RepositorioMusicas {
   Future<List<Musica>> listar() async => dados.values.toList();
   @override
   Future<Musica?> obterPorId(IdMusica id) async => dados[id];
+}
+
+class _RepositorioClassificacao implements RepositorioClassificacaoMusica {
+  final Map<IdMusica, ClassificacaoMusica> dados = {};
+
+  @override
+  Future<void> definirEnergia(IdMusica id, EnergiaMusica? energia) async {
+    final atual = await obter(id);
+    dados[id] = ClassificacaoMusica(energia: energia, tags: atual.tags);
+  }
+
+  @override
+  Future<ClassificacaoMusica> obter(IdMusica id) async =>
+      dados[id] ?? const ClassificacaoMusica();
+
+  @override
+  Future<void> removerPorMusica(IdMusica id) async => dados.remove(id);
+
+  @override
+  Future<void> substituirTags(IdMusica id, Iterable<TagMusica> tags) async {
+    final atual = await obter(id);
+    dados[id] = ClassificacaoMusica(
+      energia: atual.energia,
+      tags: tags.toList(),
+    );
+  }
 }

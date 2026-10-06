@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
@@ -23,6 +24,8 @@ class TelaBiblioteca extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.obterClassificacaoMusica,
+    this.salvarClassificacaoMusica,
     this.listarListasCulto,
     this.criarListaCulto,
     this.renomearListaCulto,
@@ -42,6 +45,8 @@ class TelaBiblioteca extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ObterClassificacaoMusica? obterClassificacaoMusica;
+  final SalvarClassificacaoMusica? salvarClassificacaoMusica;
   final ListarListasCulto? listarListasCulto;
   final CriarListaCulto? criarListaCulto;
   final RenomearListaCulto? renomearListaCulto;
@@ -113,6 +118,8 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
           removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
+          obterClassificacaoMusica: widget.obterClassificacaoMusica,
+          salvarClassificacaoMusica: widget.salvarClassificacaoMusica,
         ),
       ),
     );

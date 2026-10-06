@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
 import '../../aplicacao/edicao/dividir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_bloco_chordpro.dart';
@@ -23,6 +24,8 @@ import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
+import '../../dominio/objetos_de_valor/energia_musica.dart';
+import '../../dominio/objetos_de_valor/tag_musica.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 
 class TelaEdicaoMusica extends StatefulWidget {
@@ -30,11 +33,15 @@ class TelaEdicaoMusica extends StatefulWidget {
     super.key,
     required this.musica,
     required this.atualizarMusica,
+    this.obterClassificacaoMusica,
+    this.salvarClassificacaoMusica,
     this.textoParaLocalizacao,
   });
 
   final Musica musica;
   final AtualizarMusica atualizarMusica;
+  final ObterClassificacaoMusica? obterClassificacaoMusica;
+  final SalvarClassificacaoMusica? salvarClassificacaoMusica;
   final String? textoParaLocalizacao;
 
   @override
@@ -64,7 +71,9 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _parserDocumento = ParserDocumentoChordPro();
   final _estruturadorDocumento = EstruturadorDocumentoChordPro();
   late final String _tomInicial;
-  late final _SnapshotEdicaoMusica _snapshotInicial;
+  late _SnapshotEdicaoMusica _snapshotInicial;
+  EnergiaMusica? _energia;
+  List<TagMusica> _tags = [];
   var _salvando = false;
   var _saidaPermitida = false;
   var _modoEditor = _ModoEditor.estrutural;
@@ -90,11 +99,14 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       artista: _artista.text,
       tom: _tom.text,
       conteudo: _conteudo.text,
+      energia: null,
+      tags: const [],
     );
     _titulo.addListener(_atualizarEstadoDoEditor);
     _artista.addListener(_atualizarEstadoDoEditor);
     _tom.addListener(_atualizarEstadoDoEditor);
     _conteudo.addListener(_atualizarEstadoDoEditor);
+    _carregarClassificacao();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final texto = widget.textoParaLocalizacao;
       if (texto == null || texto.isEmpty || !mounted) {
@@ -115,6 +127,26 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
             .toDouble();
         _rolagem.jumpTo(alvo);
       }
+    });
+  }
+
+  Future<void> _carregarClassificacao() async {
+    final obter = widget.obterClassificacaoMusica;
+    if (obter == null) return;
+    final classificacao = await obter.executar(widget.musica.id);
+    if (!mounted) return;
+    setState(() {
+      _energia = classificacao.energia;
+      _tags = List.of(classificacao.tags);
+      final snapshotAnterior = _snapshotInicial;
+      _snapshotInicial = _SnapshotEdicaoMusica(
+        titulo: snapshotAnterior.titulo,
+        artista: snapshotAnterior.artista,
+        tom: snapshotAnterior.tom,
+        conteudo: snapshotAnterior.conteudo,
+        energia: _energia,
+        tags: _tags,
+      );
     });
   }
 
@@ -143,7 +175,32 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
       _titulo.text != _snapshotInicial.titulo ||
       _artista.text != _snapshotInicial.artista ||
       _tom.text != _snapshotInicial.tom ||
-      _conteudo.text != _snapshotInicial.conteudo;
+      _conteudo.text != _snapshotInicial.conteudo ||
+      _energia != _snapshotInicial.energia ||
+      !_tagsIguais(_tags, _snapshotInicial.tags);
+
+  bool _tagsIguais(List<TagMusica> atual, List<TagMusica> inicial) =>
+      atual.length == inicial.length &&
+      atual.every((tag) => inicial.contains(tag));
+
+  Future<void> _adicionarTag() async {
+    final texto = await showDialog<String>(
+      context: context,
+      builder: (_) => const _DialogAdicionarTag(),
+    );
+    if (!mounted || texto == null) return;
+    try {
+      final tag = TagMusica(texto);
+      if (_tags.contains(tag)) return;
+      setState(() => _tags = [..._tags, tag]);
+    } on ArgumentError {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe uma tag válida.')),
+        );
+      }
+    }
+  }
 
   Future<void> _aoTentarSair(bool didPop, Object? _) async {
     if (didPop || _saidaPermitida || _salvando || !_temAlteracoesPendentes) {
@@ -692,6 +749,11 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
           ),
         ),
       );
+      await widget.salvarClassificacaoMusica?.executar(
+        widget.musica.id,
+        energia: _energia,
+        tags: _tags,
+      );
       if (mounted) _sairPermitindoPop(true);
     } on RascunhoNaoPodeSerFinalizado catch (erro) {
       if (!mounted) {
@@ -987,6 +1049,51 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                     validator: (valor) => _obrigatorio(valor, 'Tom original'),
                   ),
                   const SizedBox(height: 16),
+                  Text(
+                    'Energia',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<EnergiaMusica>(
+                    key: const ValueKey('energia-musica'),
+                    emptySelectionAllowed: true,
+                    segments: [
+                      for (final energia in EnergiaMusica.values)
+                        ButtonSegment(
+                          value: energia,
+                          label: Text(energia.titulo),
+                        ),
+                    ],
+                    selected: _energia == null ? {} : {_energia!},
+                    onSelectionChanged: _salvando
+                        ? null
+                        : (selecionadas) => setState(
+                            () => _energia = selecionadas.isEmpty
+                                ? null
+                                : selecionadas.single,
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Tags', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final tag in _tags)
+                        InputChip(
+                          label: Text(tag.valor),
+                          onDeleted: _salvando
+                              ? null
+                              : () => setState(() => _tags.remove(tag)),
+                        ),
+                      ActionChip(
+                        label: const Text('Adicionar tag'),
+                        onPressed: _salvando ? null : _adicionarTag,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   SegmentedButton<_ModoEditor>(
                     key: const ValueKey('modo-editor-musica'),
                     segments: const [
@@ -1073,18 +1180,61 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   }
 }
 
+class _DialogAdicionarTag extends StatefulWidget {
+  const _DialogAdicionarTag();
+
+  @override
+  State<_DialogAdicionarTag> createState() => _DialogAdicionarTagState();
+}
+
+class _DialogAdicionarTagState extends State<_DialogAdicionarTag> {
+  final _controlador = TextEditingController();
+
+  @override
+  void dispose() {
+    _controlador.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Adicionar tag'),
+    content: TextField(
+      key: const ValueKey('nova-tag-musica'),
+      controller: _controlador,
+      autofocus: true,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _confirmar(),
+      decoration: const InputDecoration(hintText: 'Ex.: congregacional'),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(onPressed: _confirmar, child: const Text('Adicionar')),
+    ],
+  );
+
+  void _confirmar() => Navigator.pop(context, _controlador.text);
+}
+
 class _SnapshotEdicaoMusica {
   const _SnapshotEdicaoMusica({
     required this.titulo,
     required this.artista,
     required this.tom,
     required this.conteudo,
+    required this.energia,
+    required this.tags,
   });
 
   final String titulo;
   final String artista;
   final String tom;
   final String conteudo;
+  final EnergiaMusica? energia;
+  final List<TagMusica> tags;
 }
 
 const _opcoesDeSecao = [

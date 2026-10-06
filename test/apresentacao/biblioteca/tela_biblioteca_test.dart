@@ -325,7 +325,9 @@ void main() {
         find.byKey(ValueKey('acoes-bloco-$identificadorBloco')),
         findsOneWidget,
       );
-      await tester.tap(find.byKey(bloco));
+      final blocoEditavel = find.byKey(bloco);
+      await tester.ensureVisible(blocoEditavel);
+      await tester.tap(blocoEditavel);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('conteudo-edicao-secao')),

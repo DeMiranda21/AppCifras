@@ -66,13 +66,11 @@ consolidada, a especificacao-funcional.md.
    diretivas e espaçadores isolados não viram blocos.
    Não criar entidade Arranjo/Versão
    nesta fase.
-8. **Tags, classificação e metadados:** energia (muito calma, calma,
-   moderada, animada e muito animada), tema, momento/tipo (celebração,
-   adoração, abertura, ceia, oferta e encerramento) e tags livres; BPM,
-   compasso, duração, dificuldade, ministério, compositor, álbum, idioma,
-   instrumentação e observações, de forma gradual.
-9. **Pesquisa ampliada e filtros:** letra, tags, tema, categoria e ministério,
-   conforme os metadados disponíveis.
+8. **Tags, classificação e metadados:** energia (Calma, Moderada ou Animada)
+   e tags livres entregues como metadados locais. Tema, momento, BPM, compasso,
+   duração, dificuldade, ministério, compositor, álbum, idioma e
+   instrumentação permanecem futuros.
+9. **Pesquisa ampliada e filtros:** título, artista, letra, tags e energia.
 10. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
    histórico de tons por Música + Ministrante e histórico de cultos/listas.
 

@@ -18,6 +18,11 @@ não interpretáveis são preservados.
 O arquivo ChordPro é a fonte canônica do conteúdo musical. Metadados internos
 do AppCifras e estado local derivado não criam segunda fonte de verdade.
 
+EnergiaMusica é uma classificação local opcional, com Calma, Moderada ou
+Animada. TagMusica é um valor livre, não vazio e identificado por texto sem
+diferença de caixa dentro da mesma música; sua apresentação preserva o texto
+legível informado. Ambas ficam fora do ChordPro e são associadas por IdMusica.
+
 EstruturaMusica é uma representação derivada do DocumentoChordPro para leitura
 e futuras operações assistidas. Suas SecoesMusica mantêm tipo semântico, rótulo
 original e faixa de elementos no documento, inclusive seções vazias e conteúdo

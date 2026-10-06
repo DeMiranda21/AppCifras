@@ -8,6 +8,7 @@ import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../portas/gerador_id_musica.dart';
 import '../portas/repositorio_tom_execucao.dart';
+import '../portas/repositorio_classificacao_musica.dart';
 import '../entrada/rascunho_documento_chordpro.dart';
 import '../entrada/conteudo_chordpro_editavel.dart';
 
@@ -164,9 +165,14 @@ class CadastrarMusica {
 }
 
 class ExcluirMusica {
-  const ExcluirMusica(this._repositorio, {this.repositorioTomExecucao});
+  const ExcluirMusica(
+    this._repositorio, {
+    this.repositorioTomExecucao,
+    this.repositorioClassificacao,
+  });
   final RepositorioMusicas _repositorio;
   final RepositorioTomExecucao? repositorioTomExecucao;
+  final RepositorioClassificacaoMusica? repositorioClassificacao;
 
   Future<void> executar(IdMusica id, {required bool confirmada}) async {
     if (!confirmada) {
@@ -177,6 +183,7 @@ class ExcluirMusica {
     }
     await _repositorio.excluir(id);
     await repositorioTomExecucao?.removerUltimoTom(id);
+    await repositorioClassificacao?.removerPorMusica(id);
   }
 }
 

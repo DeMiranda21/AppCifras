@@ -8,11 +8,6 @@ Antes de registrar histórico automaticamente, definir como o usuário confirma
 quais músicas foram realmente executadas. Não assumir que todas as músicas
 planejadas foram tocadas.
 
-## Taxonomia de classificação
-
-Antes de implementar tags e filtros, definir se temas e momentos/tipos serão
-predefinidos, configuráveis ou combinados, e quais categorias têm valor real.
-
 ## Descoberta de "Tratar como texto"
 
 Prioridade alta: toque em palavra ou acorde deve selecionar automaticamente o

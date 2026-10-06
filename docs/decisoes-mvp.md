@@ -13,6 +13,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   SQLite/Drift mantém índice e estado local derivado, não a cifra completa.
 - Arquivo da música é fonte canônica de conteúdo e metadados. Índices, Listas
   de Culto e preferências não pertencem ao ChordPro.
+- Energia (Calma, Moderada ou Animada) é opcional e Tags são livres, opcionais
+  e múltiplas. Ambas são classificações locais no SQLite, não diretivas do
+  ChordPro; Tema e Momento não fazem parte desta etapa.
 
 ## Música, ChordPro e edição
 

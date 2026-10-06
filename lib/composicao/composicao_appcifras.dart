@@ -1,4 +1,5 @@
 import '../aplicacao/casos_de_uso/listas_culto.dart';
+import '../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../aplicacao/casos_de_uso/musicas.dart';
 import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../aplicacao/casos_de_uso/tom_execucao.dart';
@@ -7,7 +8,11 @@ import '../aplicacao/portas/gerador_id_musica.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/repositorio_tom_execucao.dart';
+import '../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
+import '../dominio/objetos_de_valor/energia_musica.dart';
+import '../dominio/objetos_de_valor/id_musica.dart';
+import '../dominio/objetos_de_valor/tag_musica.dart';
 import '../dominio/repositorios/repositorio_musicas.dart';
 import '../dominio/repositorios/repositorio_listas_culto.dart';
 import '../dominio/servicos/parser_documento_chordpro.dart';
@@ -20,6 +25,7 @@ import '../infraestrutura/persistencia/banco_biblioteca.dart';
 import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
 import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
+import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
 
 class ComposicaoAppCifras {
   ComposicaoAppCifras._({
@@ -27,6 +33,7 @@ class ComposicaoAppCifras {
     required RepositorioMusicas repositorio,
     required RepositorioListasCulto repositorioListasCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
+    required RepositorioClassificacaoMusica repositorioClassificacao,
     required GeradorIdMusica geradorId,
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
@@ -37,6 +44,7 @@ class ComposicaoAppCifras {
        excluirMusica = ExcluirMusica(
          repositorio,
          repositorioTomExecucao: repositorioTomExecucao,
+         repositorioClassificacao: repositorioClassificacao,
        ),
        atualizarMusica = AtualizarMusica(
          repositorio: repositorio,
@@ -49,6 +57,12 @@ class ComposicaoAppCifras {
        ),
        removerUltimoTomExecucao = RemoverUltimoTomExecucao(
          repositorioTomExecucao,
+       ),
+       obterClassificacaoMusica = ObterClassificacaoMusica(
+         repositorioClassificacao,
+       ),
+       salvarClassificacaoMusica = SalvarClassificacaoMusica(
+         repositorioClassificacao,
        ),
        cadastrarMusica = CadastrarMusica(
          repositorio: repositorio,
@@ -101,6 +115,8 @@ class ComposicaoAppCifras {
   final ObterUltimoTomExecucao obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao removerUltimoTomExecucao;
+  final ObterClassificacaoMusica obterClassificacaoMusica;
+  final SalvarClassificacaoMusica salvarClassificacaoMusica;
   final CriarListaCulto criarListaCulto;
   final ListarListasCulto listarListasCulto;
   final ObterListaCulto obterListaCulto;
@@ -116,6 +132,7 @@ class ComposicaoAppCifras {
     required RepositorioMusicas repositorio,
     required RepositorioListasCulto repositorioListasCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
+    RepositorioClassificacaoMusica? repositorioClassificacao,
     required GeradorIdMusica geradorId,
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
@@ -125,6 +142,8 @@ class ComposicaoAppCifras {
     repositorio: repositorio,
     repositorioListasCulto: repositorioListasCulto,
     repositorioTomExecucao: repositorioTomExecucao,
+    repositorioClassificacao:
+        repositorioClassificacao ?? _RepositorioClassificacaoVazio(),
     geradorId: geradorId,
     geradorIdListaCulto: geradorIdListaCulto,
     geradorIdItemListaCulto: geradorIdItemListaCulto,
@@ -149,6 +168,9 @@ class ComposicaoAppCifras {
         validadorSchema: validadorSchema,
       );
       final repositorioTomExecucao = RepositorioTomExecucaoLocal(banco);
+      final repositorioClassificacao = RepositorioClassificacaoMusicaLocal(
+        banco,
+      );
       final repositorioListasCulto = RepositorioListasCultoLocal(banco);
 
       return ComposicaoAppCifras._(
@@ -156,6 +178,7 @@ class ComposicaoAppCifras {
         repositorio: repositorio,
         repositorioListasCulto: repositorioListasCulto,
         repositorioTomExecucao: repositorioTomExecucao,
+        repositorioClassificacao: repositorioClassificacao,
         geradorId: GeradorIdMusicaUuid(),
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
         geradorIdItemListaCulto: GeradorIdItemListaCultoUuid(),
@@ -168,4 +191,25 @@ class ComposicaoAppCifras {
   }
 
   Future<void> encerrar() => _encerramento ??= _banco.close();
+}
+
+class _RepositorioClassificacaoVazio implements RepositorioClassificacaoMusica {
+  @override
+  Future<ClassificacaoMusica> obter(IdMusica idMusica) async =>
+      const ClassificacaoMusica();
+
+  @override
+  Future<void> definirEnergia(
+    IdMusica idMusica,
+    EnergiaMusica? energia,
+  ) async {}
+
+  @override
+  Future<void> substituirTags(
+    IdMusica idMusica,
+    Iterable<TagMusica> tags,
+  ) async {}
+
+  @override
+  Future<void> removerPorMusica(IdMusica idMusica) async {}
 }

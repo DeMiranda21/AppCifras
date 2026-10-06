@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
+import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/visualizacao/alterar_tom_execucao.dart';
 import '../../aplicacao/visualizacao/projetar_musica_para_visualizacao.dart';
@@ -29,6 +30,8 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.obterClassificacaoMusica,
+    this.salvarClassificacaoMusica,
     this.contextoListaCulto,
     this.controleTelaAtiva = const ControleTelaAtivaWakelockPlus(),
   });
@@ -36,6 +39,8 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final IdMusica idMusica;
   final ObterMusicaPorId obterMusicaPorId;
   final AtualizarMusica atualizarMusica;
+  final ObterClassificacaoMusica? obterClassificacaoMusica;
+  final SalvarClassificacaoMusica? salvarClassificacaoMusica;
   final ExcluirMusica excluirMusica;
   final ProjetarMusicaParaVisualizacao? projetarMusicaParaVisualizacao;
   final AlterarTomExecucao? alterarTomExecucao;
@@ -120,6 +125,8 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         builder: (context) => TelaEdicaoMusica(
           musica: musica,
           atualizarMusica: widget.atualizarMusica,
+          obterClassificacaoMusica: widget.obterClassificacaoMusica,
+          salvarClassificacaoMusica: widget.salvarClassificacaoMusica,
           textoParaLocalizacao: textoParaLocalizacao,
         ),
       ),

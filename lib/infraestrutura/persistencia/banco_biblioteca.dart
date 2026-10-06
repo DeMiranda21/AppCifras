@@ -33,6 +33,28 @@ class PreferenciasTomExecucao extends Table {
   Set<Column> get primaryKey => {idMusica};
 }
 
+class EnergiasMusicas extends Table {
+  TextColumn get idMusica =>
+      text().references(IndiceMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get energia => text()();
+
+  @override
+  Set<Column> get primaryKey => {idMusica};
+}
+
+class TagsMusicas extends Table {
+  TextColumn get idMusica =>
+      text().references(IndiceMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get chave => text()();
+
+  TextColumn get valor => text()();
+
+  @override
+  Set<Column> get primaryKey => {idMusica, chave};
+}
+
 class ListasCulto extends Table {
   TextColumn get id => text()();
 
@@ -59,6 +81,8 @@ class ItensListaCulto extends Table {
   tables: [
     IndiceMusicas,
     PreferenciasTomExecucao,
+    EnergiasMusicas,
+    TagsMusicas,
     ListasCulto,
     ItensListaCulto,
   ],
@@ -69,13 +93,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
       await _criarIndiceItensListaCulto();
+      await _criarIndiceTagsMusicas();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -85,6 +110,11 @@ class BancoBiblioteca extends _$BancoBiblioteca {
         await migrator.createTable(listasCulto);
         await migrator.createTable(itensListaCulto);
         await _criarIndiceItensListaCulto();
+      }
+      if (from < 4) {
+        await migrator.createTable(energiasMusicas);
+        await migrator.createTable(tagsMusicas);
+        await _criarIndiceTagsMusicas();
       }
     },
   );
@@ -167,6 +197,56 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       preferenciasTomExecucao,
     )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
   }
+
+  Future<EnergiasMusica?> obterEnergiaMusica(String idMusica) => (select(
+    energiasMusicas,
+  )..where((tabela) => tabela.idMusica.equals(idMusica))).getSingleOrNull();
+
+  Future<void> definirEnergiaMusica(String idMusica, String? energia) async {
+    if (energia == null) {
+      await (delete(
+        energiasMusicas,
+      )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
+      return;
+    }
+    await into(energiasMusicas).insertOnConflictUpdate(
+      EnergiasMusicasCompanion.insert(idMusica: idMusica, energia: energia),
+    );
+  }
+
+  Future<List<TagsMusica>> listarTagsMusica(String idMusica) =>
+      (select(tagsMusicas)
+            ..where((tabela) => tabela.idMusica.equals(idMusica))
+            ..orderBy([(tabela) => OrderingTerm.asc(tabela.valor)]))
+          .get();
+
+  Future<void> substituirTagsMusica(
+    String idMusica,
+    Iterable<({String valor, String chave})> tags,
+  ) => transaction(() async {
+    await (delete(
+      tagsMusicas,
+    )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
+    for (final tag in tags) {
+      await into(tagsMusicas).insert(
+        TagsMusicasCompanion.insert(
+          idMusica: idMusica,
+          chave: tag.chave,
+          valor: tag.valor,
+        ),
+      );
+    }
+  });
+
+  Future<void> removerClassificacaoMusica(String idMusica) =>
+      transaction(() async {
+        await (delete(
+          energiasMusicas,
+        )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
+        await (delete(
+          tagsMusicas,
+        )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
+      });
 
   Future<void> inserirListaCulto({required String id, required String nome}) =>
       into(listasCulto).insert(ListasCultoCompanion.insert(id: id, nome: nome));
@@ -260,6 +340,10 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   Future<void> _criarIndiceItensListaCulto() => customStatement(
     'CREATE INDEX IF NOT EXISTS idx_itens_lista_culto_lista_posicao '
     'ON itens_lista_culto (id_lista, posicao)',
+  );
+
+  Future<void> _criarIndiceTagsMusicas() => customStatement(
+    'CREATE INDEX IF NOT EXISTS idx_tags_musicas_chave ON tags_musicas (chave)',
   );
 }
 
