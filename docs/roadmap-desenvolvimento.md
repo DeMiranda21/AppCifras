@@ -56,9 +56,10 @@ consolidada, a especificacao-funcional.md.
    avançado/fallback. A saída da edição protege alterações não salvas, e o
    editor local de conteúdo confirma o descarte de alterações ainda não
    aplicadas.
-   Permanecem futuras: edição avançada de acordes dentro do bloco, dividir um
-   bloco/trecho em nova seção a partir de uma linha ou posição e ocultação de
-   blocos para reorganização rápida. Trechos musicais fora de seção também
+   A divisão explícita de bloco por linha persiste fronteiras entre trechos
+   livres com diretiva interna, sem atribuir semântica musical à segunda parte.
+   Permanecem futuras: edição avançada de acordes dentro do bloco e ocultação
+   de blocos para reorganização rápida. Trechos musicais fora de seção também
    aparecem como blocos derivados. As operações básicas de editar, mover,
    duplicar e excluir usam a mesma regra de faixa segura para seções ChordPro
    explícitas, rótulos textuais reconhecidos e trechos livres; metadados,

@@ -12,6 +12,34 @@ void main() {
       estruturador.estruturar(parser.interpretar(conteudo));
 
   group('EstruturadorDocumentoChordPro', () {
+    test('trata quebra interna como fronteira entre trechos livres', () {
+      const conteudo = '{title: T}\nA\nB\n{appcifras_block_break}\nC\nD';
+      final estrutura = estruturar(conteudo);
+
+      expect(estrutura.secoes, hasLength(2));
+      expect(_conteudo(estrutura.secoes[0]), 'A\nB');
+      expect(_conteudo(estrutura.secoes[1]), 'C\nD');
+      expect(
+        estrutura.secoes.expand((secao) => secao.elementos),
+        isNot(
+          contains(
+            predicate<ElementoDocumentoChordPro>(
+              (elemento) =>
+                  elemento.conteudoOriginal == '{appcifras_block_break}',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('não insere quebra interna ao estruturar documento sem marcador', () {
+      const conteudo = 'A\n\nB';
+      final estrutura = estruturar(conteudo);
+
+      expect(estrutura.documento.conteudoOriginal, conteudo);
+      expect(estrutura.secoes, hasLength(1));
+    });
+
     test('reconhece todos os rótulos textuais aprovados sem normalizá-los', () {
       final estrutura = estruturar(
         'Intro\nI\n'

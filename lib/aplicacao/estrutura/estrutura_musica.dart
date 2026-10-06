@@ -102,6 +102,16 @@ class EstruturadorDocumentoChordPro {
 
     for (var indice = 0; indice < documento.elementos.length; indice += 1) {
       final elemento = documento.elementos[indice];
+      if (elemento is DiretivaQuebraBlocoAppCifras) {
+        final secaoAberta = aberta;
+        if (secaoAberta != null && secaoAberta.ambiente.isEmpty) {
+          concluirAberta(indice);
+        } else if (secaoAberta == null) {
+          concluirLivre(indice);
+        }
+        inicioLivre = indice + 1;
+        continue;
+      }
       final marcador = _marcadorDoElemento(elemento);
       if (marcador == null) {
         continue;

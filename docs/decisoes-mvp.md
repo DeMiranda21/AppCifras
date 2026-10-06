@@ -42,6 +42,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Edição preserva IdMusica e altera explicitamente só diretivas funcionais.
   appcifras_schema e appcifras_id são internos, ocultos do editor e
   reaplicados/validados pela aplicação.
+- `{appcifras_block_break}` é diretiva interna sem semântica musical, criada
+  somente pela divisão explícita de bloco para persistir fronteiras entre
+  trechos livres derivados. Ela não aparece na leitura nem no editor local.
 - Reanálise preserva ChordPro e rótulos existentes; converte somente pares
   inequívocos de linha textual de acordes e letra ainda não marcados.
 

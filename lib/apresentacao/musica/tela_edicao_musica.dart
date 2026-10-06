@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
+import '../../aplicacao/edicao/dividir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_bloco_chordpro.dart';
 import '../../aplicacao/edicao/editar_conteudo_secao_chordpro.dart';
 import '../../aplicacao/edicao/editar_trecho_nao_identificado_chordpro.dart';
@@ -54,6 +55,7 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   final _editarConteudoSecaoChordPro = EditarConteudoSecaoChordPro();
   final _editarTrechoNaoIdentificadoChordPro =
       EditarTrechoNaoIdentificadoChordPro();
+  final _dividirBlocoChordPro = DividirBlocoChordPro();
   final _editarSecaoChordPro = EditarSecaoChordPro();
   final _duplicarBlocoChordPro = DuplicarBlocoChordPro();
   final _excluirBlocoChordPro = ExcluirBlocoChordPro();
@@ -300,8 +302,10 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                   onChanged: (novoLabel) => atualizar(() => label = novoLabel),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
@@ -371,6 +375,23 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     if (resultado.foiAlterado) {
       _atualizarConteudo(resultado.conteudo, resultado.selecao);
     }
+    if (resultadoDaFolha.acao == _AcaoEdicaoConteudoSecao.dividir) {
+      final faixaAtual = _localizadorSecaoChordPro.localizar(
+        conteudo: _conteudo.text,
+        indiceMarcador: indiceMarcador,
+      );
+      if (faixaAtual != null) {
+        final divisao = _dividirBlocoChordPro.dividir(
+          conteudo: _conteudo.text,
+          faixa: FaixaBlocoChordPro.deSecao(faixaAtual),
+          posicao: faixaAtual.inicioConteudo + resultadoDaFolha.posicaoCursor,
+        );
+        if (divisao.foiDividido) {
+          _atualizarConteudo(divisao.conteudo, divisao.selecao);
+        }
+      }
+      return;
+    }
     if (resultadoDaFolha.acao == _AcaoEdicaoConteudoSecao.editarSecao &&
         mounted) {
       await _editarSecao(selecao: resultado.selecao);
@@ -406,6 +427,27 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
     );
     if (resultado.foiAlterado) {
       _atualizarConteudo(resultado.conteudo, resultado.selecao);
+    }
+    if (resultadoDaFolha.acao == _AcaoEdicaoConteudoSecao.dividir) {
+      final contextoAtual = _editarTrechoNaoIdentificadoChordPro.contextoAtual(
+        conteudo: _conteudo.text,
+        inicioConteudo: trecho.inicioConteudo,
+      );
+      if (contextoAtual != null) {
+        final divisao = _dividirBlocoChordPro.dividir(
+          conteudo: _conteudo.text,
+          faixa: FaixaBlocoChordPro(
+            bloco: trecho,
+            inicio: contextoAtual.faixa.inicio,
+            fim: contextoAtual.faixa.fim,
+            fimComSeparador: contextoAtual.faixa.fimComSeparador,
+          ),
+          posicao: contextoAtual.faixa.inicio + resultadoDaFolha.posicaoCursor,
+        );
+        if (divisao.foiDividido) {
+          _atualizarConteudo(divisao.conteudo, divisao.selecao);
+        }
+      }
     }
   }
 
@@ -1061,16 +1103,18 @@ enum _ModoEditor { estrutural, textual }
 
 enum _AcaoBloco { duplicar, excluir }
 
-enum _AcaoEdicaoConteudoSecao { aplicar, editarSecao }
+enum _AcaoEdicaoConteudoSecao { aplicar, editarSecao, dividir }
 
 class _ResultadoFolhaEdicaoConteudoSecao {
   const _ResultadoFolhaEdicaoConteudoSecao({
     required this.acao,
     required this.conteudo,
+    required this.posicaoCursor,
   });
 
   final _AcaoEdicaoConteudoSecao acao;
   final String conteudo;
+  final int posicaoCursor;
 }
 
 class _FolhaEdicaoConteudoSecao extends StatefulWidget {
@@ -1159,14 +1203,19 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
                       child: const Text('Cancelar'),
                     ),
                     if (widget.podeEditarSecao) ...[
-                      const SizedBox(width: 8),
                       OutlinedButton(
                         onPressed: () =>
                             _concluir(_AcaoEdicaoConteudoSecao.editarSecao),
                         child: const Text('Editar seção'),
                       ),
                     ],
-                    const SizedBox(width: 8),
+                    if (_podeDividir) ...[
+                      OutlinedButton(
+                        onPressed: () =>
+                            _concluir(_AcaoEdicaoConteudoSecao.dividir),
+                        child: const Text('Dividir bloco aqui'),
+                      ),
+                    ],
                     FilledButton(
                       onPressed: () =>
                           _concluir(_AcaoEdicaoConteudoSecao.aplicar),
@@ -1221,8 +1270,26 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
 
   void _concluir(_AcaoEdicaoConteudoSecao acao) {
     _fecharPermitindoPop(
-      _ResultadoFolhaEdicaoConteudoSecao(acao: acao, conteudo: _conteudo.text),
+      _ResultadoFolhaEdicaoConteudoSecao(
+        acao: acao,
+        conteudo: _conteudo.text,
+        posicaoCursor: _conteudo.selection.extentOffset,
+      ),
     );
+  }
+
+  bool get _podeDividir {
+    final posicao = _conteudo.selection.extentOffset;
+    if (posicao <= 0 || posicao >= _conteudo.text.length) return false;
+    var inicioDaLinha = posicao;
+    while (inicioDaLinha > 0) {
+      final anterior = _conteudo.text.codeUnitAt(inicioDaLinha - 1);
+      if (anterior == 10 || anterior == 13) break;
+      inicioDaLinha -= 1;
+    }
+    return inicioDaLinha > 0 &&
+        _conteudo.text.substring(0, inicioDaLinha).trim().isNotEmpty &&
+        _conteudo.text.substring(inicioDaLinha).trim().isNotEmpty;
   }
 
   void _fecharPermitindoPop([_ResultadoFolhaEdicaoConteudoSecao? resultado]) {

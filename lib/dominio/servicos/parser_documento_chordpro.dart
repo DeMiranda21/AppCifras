@@ -49,6 +49,7 @@ class ParserDocumentoChordPro {
     ),
     'appcifras_schema' => DiretivaSchemaAppCifras(original, valor),
     'appcifras_id' => DiretivaIdAppCifras(original, valor),
+    'appcifras_block_break' => DiretivaQuebraBlocoAppCifras(original),
     'start_of_chorus' || 'soc' => InicioRefraoChordPro(original),
     'end_of_chorus' || 'eoc' => FimRefraoChordPro(original),
     _ => DiretivaDesconhecidaChordPro(original, valor, nome),

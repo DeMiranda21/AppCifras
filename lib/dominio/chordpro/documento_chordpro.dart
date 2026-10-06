@@ -76,6 +76,13 @@ class DiretivaIdAppCifras extends DiretivaChordPro {
   }
 }
 
+/// Fronteira técnica persistida entre blocos livres derivados pelo AppCifras.
+///
+/// Não representa uma seção musical e não deve ser exibida como conteúdo.
+class DiretivaQuebraBlocoAppCifras extends DiretivaChordPro {
+  const DiretivaQuebraBlocoAppCifras(String original) : super(original, '');
+}
+
 class DiretivaDesconhecidaChordPro extends DiretivaChordPro {
   const DiretivaDesconhecidaChordPro(super.original, super.valor, this.nome);
   final String nome;
