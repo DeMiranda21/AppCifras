@@ -96,6 +96,33 @@ void main() {
     return (menu as AdaptiveTextSelectionToolbar).buttonItems!;
   }
 
+  Future<void> tocarNoOffset(
+    WidgetTester tester,
+    Finder campo,
+    int offset,
+  ) async {
+    final campoDeTexto = tester.widget<TextFormField>(campo);
+    final controlador = campoDeTexto.controller!;
+    final editable = find.descendant(
+      of: campo,
+      matching: find.byType(EditableText),
+    );
+    final render = tester.state<EditableTextState>(editable).renderEditable;
+    final inicio = render.getLocalRectForCaret(TextPosition(offset: offset));
+    final proximoOffset = offset + 1 < controlador.text.length
+        ? offset + 1
+        : offset;
+    final fim = render.getLocalRectForCaret(
+      TextPosition(offset: proximoOffset),
+    );
+    await tester.tapAt(
+      render.localToGlobal(
+        Offset((inicio.left + fim.left) / 2, inicio.center.dy),
+      ),
+    );
+    await tester.pump();
+  }
+
   testWidgets('cancelar prévia preserva editor e não persiste', (tester) async {
     final repositorio = await montar(tester);
     final campo = find.byType(TextFormField).at(3);
@@ -208,6 +235,102 @@ void main() {
           .documento
           .conteudoOriginal,
       contains('[Am7]'),
+    );
+  });
+
+  testWidgets('toque seleciona token no ChordPro avançado e habilita marcar', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byKey(const ValueKey('conteudo-edicao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.text = 'C Am7 D/F# Senhor';
+    await tester.pump();
+
+    await tocarNoOffset(tester, campo, 0);
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+    );
+    expect(
+      itensDoMenuContextual(tester, campo).map((item) => item.label),
+      contains('Marcar como acorde'),
+    );
+
+    await tocarNoOffset(tester, campo, 6);
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 6, extentOffset: 10),
+    );
+
+    await tocarNoOffset(tester, campo, 13);
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 11, extentOffset: 17),
+    );
+  });
+
+  testWidgets('toque em espaço mantém o cursor no ChordPro avançado', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byKey(const ValueKey('conteudo-edicao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.text = 'C Am7';
+    await tester.pump();
+
+    await tocarNoOffset(tester, campo, 1);
+
+    final selecao = controlador.selection;
+    expect(
+      selecao.isCollapsed ||
+          controlador.text.substring(selecao.start, selecao.end) == ' ',
+      isTrue,
+    );
+    expect(
+      itensDoMenuContextual(tester, campo)
+          .map((item) => item.label)
+          .where((label) => label == 'Marcar como acorde'),
+      isEmpty,
+    );
+  });
+
+  testWidgets('toque em palavra abre apenas o menu nativo', (tester) async {
+    await montar(tester);
+    final campo = find.byKey(const ValueKey('conteudo-edicao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.text = 'Senhor';
+    await tester.pump();
+
+    await tocarNoOffset(tester, campo, 2);
+
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 6),
+    );
+    final itens = itensDoMenuContextual(tester, campo);
+    expect(itens.where((item) => item.label == 'Marcar como acorde'), isEmpty);
+    expect(itens.where((item) => item.label == 'Tratar como texto'), isEmpty);
+  });
+
+  testWidgets('toque em acorde entre colchetes oferece tratar como texto', (
+    tester,
+  ) async {
+    await montar(tester);
+    final campo = find.byKey(const ValueKey('conteudo-edicao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+    controlador.text = '[C]';
+    await tester.pump();
+
+    await tocarNoOffset(tester, campo, 1);
+
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 3),
+    );
+    expect(
+      itensDoMenuContextual(tester, campo).map((item) => item.label),
+      contains('Tratar como texto'),
     );
   });
 
@@ -658,6 +781,8 @@ void main() {
       );
       await tester.tap(find.text('Cancelar'));
       await tester.pump();
+      await tester.tap(find.text('Descartar'));
+      await tester.pump();
       await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();
 
@@ -781,6 +906,8 @@ void main() {
     );
     await tester.tap(find.text('Cancelar'));
     await tester.pump();
+    await tester.tap(find.text('Descartar'));
+    await tester.pump();
     await tester.tap(find.text('ChordPro avançado'));
     await tester.pump();
 
@@ -886,6 +1013,58 @@ void main() {
     expect(repositorio.atualizacoes, 0);
   });
 
+  testWidgets('toque seleciona token no editor de conteúdo da seção', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo:
+          '{title: T}\n{artist: A}\n{key: C}\n'
+          '{start_of_verse: label="V"}\nAm7 D/F#\n{end_of_verse}',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-secao-3')));
+    await tester.pumpAndSettle();
+    final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+
+    await tocarNoOffset(tester, campo, 5);
+
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 4, extentOffset: 8),
+    );
+    expect(
+      itensDoMenuContextual(tester, campo).map((item) => item.label),
+      contains('Marcar como acorde'),
+    );
+  });
+
+  testWidgets('toque seleciona token no editor de trecho não identificado', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      estrutural: true,
+      conteudo: '{title: T}\n{artist: A}\n{key: C}\nC Senhor',
+    );
+    await tester.tap(find.byKey(const ValueKey('bloco-trecho-3')));
+    await tester.pumpAndSettle();
+    final campo = find.byKey(const ValueKey('conteudo-edicao-secao'));
+    final controlador = tester.widget<TextFormField>(campo).controller!;
+
+    await tocarNoOffset(tester, campo, 0);
+
+    expect(
+      controlador.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 1),
+    );
+    expect(
+      itensDoMenuContextual(tester, campo).map((item) => item.label),
+      contains('Marcar como acorde'),
+    );
+  });
+
   testWidgets('não oferece ação para token inválido no conteúdo do bloco', (
     tester,
   ) async {
@@ -951,6 +1130,8 @@ void main() {
       expect(controlador.text, 'Am7Letra\n');
 
       await tester.tap(find.text('Cancelar'));
+      await tester.pump();
+      await tester.tap(find.text('Descartar'));
       await tester.pump();
       await tester.tap(find.text('ChordPro avançado'));
       await tester.pump();

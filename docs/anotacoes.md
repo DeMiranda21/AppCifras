@@ -13,7 +13,7 @@ planejadas foram tocadas.
 Antes de implementar tags e filtros, definir se temas e momentos/tipos serão
 predefinidos, configuráveis ou combinados, e quais categorias têm valor real.
 
-## Interação móvel da edição assistida
+## Descoberta de "Tratar como texto"
 
 Prioridade alta: toque em palavra ou acorde deve selecionar automaticamente o
 token completo, delimitado por espaço ou quebra de linha; acordes como `D/F#`
@@ -80,3 +80,10 @@ e direitos autorais relacionados ao compartilhamento público de letras e cifras
 O objetivo a investigar é facilitar que o usuário encontre rapidamente versões
 confiáveis de músicas e descubra bibliotecas úteis, e não criar uma rede social
 como fim em si mesma.
+
+A seleção automática de palavras e tokens musicais por toque foi entregue; a
+seleção manual por pressão longa continua disponível como alternativa. Ainda
+definir uma apresentação mais encontrável para `Tratar como texto`, que não
+dependa da posição variável do menu nativo, sem transformar a edição em um
+editor de texto complexo.
+

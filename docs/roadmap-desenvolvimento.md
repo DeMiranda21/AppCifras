@@ -39,8 +39,11 @@ consolidada, a especificacao-funcional.md.
    acorde entre colchetes como texto, transformar uma linha selecionada em
    seção ChordPro e editar tipo/rótulo de uma seção explícita. A edição por
    blocos reutiliza essas transformações e mantém o ChordPro como fonte de
-   verdade. As ações de acorde são oferecidas no menu contextual nativo da
-   seleção; a descoberta/onboarding dessa interação permanece futura.
+   verdade. O toque simples seleciona automaticamente palavras e tokens
+   musicais completos; a seleção manual por pressão longa permanece como
+   alternativa. O mesmo toque que seleciona automaticamente abre o menu
+   contextual nativo. As ações de acorde são oferecidas nesse menu; a
+   descoberta/onboarding dessa interação permanece futura.
    `Tratar como texto` deverá ganhar uma apresentação mais encontrável, sem
    depender da posição variável do menu nativo. Permanecem futuras: editar
    acorde e movimento de seções.
@@ -50,7 +53,9 @@ consolidada, a especificacao-funcional.md.
    seções com limites confiáveis. O conteúdo interno de uma seção também é
    editável sem expor seus delimitadores estruturais e reutiliza as ações de
    marcar como acorde/tratar como texto. ChordPro textual segue como modo
-   avançado/fallback. A saída da edição protege alterações não salvas.
+   avançado/fallback. A saída da edição protege alterações não salvas, e o
+   editor local de conteúdo confirma o descarte de alterações ainda não
+   aplicadas.
    Permanecem futuras: edição avançada de acordes dentro do bloco, dividir um
    bloco/trecho em nova seção a partir de uma linha ou posição e ocultação de
    blocos para reorganização rápida. Trechos musicais fora de seção também

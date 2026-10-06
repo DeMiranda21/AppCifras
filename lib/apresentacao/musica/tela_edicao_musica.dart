@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
@@ -9,6 +10,7 @@ import '../../aplicacao/edicao/editar_secao_chordpro.dart';
 import '../../aplicacao/edicao/excluir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
 import '../../aplicacao/edicao/reordenar_secoes_chordpro.dart';
+import '../../aplicacao/edicao/selecionar_token_texto.dart';
 import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/edicao/transformar_secao_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
@@ -968,27 +970,30 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
                   if (_modoEditor == _ModoEditor.estrutural)
                     _editorEstrutural()
                   else ...[
-                    TextFormField(
-                      key: const ValueKey('conteudo-edicao'),
-                      controller: _conteudo,
-                      focusNode: _focoConteudo,
-                      enabled: !_salvando,
-                      decoration: const InputDecoration(
-                        alignLabelWithHint: true,
-                        labelText: 'Conteúdo ChordPro',
+                    _CampoComSelecaoAutomatica(
+                      controlador: _conteudo,
+                      child: TextFormField(
+                        key: const ValueKey('conteudo-edicao'),
+                        controller: _conteudo,
+                        focusNode: _focoConteudo,
+                        enabled: !_salvando,
+                        decoration: const InputDecoration(
+                          alignLabelWithHint: true,
+                          labelText: 'Conteúdo ChordPro',
+                        ),
+                        keyboardType: TextInputType.multiline,
+                        minLines: 12,
+                        maxLines: null,
+                        textInputAction: TextInputAction.newline,
+                        contextMenuBuilder: (context, editableTextState) =>
+                            _menuContextualComAcaoChordPro(
+                              editableTextState: editableTextState,
+                              transformarSelecao: _transformarSelecaoChordPro,
+                              aoAplicar: _aplicarAcaoAssistida,
+                            ),
+                        validator: (valor) =>
+                            _obrigatorio(valor, 'Conteúdo ChordPro'),
                       ),
-                      keyboardType: TextInputType.multiline,
-                      minLines: 12,
-                      maxLines: null,
-                      textInputAction: TextInputAction.newline,
-                      contextMenuBuilder: (context, editableTextState) =>
-                          _menuContextualComAcaoChordPro(
-                            editableTextState: editableTextState,
-                            transformarSelecao: _transformarSelecaoChordPro,
-                            aoAplicar: _aplicarAcaoAssistida,
-                          ),
-                      validator: (valor) =>
-                          _obrigatorio(valor, 'Conteúdo ChordPro'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
@@ -1088,6 +1093,9 @@ class _FolhaEdicaoConteudoSecao extends StatefulWidget {
 
 class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
   late final TextEditingController _conteudo;
+  var _saidaPermitida = false;
+
+  bool get _temAlteracoesPendentes => _conteudo.text != widget.conteudoInicial;
 
   @override
   void initState() {
@@ -1104,71 +1112,122 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        24,
-        24,
-        24 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(widget.titulo, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const ValueKey('conteudo-edicao-secao'),
-            controller: _conteudo,
-            minLines: 8,
-            maxLines: 12,
-            keyboardType: TextInputType.multiline,
-            contextMenuBuilder: (context, editableTextState) =>
-                _menuContextualComAcaoChordPro(
-                  editableTextState: editableTextState,
-                  transformarSelecao: widget.transformarSelecao,
-                  aoAplicar: _aplicarAcaoAssistida,
-                ),
-            decoration: const InputDecoration(
-              labelText: 'Conteúdo da seção',
-              alignLabelWithHint: true,
+  Widget build(BuildContext context) =>
+      PopScope<_ResultadoFolhaEdicaoConteudoSecao>(
+        canPop: _saidaPermitida || !_temAlteracoesPendentes,
+        onPopInvokedWithResult: _aoTentarSair,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + MediaQuery.viewInsetsOf(context).bottom,
             ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-              if (widget.podeEditarSecao) ...[
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () =>
-                      _concluir(context, _AcaoEdicaoConteudoSecao.editarSecao),
-                  child: const Text('Editar seção'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(widget.titulo, style: const TextStyle(fontSize: 20)),
+                const SizedBox(height: 16),
+                _CampoComSelecaoAutomatica(
+                  controlador: _conteudo,
+                  child: TextFormField(
+                    key: const ValueKey('conteudo-edicao-secao'),
+                    controller: _conteudo,
+                    minLines: 8,
+                    maxLines: 12,
+                    keyboardType: TextInputType.multiline,
+                    contextMenuBuilder: (context, editableTextState) =>
+                        _menuContextualComAcaoChordPro(
+                          editableTextState: editableTextState,
+                          transformarSelecao: widget.transformarSelecao,
+                          aoAplicar: _aplicarAcaoAssistida,
+                        ),
+                    decoration: const InputDecoration(
+                      labelText: 'Conteúdo da seção',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: _cancelar,
+                      child: const Text('Cancelar'),
+                    ),
+                    if (widget.podeEditarSecao) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: () =>
+                            _concluir(_AcaoEdicaoConteudoSecao.editarSecao),
+                        child: const Text('Editar seção'),
+                      ),
+                    ],
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () =>
+                          _concluir(_AcaoEdicaoConteudoSecao.aplicar),
+                      child: const Text('Aplicar'),
+                    ),
+                  ],
                 ),
               ],
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () =>
-                    _concluir(context, _AcaoEdicaoConteudoSecao.aplicar),
-                child: const Text('Aplicar'),
-              ),
-            ],
+            ),
+          ),
+        ),
+      );
+
+  Future<void> _aoTentarSair(
+    bool didPop,
+    _ResultadoFolhaEdicaoConteudoSecao? _,
+  ) async {
+    if (didPop || _saidaPermitida || !_temAlteracoesPendentes) {
+      return;
+    }
+    final descartar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descartar alterações?'),
+        content: const Text(
+          'As alterações feitas neste bloco não foram aplicadas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Continuar editando'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descartar'),
           ),
         ],
       ),
-    ),
-  );
+    );
+    if (descartar == true && mounted) {
+      _fecharPermitindoPop();
+    }
+  }
 
-  void _concluir(BuildContext context, _AcaoEdicaoConteudoSecao acao) {
-    Navigator.pop(
-      context,
+  void _cancelar() {
+    if (_temAlteracoesPendentes) {
+      _aoTentarSair(false, null);
+      return;
+    }
+    Navigator.pop(context);
+  }
+
+  void _concluir(_AcaoEdicaoConteudoSecao acao) {
+    _fecharPermitindoPop(
       _ResultadoFolhaEdicaoConteudoSecao(acao: acao, conteudo: _conteudo.text),
     );
+  }
+
+  void _fecharPermitindoPop([_ResultadoFolhaEdicaoConteudoSecao? resultado]) {
+    setState(() => _saidaPermitida = true);
+    Navigator.pop(context, resultado);
   }
 
   void _atualizarAcoes() {
@@ -1198,6 +1257,159 @@ class _FolhaEdicaoConteudoSecaoState extends State<_FolhaEdicaoConteudoSecao> {
       ),
     );
   }
+}
+
+class _CampoComSelecaoAutomatica extends StatefulWidget {
+  const _CampoComSelecaoAutomatica({
+    required this.controlador,
+    required this.child,
+  });
+
+  final TextEditingController controlador;
+  final Widget child;
+
+  @override
+  State<_CampoComSelecaoAutomatica> createState() =>
+      _CampoComSelecaoAutomaticaState();
+}
+
+class _CampoComSelecaoAutomaticaState
+    extends State<_CampoComSelecaoAutomatica> {
+  static const _duracaoMaximaDoToque = Duration(milliseconds: 300);
+  static const _deslocamentoMaximoDoToque = 12.0;
+
+  final _seletor = SelecionarTokenTexto();
+  final Map<int, _ToquePendente> _toques = {};
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: _registrarToque,
+    onPointerMove: _registrarMovimento,
+    onPointerUp: _concluirToque,
+    onPointerCancel: (evento) => _toques.remove(evento.pointer),
+    child: widget.child,
+  );
+
+  void _registrarToque(PointerDownEvent evento) {
+    _toques[evento.pointer] = _ToquePendente(
+      posicaoInicial: evento.position,
+      instanteInicial: evento.timeStamp,
+    );
+  }
+
+  void _registrarMovimento(PointerMoveEvent evento) {
+    final toque = _toques[evento.pointer];
+    if (toque == null) {
+      return;
+    }
+    if ((evento.position - toque.posicaoInicial).distance >
+        _deslocamentoMaximoDoToque) {
+      toque.moveu = true;
+    }
+  }
+
+  void _concluirToque(PointerUpEvent evento) {
+    final toque = _toques.remove(evento.pointer);
+    if (toque == null ||
+        toque.moveu ||
+        evento.timeStamp - toque.instanteInicial > _duracaoMaximaDoToque) {
+      return;
+    }
+    final render = _encontrarRenderEditable();
+    if (render == null) {
+      return;
+    }
+    final offset = _offsetDoCaractereTocado(render, evento.position);
+    if (offset == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final faixa = _seletor.localizar(
+        texto: widget.controlador.text,
+        offset: offset,
+      );
+      if (faixa == null) {
+        return;
+      }
+      widget.controlador.selection = TextSelection(
+        baseOffset: faixa.inicio,
+        extentOffset: faixa.fim,
+      );
+      _encontrarEstadoEditable()?.showToolbar();
+    });
+  }
+
+  EditableTextState? _encontrarEstadoEditable() {
+    EditableTextState? encontrado;
+
+    void visitar(Element elemento) {
+      if (encontrado != null) {
+        return;
+      }
+      if (elemento is StatefulElement && elemento.state is EditableTextState) {
+        encontrado = elemento.state as EditableTextState;
+        return;
+      }
+      elemento.visitChildren(visitar);
+    }
+
+    context.visitChildElements(visitar);
+    return encontrado;
+  }
+
+  RenderEditable? _encontrarRenderEditable() {
+    RenderEditable? encontrado;
+
+    void visitar(RenderObject objeto) {
+      if (encontrado != null) {
+        return;
+      }
+      if (objeto is RenderEditable) {
+        encontrado = objeto;
+        return;
+      }
+      objeto.visitChildren(visitar);
+    }
+
+    final raiz = context.findRenderObject();
+    if (raiz != null) {
+      visitar(raiz);
+    }
+    return encontrado;
+  }
+
+  int? _offsetDoCaractereTocado(RenderEditable render, Offset posicaoGlobal) {
+    final texto = widget.controlador.text;
+    final posicaoDoTexto = render.getPositionForPoint(posicaoGlobal);
+    final posicaoLocal = render.globalToLocal(posicaoGlobal);
+    for (final candidato in [
+      posicaoDoTexto.offset,
+      posicaoDoTexto.offset - 1,
+    ]) {
+      if (candidato < 0 || candidato >= texto.length) {
+        continue;
+      }
+      final caixas = render.getBoxesForSelection(
+        TextSelection(baseOffset: candidato, extentOffset: candidato + 1),
+      );
+      if (caixas.any((caixa) => caixa.toRect().contains(posicaoLocal))) {
+        return candidato;
+      }
+    }
+    return null;
+  }
+}
+
+class _ToquePendente {
+  _ToquePendente({required this.posicaoInicial, required this.instanteInicial});
+
+  final Offset posicaoInicial;
+  final Duration instanteInicial;
+  var moveu = false;
 }
 
 Widget _menuContextualComAcaoChordPro({
