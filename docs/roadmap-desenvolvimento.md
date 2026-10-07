@@ -7,7 +7,7 @@ consolidada, a especificacao-funcional.md.
 ## Base já entregue
 
 - Biblioteca offline, cadastro por colagem/importação, edição, exclusão
-  confirmada e pesquisa por título e artista.
+  confirmada e pesquisa textual por título, artista e letra.
 - ChordPro canônico, parser conservador e preservação de conteúdo desconhecido.
 - Visualização responsiva, transposição temporária, último tom por música,
   zoom com reflow, swipe entre itens da Lista de Culto e tela mantida ativa
@@ -70,7 +70,8 @@ consolidada, a especificacao-funcional.md.
    e tags livres entregues como metadados locais. Tema, momento, BPM, compasso,
    duração, dificuldade, ministério, compositor, álbum, idioma e
    instrumentação permanecem futuros.
-9. **Pesquisa ampliada e filtros:** título, artista, letra, tags e energia.
+9. **Pesquisa ampliada e filtros:** busca textual offline por título, artista
+   e letra entregue. Próxima fatia: filtros por energia e tags.
 10. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
    histórico de tons por Música + Ministrante e histórico de cultos/listas.
 

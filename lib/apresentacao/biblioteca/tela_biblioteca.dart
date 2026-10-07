@@ -6,8 +6,8 @@ import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
+import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
 import '../../dominio/entidades/musica.dart';
-import '../compartilhado/normalizacao_pesquisa.dart';
 import '../entrada/tela_entrada_musica.dart';
 import '../listas_culto/tela_listas_culto.dart';
 import '../musica/tela_visualizacao_musica.dart';
@@ -61,13 +61,14 @@ class TelaBiblioteca extends StatefulWidget {
 }
 
 class _TelaBibliotecaState extends State<TelaBiblioteca> {
-  late Future<List<Musica>> _musicas;
+  static const _pesquisaMusicas = ServicoPesquisaMusicas();
+  late Future<IndicePesquisaMusicas> _indiceMusicas;
   final _pesquisa = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _musicas = widget.listarMusicas.executar();
+    _recarregarMusicas();
     _pesquisa.addListener(_atualizarPesquisa);
   }
 
@@ -86,7 +87,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   void didUpdateWidget(covariant TelaBiblioteca oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.listarMusicas != oldWidget.listarMusicas) {
-      _musicas = widget.listarMusicas.executar();
+      _recarregarMusicas();
     }
   }
 
@@ -100,10 +101,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       ),
     );
     if (cadastrada == true && mounted) {
-      final musicas = widget.listarMusicas.executar();
-      setState(() {
-        _musicas = musicas;
-      });
+      setState(_recarregarMusicas);
     }
   }
 
@@ -124,10 +122,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       ),
     );
     if (mounted) {
-      final musicas = widget.listarMusicas.executar();
-      setState(() {
-        _musicas = musicas;
-      });
+      setState(_recarregarMusicas);
     }
   }
 
@@ -172,10 +167,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       ),
     );
     if (mounted) {
-      final musicas = widget.listarMusicas.executar();
-      setState(() {
-        _musicas = musicas;
-      });
+      setState(_recarregarMusicas);
     }
   }
 
@@ -197,8 +189,8 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       tooltip: 'Adicionar música',
       child: const Icon(Icons.add),
     ),
-    body: FutureBuilder<List<Musica>>(
-      future: _musicas,
+    body: FutureBuilder<IndicePesquisaMusicas>(
+      future: _indiceMusicas,
       builder: (context, resultado) {
         if (resultado.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
@@ -206,11 +198,12 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         if (resultado.hasError) {
           return const _EstadoErroBiblioteca();
         }
-        final musicas = resultado.requireData;
+        final indice = resultado.requireData;
+        final musicas = indice.filtrar('');
         if (musicas.isEmpty) {
           return const _EstadoBibliotecaVazia();
         }
-        final filtradas = _filtrar(musicas, _pesquisa.text);
+        final filtradas = indice.filtrar(_pesquisa.text);
         return Column(
           children: [
             Padding(
@@ -254,13 +247,10 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     ),
   );
 
-  List<Musica> _filtrar(List<Musica> musicas, String consulta) {
-    final normalizada = normalizarPesquisa(consulta);
-    if (normalizada.isEmpty) return musicas;
-    return musicas.where((musica) {
-      return normalizarPesquisa(musica.titulo).contains(normalizada) ||
-          normalizarPesquisa(musica.artista).contains(normalizada);
-    }).toList();
+  void _recarregarMusicas() {
+    _indiceMusicas = widget.listarMusicas.executar().then(
+      _pesquisaMusicas.criarIndice,
+    );
   }
 }
 

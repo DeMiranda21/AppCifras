@@ -13,7 +13,7 @@ O uso cotidiano não depende de internet nem exige conhecimento de ChordPro.
 A Biblioteca reúne músicas locais identificadas individualmente. Cada música
 válida tem título, artista, tom original e conteúdo musical. O usuário cadastra
 por texto/colagem, importa ChordPro, edita, exclui com confirmação e pesquisa
-por título ou artista.
+por título, artista ou conteúdo visível da letra.
 
 ### Conteúdo e leitura
 

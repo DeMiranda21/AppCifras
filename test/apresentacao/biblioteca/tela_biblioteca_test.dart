@@ -380,44 +380,73 @@ void main() {
     expect(repositorio.musicas, isEmpty);
   });
 
-  testWidgets('pesquisa por título, artista, acentos e permite limpar', (
-    tester,
-  ) async {
-    final repositorio = _RepositorioFake();
-    for (final dados in [
-      ('Coração de Adorador', 'Ministério Ágape', 'musica-1'),
-      ('Outra Canção', 'Banda Exemplo', 'musica-2'),
-    ]) {
-      repositorio.musicas.add(
-        Musica(
-          id: IdMusica(dados.$3),
-          documento: parser.interpretar(
-            '{title: ${dados.$1}}\n{artist: ${dados.$2}}\n{key: C}\n[C]Letra',
-          ),
+  testWidgets(
+    'pesquisa título, artista e letra sem nova leitura e permite limpar',
+    (tester) async {
+      final repositorio = _RepositorioFake();
+      for (final dados in [
+        ('Graça Suprema', 'Artista A', '[C]Letra A', 'musica-a'),
+        ('Outra Canção', 'Ministério da Graça', '[C]Letra B', 'musica-b'),
+        (
+          'Canção C',
+          'Artista C',
+          '[C]Tua graça me alcançou\nO Espírito Santo está aqui',
+          'musica-c',
         ),
+        (
+          'Canção D',
+          'Artista D',
+          '[C]Conteúdo sem correspondência',
+          'musica-d',
+        ),
+      ]) {
+        repositorio.musicas.add(
+          Musica(
+            id: IdMusica(dados.$4),
+            documento: parser.interpretar(
+              '{title: ${dados.$1}}\n{artist: ${dados.$2}}\n{key: C}\n${dados.$3}',
+            ),
+          ),
+        );
+      }
+      await montar(tester, repositorio);
+      await tester.pumpAndSettle();
+      final leiturasIniciais = repositorio.listagens;
+      final pesquisa = find.byType(TextField);
+      await tester.enterText(pesquisa, '  graca  ');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-b')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-c')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-d')), findsNothing);
+      expect(repositorio.listagens, leiturasIniciais);
+
+      await tester.enterText(pesquisa, '  ESPIRITO   SANTO ');
+      await tester.pump();
+      expect(repositorio.listagens, leiturasIniciais);
+      final musicaDaLetra = find.byKey(const ValueKey('musica-c'));
+      expect(musicaDaLetra, findsOneWidget);
+      await tester.tap(musicaDaLetra);
+      await tester.pumpAndSettle();
+      expect(find.text('Cifra'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      final leiturasAposNavegacao = repositorio.listagens;
+
+      await tester.enterText(pesquisa, 'inexistente');
+      await tester.pump();
+      expect(
+        find.text('Nenhuma música encontrada para esta pesquisa.'),
+        findsOneWidget,
       );
-    }
-    await montar(tester, repositorio);
-    await tester.pumpAndSettle();
-    final pesquisa = find.byType(TextField);
-    await tester.enterText(pesquisa, '  coracao  ');
-    await tester.pump();
-    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
-    expect(find.byKey(const ValueKey('musica-2')), findsNothing);
-    await tester.enterText(pesquisa, 'ÁGAPE');
-    await tester.pump();
-    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
-    await tester.enterText(pesquisa, 'inexistente');
-    await tester.pump();
-    expect(
-      find.text('Nenhuma música encontrada para esta pesquisa.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.byTooltip('Limpar pesquisa'));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
-    expect(find.byKey(const ValueKey('musica-2')), findsOneWidget);
-  });
+      await tester.tap(find.byTooltip('Limpar pesquisa'));
+      await tester.pump();
+      for (final id in ['musica-a', 'musica-b', 'musica-c', 'musica-d']) {
+        expect(find.byKey(ValueKey(id)), findsOneWidget);
+      }
+      expect(repositorio.listagens, leiturasAposNavegacao);
+    },
+  );
 
   testWidgets('falha ao salvar mantém o usuário na edição', (tester) async {
     final repositorio = _RepositorioFake()..erroAtualizar = StateError('falha');
@@ -483,11 +512,16 @@ class _RepositorioFake implements RepositorioMusicas {
   Object? erroAtualizar;
   Completer<void>? atualizacaoPendente;
   var atualizacoes = 0;
+  var listagens = 0;
   @override
   Future<void> excluir(IdMusica id) async =>
       musicas.removeWhere((m) => m.id == id);
   @override
-  Future<List<Musica>> listar() async => List.of(musicas);
+  Future<List<Musica>> listar() async {
+    listagens += 1;
+    return List.of(musicas);
+  }
+
   @override
   Future<Musica?> obterPorId(IdMusica id) async {
     for (final musica in musicas) {
