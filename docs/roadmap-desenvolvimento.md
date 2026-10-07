@@ -31,7 +31,7 @@ consolidada, a especificacao-funcional.md.
    músicas da Lista de Culto de modo coerente com a direção do swipe, sem
    prejudicar a resposta imediata à navegação.
 
-## Prioridade 1 — Estrutura, classificação e histórico
+## Prioridade 1 — Estrutura, classificação, versões e Listas
 
 5. **Reconhecimento estrutural:** Intro, Verso, Pré-Refrão, Refrão, Ponte,
    Instrumental, Final e outros rótulos, sempre preservando o original.
@@ -64,47 +64,60 @@ consolidada, a especificacao-funcional.md.
    duplicar e excluir usam a mesma regra de faixa segura para seções ChordPro
    explícitas, rótulos textuais reconhecidos e trechos livres; metadados,
    diretivas e espaçadores isolados não viram blocos.
-   Não criar entidade Arranjo/Versão
-   nesta fase.
 8. **Tags, classificação e metadados:** energia (Calma, Moderada ou Animada)
    e tags livres entregues como metadados locais. Tema, momento, BPM, compasso,
    duração, dificuldade, ministério, compositor, álbum, idioma e
    instrumentação permanecem futuros.
 9. **Pesquisa ampliada e filtros:** busca textual offline por título, artista
-   e letra entregue. Próxima fatia: filtros por energia e tags.
-10. **Histórico:** execução, data, lista/culto, tom, frequência, ministrante,
-   histórico de tons por Música + Ministrante e histórico de cultos/listas.
+   e letra, combinável com filtros por energia e tags. Resultados encontrados
+   na letra exibem o primeiro trecho visível correspondente, entregue.
+10. **Versões e arranjos:** introduzir VersaoMusica como arranjo concreto de
+    uma Música, com versão principal protegida contra sobrescrita silenciosa.
+    Migrar a cifra única atual para a versão principal e permitir que uma nova
+    versão nasça de outra. Após uso em Lista, o conteúdo musical da versão será
+    imutável; versões usadas serão arquivadas, não excluídas, e a marca de
+    principal poderá ser trocada sem alterar identidade ou conteúdo.
+11. **Listas com contexto de ministração:** adicionar data e ministrante
+    opcional à Lista; fazer o Item registrar Música, versão escolhida e tom
+    snapshot da ocasião. A Lista é memória operacional do repertório, sem
+    estado planejada/executada nem entidade autônoma de histórico.
+12. **Consulta de Listas anteriores:** pesquisar músicas, data, ministrante,
+    versão e tom nas Listas já criadas. Esta visão substitui o antigo item de
+    Histórico separado.
 
 ## Prioridade 2 — Apoio ao ministrante e evoluções locais
 
-11. **Descoberta e uso recente:** repertório por classificação, BPM,
-    tonalidade, ministrante, histórico e tempo desde última execução;
+13. **Importação em lote:** primeiro múltiplos arquivos `.cho`; depois `.txt`
+    com conversão conservadora, revisão de ambiguidades e resultado por
+    arquivo, sem deixar uma falha bloquear o lote inteiro. Duplicidade e o
+    destino de um arquivo como Música nova ou VersaoMusica continuam abertos.
+14. **Descoberta e uso recente:** repertório por classificação, BPM,
+    tonalidade, ministrante, Listas anteriores e tempo desde a última
+    aparição em Lista;
     recorrência e prevenção de repetição.
-12. **BPM e compasso:** BPM por música, indicador luminoso discreto e
+15. **BPM e compasso:** BPM por música, indicador luminoso discreto e
     compasso. Sem tap tempo ou metrônomo sonoro.
-13. **Listas de Culto:** duplicar, data opcional, responsável, status derivado
-    da data (futura, hoje ou passada/executada) e histórico após definir como
-    confirmar execução real.
-14. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
+16. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
     em baixa prioridade.
-15. **Seleção direta de tom** e **graus na interface** (cifras, graus ou
+17. **Seleção direta de tom** e **graus na interface** (cifras, graus ou
     ambos; romano ou numérico).
-16. **Importação:** colagem melhorada, lote, fontes externas/APIs e detecção
-    explícita de metadados e estrutura. Sem importação automática de PDF.
+18. **Estatísticas derivadas das Listas:** frequência de músicas, última
+    aparição, tons e repertórios por ministrante. Não persistir estatísticas
+    independentes nesta etapa.
 
-## Prioridade 3 — Compartilhamento, backup e estatísticas
+## Prioridade 3 — Backup e evoluções remotas
 
-17. Compartilhamento de músicas/Listas, equipe, versão oficial, distribuição,
-    atualização e conflitos; sem antecipar entidade Arranjo/Versão.
-18. Backup, importação/exportação, sincronização entre aparelhos e resolução de
-    conflitos.
-19. Estatísticas derivadas do histórico real: execuções, frequência, tons,
-    ministrantes, cultos e classificações.
+19. Backup, importação/exportação, sincronização entre aparelhos e resolução de
+    conflitos. Sincronização não substitui importação.
+20. Múltiplas bibliotecas públicas ou assináveis, distribuição, equipe,
+    atualização remota e conflitos entre origens são possibilidade distante.
+    Não orientam a arquitetura atual, que mantém uma Biblioteca principal e
+    oficial.
 
 ## Prioridade 4 — Interface e plataforma
 
-20. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
-21. iOS como evolução posterior; Android continua principal.
+21. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
+22. iOS como evolução posterior; Android continua principal.
 
 ## Última etapa — IA
 
@@ -117,7 +130,8 @@ transições.
 
     Correção de cifra → reconhecimento estrutural → edição assistida → editor por blocos
     Tags/metadados → pesquisa/filtros → descoberta de repertório
-    Histórico → ministrantes/histórico de tons → descoberta e estatísticas
+    Versões/arranjos → versão e tom por ItemListaCulto → consulta de Listas
+    Contexto da Lista → ministrante/data → descoberta e estatísticas derivadas
+    Importação em lote → revisão/duplicidade → fontes externas futuras
     BPM → indicador luminoso
-    Listas + histórico → registro de culto → estatísticas
-    Compartilhamento → usuários/equipe → sincronização colaborativa
+    Biblioteca principal → backup/sincronização → múltiplas bibliotecas futuras

@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import 'package:appcifras/aplicacao/entrada/preparar_entrada_musica.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_musica.dart';
+import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
 import 'package:appcifras/apresentacao/biblioteca/tela_biblioteca.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tag_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter/material.dart';
@@ -22,22 +26,34 @@ void main() {
         geradorId: _GeradorIdFake(IdMusica('musica-nova')),
       );
 
-  Future<void> montar(WidgetTester tester, _RepositorioFake repositorio) =>
-      tester.pumpWidget(
-        MaterialApp(
-          home: TelaBiblioteca(
-            listarMusicas: ListarMusicas(repositorio),
-            prepararEntradaMusica: PrepararEntradaMusica(),
-            salvarRascunhoChordPro: salvador(repositorio),
-            obterMusicaPorId: ObterMusicaPorId(repositorio),
-            atualizarMusica: AtualizarMusica(
-              repositorio: repositorio,
-              parserDocumento: parser,
-            ),
-            excluirMusica: ExcluirMusica(repositorio),
-          ),
+  Future<void> montar(
+    WidgetTester tester,
+    _RepositorioFake repositorio, {
+    _RepositorioClassificacaoFake? classificacao,
+  }) => tester.pumpWidget(
+    MaterialApp(
+      home: TelaBiblioteca(
+        listarMusicas: ListarMusicas(repositorio),
+        prepararEntradaMusica: PrepararEntradaMusica(),
+        salvarRascunhoChordPro: salvador(repositorio),
+        obterMusicaPorId: ObterMusicaPorId(repositorio),
+        atualizarMusica: AtualizarMusica(
+          repositorio: repositorio,
+          parserDocumento: parser,
         ),
-      );
+        excluirMusica: ExcluirMusica(repositorio),
+        listarClassificacoesMusicas: classificacao == null
+            ? null
+            : ListarClassificacoesMusicas(classificacao),
+        obterClassificacaoMusica: classificacao == null
+            ? null
+            : ObterClassificacaoMusica(classificacao),
+        salvarClassificacaoMusica: classificacao == null
+            ? null
+            : SalvarClassificacaoMusica(classificacao),
+      ),
+    ),
+  );
 
   Future<void> abrirEntrada(
     WidgetTester tester,
@@ -381,6 +397,216 @@ void main() {
   });
 
   testWidgets(
+    'combina texto, energia e tags sem recarregar a Biblioteca por filtro',
+    (tester) async {
+      final repositorio = _RepositorioFake();
+      final classificacao = _RepositorioClassificacaoFake();
+      final dados = [
+        (
+          'musica-a',
+          'Graça A',
+          '[C]Tua graça me alcançou',
+          EnergiaMusica.calma,
+          [TagMusica('Ceia'), TagMusica('Congregacional')],
+        ),
+        (
+          'musica-b',
+          'Graça B',
+          '[C]Tua graça me alcançou',
+          EnergiaMusica.animada,
+          [TagMusica('Celebração')],
+        ),
+        (
+          'musica-c',
+          'Música C',
+          '[C]Outra letra',
+          EnergiaMusica.calma,
+          [TagMusica('Ceia')],
+        ),
+        ('musica-d', 'Música D', '[C]Outra letra', null, <TagMusica>[]),
+      ];
+      for (final dado in dados) {
+        final musica = Musica(
+          id: IdMusica(dado.$1),
+          documento: parser.interpretar(
+            '{title: ${dado.$2}}\n{artist: Artista}\n{key: C}\n${dado.$3}',
+          ),
+        );
+        repositorio.musicas.add(musica);
+        classificacao.dados[musica.id] = ClassificacaoMusica(
+          energia: dado.$4,
+          tags: dado.$5,
+        );
+      }
+
+      await montar(tester, repositorio, classificacao: classificacao);
+      await tester.pumpAndSettle();
+      final listagensIniciais = repositorio.listagens;
+      final pesquisa = find.byType(TextField);
+      await tester.enterText(pesquisa, 'graca');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-b')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-c')), findsNothing);
+
+      Future<void> abrirFiltros() async {
+        await tester.tap(
+          find.byKey(const ValueKey('abrir-filtros-biblioteca')),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> aplicarFiltros() async {
+        await tester.tap(
+          find.byKey(const ValueKey('aplicar-filtros-biblioteca')),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await abrirFiltros();
+      await tester.tap(find.byKey(const ValueKey('filtro-energia-calma')));
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-b')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('indicador-filtros-ativos')),
+        findsNothing,
+      );
+
+      await abrirFiltros();
+      await tester.tap(find.byKey(const ValueKey('filtro-energia-calma')));
+      await tester.tap(find.byKey(const ValueKey('filtro-tag-ceia')));
+      await aplicarFiltros();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-b')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('indicador-filtros-ativos')),
+        findsOneWidget,
+      );
+      expect(repositorio.listagens, listagensIniciais);
+
+      await tester.enterText(pesquisa, '');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-c')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-d')), findsNothing);
+
+      await abrirFiltros();
+      await tester.tap(find.byKey(const ValueKey('filtro-tag-congregacional')));
+      await aplicarFiltros();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-c')), findsNothing);
+
+      await tester.enterText(pesquisa, 'graca');
+      await tester.pump();
+      await abrirFiltros();
+      await tester.tap(find.byKey(const ValueKey('limpar-filtros-biblioteca')));
+      await aplicarFiltros();
+      expect(find.byKey(const ValueKey('musica-a')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-b')), findsOneWidget);
+      expect(find.byKey(const ValueKey('musica-c')), findsNothing);
+
+      await tester.enterText(pesquisa, '');
+      await tester.pump();
+      for (final id in ['musica-a', 'musica-b', 'musica-c', 'musica-d']) {
+        expect(find.byKey(ValueKey(id)), findsOneWidget);
+      }
+
+      await abrirFiltros();
+      await tester.tap(find.byKey(const ValueKey('filtro-energia-calma')));
+      await tester.tap(find.byKey(const ValueKey('filtro-tag-celebração')));
+      await aplicarFiltros();
+      expect(
+        find.text('Nenhuma música encontrada para esta pesquisa.'),
+        findsOneWidget,
+      );
+      expect(repositorio.listagens, listagensIniciais);
+    },
+  );
+
+  testWidgets('recarrega classificações após editar música com filtro ativo', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    final classificacao = _RepositorioClassificacaoFake();
+    final musica = Musica(
+      id: IdMusica('musica-1'),
+      documento: parser.interpretar(
+        '{title: Música}\n{artist: Artista}\n{key: C}\n[C]Letra',
+      ),
+    );
+    repositorio.musicas.add(musica);
+    classificacao.dados[musica.id] = const ClassificacaoMusica(
+      energia: EnergiaMusica.calma,
+    );
+    await montar(tester, repositorio, classificacao: classificacao);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('abrir-filtros-biblioteca')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('filtro-energia-calma')));
+    await tester.tap(find.byKey(const ValueKey('aplicar-filtros-biblioteca')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('musica-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Editar música'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Animada'));
+    final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Nenhuma música encontrada para esta pesquisa.'),
+      findsOneWidget,
+    );
+    expect(
+      (await classificacao.obter(musica.id)).energia,
+      EnergiaMusica.animada,
+    );
+  });
+
+  testWidgets('remove filtro de tag que deixa de existir ao recarregar', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    final classificacao = _RepositorioClassificacaoFake();
+    final musica = Musica(
+      id: IdMusica('musica-1'),
+      documento: parser.interpretar(
+        '{title: Música}\n{artist: Artista}\n{key: C}\n[C]Letra',
+      ),
+    );
+    repositorio.musicas.add(musica);
+    classificacao.dados[musica.id] = ClassificacaoMusica(
+      tags: [TagMusica('Ceia')],
+    );
+    await montar(tester, repositorio, classificacao: classificacao);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('abrir-filtros-biblioteca')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('filtro-tag-ceia')));
+    await tester.tap(find.byKey(const ValueKey('aplicar-filtros-biblioteca')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('musica-1')));
+    await tester.pumpAndSettle();
+    await classificacao.substituirTags(musica.id, []);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('musica-1')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('indicador-filtros-ativos')),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
     'pesquisa título, artista e letra sem nova leitura e permite limpar',
     (tester) async {
       final repositorio = _RepositorioFake();
@@ -447,6 +673,53 @@ void main() {
       expect(repositorio.listagens, leiturasAposNavegacao);
     },
   );
+
+  testWidgets('mostra trecho da letra somente quando a busca o corresponde', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    for (final dados in [
+      (
+        'Graça no título',
+        'Artista A',
+        '[C]Letra sem correspondência',
+        'titulo',
+      ),
+      ('Canção B', 'Artista B', '[C]Tua graça me alcançou', 'letra'),
+      ('Canção C', 'Artista C', '[C]Pela graça [G]somos salvos', 'acordes'),
+      ('Canção D', 'Artista D', '[C]Outra letra', 'fora'),
+    ]) {
+      repositorio.musicas.add(
+        Musica(
+          id: IdMusica(dados.$4),
+          documento: parser.interpretar(
+            '{title: ${dados.$1}}\n{artist: ${dados.$2}}\n{key: C}\n${dados.$3}',
+          ),
+        ),
+      );
+    }
+    await montar(tester, repositorio);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '  GRACA ');
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('titulo')), findsOneWidget);
+    expect(find.byKey(const ValueKey('letra')), findsOneWidget);
+    expect(find.byKey(const ValueKey('acordes')), findsOneWidget);
+    expect(find.byKey(const ValueKey('fora')), findsNothing);
+    expect(find.text('Tua graça me alcançou'), findsOneWidget);
+    expect(find.text('Pela graça somos salvos'), findsOneWidget);
+    expect(find.text('[C]Pela graça [G]somos salvos'), findsNothing);
+    expect(find.text('Letra sem correspondência'), findsNothing);
+
+    await tester.tap(find.byTooltip('Limpar pesquisa'));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('fora')), findsOneWidget);
+    expect(find.text('Tua graça me alcançou'), findsNothing);
+    expect(find.text('Pela graça somos salvos'), findsNothing);
+  });
 
   testWidgets('falha ao salvar mantém o usuário na edição', (tester) async {
     final repositorio = _RepositorioFake()..erroAtualizar = StateError('falha');
@@ -549,6 +822,36 @@ class _RepositorioFake implements RepositorioMusicas {
       throw StateError('Música não encontrada.');
     }
     musicas[indice] = musica;
+  }
+}
+
+class _RepositorioClassificacaoFake implements RepositorioClassificacaoMusica {
+  final Map<IdMusica, ClassificacaoMusica> dados = {};
+
+  @override
+  Future<void> definirEnergia(IdMusica id, EnergiaMusica? energia) async {
+    final atual = await obter(id);
+    dados[id] = ClassificacaoMusica(energia: energia, tags: atual.tags);
+  }
+
+  @override
+  Future<ClassificacaoMusica> obter(IdMusica id) async =>
+      dados[id] ?? const ClassificacaoMusica();
+
+  @override
+  Future<Map<IdMusica, ClassificacaoMusica>> listar() async =>
+      Map.unmodifiable(dados);
+
+  @override
+  Future<void> removerPorMusica(IdMusica id) async => dados.remove(id);
+
+  @override
+  Future<void> substituirTags(IdMusica id, Iterable<TagMusica> tags) async {
+    final atual = await obter(id);
+    dados[id] = ClassificacaoMusica(
+      energia: atual.energia,
+      tags: tags.toList(),
+    );
   }
 }
 

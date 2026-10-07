@@ -7,8 +7,10 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 
 - Android é a plataforma inicial, com mínimo API 23; Samsung Galaxy A72 é a
   referência de validação.
-- O produto é local e offline. Nuvem, backup entre aparelhos,
-  compartilhamento, colaboração e IA não fazem parte da versão atual.
+- O produto é local e offline, com uma única Biblioteca principal e oficial,
+  alimentada pelo AppCifras. Nuvem, backup entre aparelhos,
+  compartilhamento, colaboração, múltiplas bibliotecas públicas ou assináveis
+  e IA não fazem parte da versão atual.
 - Cada música gerenciada usa arquivo UTF-8 .cho nomeado por IdMusica.
   SQLite/Drift mantém índice e estado local derivado, não a cifra completa.
 - Arquivo da música é fonte canônica de conteúdo e metadados. Índices, Listas
@@ -16,6 +18,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Energia (Calma, Moderada ou Animada) é opcional e Tags são livres, opcionais
   e múltiplas. Ambas são classificações locais no SQLite, não diretivas do
   ChordPro; Tema e Momento não fazem parte desta etapa.
+- Importação introduz conteúdo novo na Biblioteca; sincronização futura mantém
+  conteúdo já conhecido alinhado a uma origem externa. São conceitos distintos.
 
 ## Música, ChordPro e edição
 
@@ -50,6 +54,24 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   trechos livres derivados. Ela não aparece na leitura nem no editor local.
 - Reanálise preserva ChordPro e rótulos existentes; converte somente pares
   inequívocos de linha textual de acordes e letra ainda não marcados.
+- Na evolução de versões, Musica será a identidade de catálogo com título e
+  artista, enquanto VersaoMusica será o arranjo concreto, com identidade,
+  ChordPro e tom original próprios. A cifra única atual migrará para a versão
+  principal; arranjos não duplicarão a Música no catálogo.
+- Editar a versão principal deverá preservar seu conteúdo: o fluxo seguro será
+  salvar como nova versão. Versões alternativas poderão receber alterações e
+  também originar uma nova versão. A interface exata permanece futura.
+- Cada Música terá exatamente uma VersaoMusica principal. Trocar a principal
+  apenas move essa marca: não copia conteúdo, não exclui a anterior nem altera
+  identidades.
+- O nome da versão permanece editável e não define sua identidade. O conteúdo
+  musical — ChordPro, acordes, estrutura, arranjo e tom original — deixa de
+  ser editável após a primeira referência por ItemListaCulto. A alteração
+  musical de versão já usada cria nova versão; a proteção independe de ela ser
+  principal ou alternativa.
+- Versão usada por Lista não pode ser excluída fisicamente; ela poderá ser
+  arquivada, preservando conteúdo e referências antigas e ficando fora das
+  novas seleções usuais. Versão nunca usada poderá ser excluída.
 
 ## Parser e acordes
 
@@ -98,15 +120,28 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   itens na ordem capturada; o indicador de posição permanece visível e o botão
   de voltar retorna diretamente à Lista.
 
-## Lista de Culto v1
+## Lista de Culto v1 e evolução aprovada
 
-- Lista guarda IdListaCulto e nome. Item guarda IdItemListaCulto, IdMusica e
-  posição; não guarda ChordPro nem tom próprio.
+- Atualmente, Lista guarda IdListaCulto e nome. Item guarda IdItemListaCulto,
+  IdMusica e posição; não guarda ChordPro nem tom próprio.
 - Domínio aceita ocorrências repetidas; UI v1 impede nova inclusão de música já
   presente, sem alterar dados preexistentes.
 - Excluir item ou Lista não exclui Música. Excluir Música remove itens de forma
   explícita, sem depender apenas de ON DELETE CASCADE.
 - Remoção de item exige confirmação. Visualização aberta pela Lista navega na
   ordem capturada sem criar rota por música.
-- A Lista usa último tom da Música ou tom original. Tom por item será conceito
-  futuro separado.
+- Uma Lista será normalmente criada para uma ministração e servirá como sua
+  memória operacional. Não haverá entidade separada de histórico de execução,
+  estados planejada/executada/cancelada, marcação de execução ou confirmação
+  música a música nesta fase.
+- A evolução aprovada dará à Lista data e ministrante opcional, aplicado à
+  Lista inteira; não haverá ministrante por música, múltiplos ministrantes ou
+  override por item.
+- Quando VersaoMusica existir, ItemListaCulto registrará Música, versão
+  escolhida, posição e tom da ocasião. O tom será snapshot operacional e não
+  mudará quando a preferência de último tom, a versão principal ou outra Lista
+  for alterada. O Item referencia a versão concreta e não armazena snapshot
+  completo de ChordPro; a imutabilidade da versão após uso preserva a Lista.
+- A regra de sugestão inicial entre último tom e tom original da versão ao
+  incluir uma música em uma Lista permanece aberta. Pesquisa histórica e
+  estatísticas futuras serão derivadas das Listas.

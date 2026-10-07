@@ -43,14 +43,16 @@ Inclui:
 - conteúdo das músicas estruturado em ChordPro;
 - visualização de cifras, ajuste de fonte e transposição;
 - visualização por cifras, graus ou ambas;
-- Listas de Culto com criação, inclusão, reordenação, tom por item e
-  navegação;
+- Listas de Culto com criação, inclusão, reordenação e navegação; tom por item
+  e versão escolhida são evoluções aprovadas ainda não implementadas;
 - funcionamento offline.
 
-Ficam fora do MVP: sincronização em nuvem, importação de PDF,
-compartilhamento, coleções, histórico avançado, editor estruturado por
-seções, modo palco, rolagem automática, estatísticas, Bluetooth, MIDI, IA e
-colaboração.
+Ficam fora do MVP atual: sincronização em nuvem, importação de PDF,
+compartilhamento, múltiplas bibliotecas públicas ou assináveis, coleções,
+histórico de execução autônomo, modo palco, rolagem automática, estatísticas,
+Bluetooth, MIDI, IA e colaboração. Versões/arranjos, contexto de ministração
+em Listas e importação em lote são evoluções aprovadas, mas ainda não
+implementadas.
 
 ## Regras de domínio do MVP
 
@@ -58,17 +60,21 @@ colaboração.
   localmente.
 - Biblioteca Musical é um escopo organizacional, não um Aggregate Root formal
   no MVP.
-- Lista de Culto tem identidade própria e seus itens referenciam músicas por
-  ID.
+- Lista de Culto tem identidade própria e seus itens atualmente referenciam
+  músicas por ID. A evolução aprovada para versões fará o item registrar a
+  versão escolhida e o tom da ocasião.
 - Registro de Tom, Tag e Fonte de Sincronização não são entidades completas no
   MVP; use valores ou estruturas simples somente quando forem necessários.
+  Não criar subsistema separado de histórico de execução enquanto Listas de
+  Culto forem a memória operacional das ministrações.
 - A transposição nunca altera o conteúdo original nem o tom original da
   música.
 - Na exibição por graus, converta somente acordes diatônicos para o tom atual.
   Acordes não diatônicos e inversões permanecem como cifras absolutas com a
   grafia original.
-- O editor inicial é texto simples. Não implemente edição estruturada de
-  seções ou blocos antes de existir necessidade aprovada.
+- ChordPro textual é o modo avançado e fallback. A edição por blocos já é uma
+  projeção assistida do ChordPro; futuras operações devem preservar essa fonte
+  canônica e só ampliar o editor quando houver necessidade aprovada.
 
 ## Dados e persistência
 

@@ -61,6 +61,9 @@ class ComposicaoAppCifras {
        obterClassificacaoMusica = ObterClassificacaoMusica(
          repositorioClassificacao,
        ),
+       listarClassificacoesMusicas = ListarClassificacoesMusicas(
+         repositorioClassificacao,
+       ),
        salvarClassificacaoMusica = SalvarClassificacaoMusica(
          repositorioClassificacao,
        ),
@@ -116,6 +119,7 @@ class ComposicaoAppCifras {
   final SalvarUltimoTomExecucao salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao removerUltimoTomExecucao;
   final ObterClassificacaoMusica obterClassificacaoMusica;
+  final ListarClassificacoesMusicas listarClassificacoesMusicas;
   final SalvarClassificacaoMusica salvarClassificacaoMusica;
   final CriarListaCulto criarListaCulto;
   final ListarListasCulto listarListasCulto;
@@ -197,6 +201,9 @@ class _RepositorioClassificacaoVazio implements RepositorioClassificacaoMusica {
   @override
   Future<ClassificacaoMusica> obter(IdMusica idMusica) async =>
       const ClassificacaoMusica();
+
+  @override
+  Future<Map<IdMusica, ClassificacaoMusica>> listar() async => const {};
 
   @override
   Future<void> definirEnergia(

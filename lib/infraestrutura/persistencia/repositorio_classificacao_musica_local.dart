@@ -22,6 +22,31 @@ class RepositorioClassificacaoMusicaLocal
   }
 
   @override
+  Future<Map<IdMusica, ClassificacaoMusica>> listar() async {
+    final resultados = await Future.wait([
+      _banco.listarEnergiasMusicas(),
+      _banco.listarTodasTagsMusicas(),
+    ]);
+    final energias = resultados[0] as List<EnergiasMusica>;
+    final tags = resultados[1] as List<TagsMusica>;
+    final classificacoes = <IdMusica, ClassificacaoMusica>{
+      for (final energia in energias)
+        IdMusica(energia.idMusica): ClassificacaoMusica(
+          energia: EnergiaMusica.values.byName(energia.energia),
+        ),
+    };
+    for (final tag in tags) {
+      final id = IdMusica(tag.idMusica);
+      final atual = classificacoes[id] ?? const ClassificacaoMusica();
+      classificacoes[id] = ClassificacaoMusica(
+        energia: atual.energia,
+        tags: [...atual.tags, TagMusica(tag.valor)],
+      );
+    }
+    return Map.unmodifiable(classificacoes);
+  }
+
+  @override
   Future<void> definirEnergia(IdMusica idMusica, EnergiaMusica? energia) =>
       _banco.definirEnergiaMusica(idMusica.valor, energia?.name);
 

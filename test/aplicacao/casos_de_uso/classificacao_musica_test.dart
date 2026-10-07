@@ -39,6 +39,10 @@ class _RepositorioClassificacaoFake implements RepositorioClassificacaoMusica {
       _dados[id] ?? const ClassificacaoMusica();
 
   @override
+  Future<Map<IdMusica, ClassificacaoMusica>> listar() async =>
+      Map.unmodifiable(_dados);
+
+  @override
   Future<void> removerPorMusica(IdMusica id) async => _dados.remove(id);
 
   @override

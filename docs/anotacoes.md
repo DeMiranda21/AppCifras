@@ -2,83 +2,45 @@
 
 Este arquivo guarda apenas dúvidas ou hipóteses ainda não consolidadas.
 
-## Confirmação de execução de uma Lista de Culto
-
-Antes de registrar histórico automaticamente, definir como o usuário confirma
-quais músicas foram realmente executadas. Não assumir que todas as músicas
-planejadas foram tocadas.
-
 ## Descoberta de "Tratar como texto"
 
-Prioridade alta: toque em palavra ou acorde deve selecionar automaticamente o
-token completo, delimitado por espaço ou quebra de linha; acordes como `D/F#`
-e `Am7` continuam um único token. Definir também uma apresentação alternativa
-para `Tratar como texto`, que não dependa da posição variável do menu nativo,
-sem transformar a edição em um editor de texto complexo.
+Prioridade alta: a seleção automática de palavras e tokens musicais por toque
+foi entregue; a seleção manual por pressão longa continua disponível como
+alternativa. Ainda definir uma apresentação mais encontrável para `Tratar como
+texto`, que não dependa da posição variável do menu nativo, sem transformar a
+edição em um editor de texto complexo.
 
-## Bibliotecas compartilháveis/assináveis
+## Último tom e novo Item de Lista
 
-Avaliar futuramente a possibilidade de um usuário ou grupo publicar uma
-biblioteca musical para que outras pessoas possam adicioná-la ou assiná-la no
-AppCifras. O conceito pode abranger bibliotecas pessoais, de uma igreja, de um
-ministério ou de uma equipe de louvor, inclusive permitindo que um usuário
-acompanhe mais de uma biblioteca.
+Definir a regra exata para sugerir o tom inicial quando uma música for incluída
+em uma Lista de Culto: usar o último tom salvo para a Música, o tom original da
+versão escolhida ou outra regra explícita. Depois de criado, o tom snapshot do
+ItemListaCulto será independente da preferência de último tom.
 
-Após a sincronização, as músicas recebidas devem permanecer disponíveis
-localmente, preservando o funcionamento offline-first. Novas músicas e
-alterações publicadas pela origem poderão ser identificadas e recebidas pelo
-aplicativo quando houver conexão.
+## Importação em lote
 
-A solução deverá considerar origem e versionamento das músicas e tratar
-explicitamente divergências entre uma atualização publicada e alterações feitas
-localmente pelo usuário. Uma atualização remota não deve sobrescrever
-silenciosamente uma versão local modificada.
+Continuam abertas:
 
-Possíveis formas de resolução, ainda em aberto, incluem avisar que existe uma
-nova versão, permitir atualizar, manter a versão local e, futuramente, comparar
-alterações ou distinguir de forma mais explícita a música publicada da cópia ou
-versão local.
+- política para identificar duplicata, Música existente ou nova VersaoMusica;
+- ação diante de possível duplicata: pular, revisar, atualizar ou outra;
+- destino de um `.txt` cuja conversão conservadora não seja confiável:
+  revisão obrigatória, rascunho, ignorar com relatório ou outra alternativa;
+- necessidade de preservar permanentemente o texto original `.txt` depois da
+  conversão para ChordPro.
 
-Este registro representa uma oportunidade futura, não uma decisão de
-implementação nem requisito da versão atual. Antes de desenvolver, avaliar a
-necessidade real, a experiência de uso, o modelo de versionamento e conflitos e
-as alternativas técnicas. Não estão definidos neste momento servidor próprio,
-Google Drive, Firebase, Supabase, protocolo/API, arquitetura de sincronização ou
-modelo definitivo de resolução de conflitos.
+## Consultas e estatísticas derivadas das Listas
 
-### Descoberta e comunidade
+Definir futuramente se consultas e estatísticas usarão todas as Listas ou algum
+filtro explícito. A Lista é memória operacional do repertório; caso o uso real
+revele necessidade de distinguir planejamento de repertório efetivamente
+tocado, reavaliar essa simplificação antes de introduzir estados ou registros
+de execução.
 
-Avaliar também uma possível evolução das bibliotecas compartilháveis para uma
-experiência de descoberta comunitária. Uma futura tela de bibliotecas poderia
-distinguir uma biblioteca oficial do AppCifras de bibliotecas publicadas por
-usuários, igrejas, ministérios ou equipes de louvor.
+## Múltiplas bibliotecas e compartilhamento
 
-Os usuários poderiam cadastrar e compartilhar suas próprias bibliotecas e
-pesquisar músicas dentro de uma biblioteca específica ou, eventualmente, entre
-múltiplas bibliotecas. Uma mesma música poderá existir em diferentes versões e
-fontes, devendo sua origem ficar clara para que o usuário possa escolher qual
-conteúdo deseja utilizar.
-
-Como hipóteses de descoberta e sinais de qualidade, avaliar futuramente recursos
-como seguir, adicionar ou utilizar bibliotecas, curtir músicas/cifras ou
-bibliotecas e apresentar indicadores simples de utilização. Esses sinais
-poderiam permitir que autores e bibliotecas reconhecidos pela comunidade por
-cifras completas, corretas ou bem estruturadas ganhassem reputação de forma
-orgânica.
-
-Não estão decididos sistema de ranking, pontuação, estrelas, algoritmo de
-reputação ou qualquer outro mecanismo específico. Antes de implementar, avaliar
-a necessidade real desses recursos e questões como identidade e autoria,
-moderação, duplicidade de conteúdo, pesquisa remota, privacidade, infraestrutura
-e direitos autorais relacionados ao compartilhamento público de letras e cifras.
-
-O objetivo a investigar é facilitar que o usuário encontre rapidamente versões
-confiáveis de músicas e descubra bibliotecas úteis, e não criar uma rede social
-como fim em si mesma.
-
-A seleção automática de palavras e tokens musicais por toque foi entregue; a
-seleção manual por pressão longa continua disponível como alternativa. Ainda
-definir uma apresentação mais encontrável para `Tratar como texto`, que não
-dependa da posição variável do menu nativo, sem transformar a edição em um
-editor de texto complexo.
-
+Bibliotecas públicas ou assináveis, bibliotecas de igrejas/equipes,
+distribuição remota e conflitos entre origens são possibilidade distante. Não
+orientam o domínio, a persistência ou o roadmap de curto prazo, que mantêm uma
+única Biblioteca principal e oficial. Antes de qualquer implementação futura,
+avaliar necessidade real, autoria, direitos, versionamento, conflitos,
+privacidade e alternativas técnicas.

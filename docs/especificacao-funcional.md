@@ -13,7 +13,9 @@ O uso cotidiano não depende de internet nem exige conhecimento de ChordPro.
 A Biblioteca reúne músicas locais identificadas individualmente. Cada música
 válida tem título, artista, tom original e conteúdo musical. O usuário cadastra
 por texto/colagem, importa ChordPro, edita, exclui com confirmação e pesquisa
-por título, artista ou conteúdo visível da letra.
+por título, artista ou conteúdo visível da letra. Resultados encontrados na
+letra podem exibir uma linha correspondente. A pesquisa pode ser combinada com
+filtros locais de energia e tags.
 
 ### Conteúdo e leitura
 
@@ -44,7 +46,14 @@ acorde e marcar ou trocar o tipo de uma seção. A edição textual ChordPro
 permanece como modo avançado e fallback; ela não será removida nesta etapa.
 
 Reconhecimento estrutural, edição assistida, edição por blocos, classificação,
-metadados, pesquisa ampliada, histórico, BPM, backup, compartilhamento e
-estatísticas evoluirão em etapas. Ordem, dependências e prioridades estão em
-roadmap-desenvolvimento.md. Sincronização, colaboração e IA não fazem parte da
-experiência atual.
+metadados, versões/arranjos, contexto de ministração nas Listas, consulta de
+repertórios anteriores, importação múltipla, BPM, backup e estatísticas
+evoluirão em etapas. Uma evolução aprovada permitirá que uma Música tenha
+versões de arranjo, com uma versão principal; Listas futuras registrarão data,
+ministrante opcional, versão e tom da ocasião por item. Consultas históricas e
+estatísticas serão derivadas das próprias Listas, sem subsistema independente
+de execução nesta fase. Versões usadas por Listas preservarão seu conteúdo
+musical e serão arquivadas, em vez de excluídas, quando necessário. Ordem,
+dependências e prioridades estão em
+roadmap-desenvolvimento.md. Sincronização, colaboração e múltiplas bibliotecas
+não fazem parte da experiência atual.

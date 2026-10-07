@@ -202,6 +202,9 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     energiasMusicas,
   )..where((tabela) => tabela.idMusica.equals(idMusica))).getSingleOrNull();
 
+  Future<List<EnergiasMusica>> listarEnergiasMusicas() =>
+      select(energiasMusicas).get();
+
   Future<void> definirEnergiaMusica(String idMusica, String? energia) async {
     if (energia == null) {
       await (delete(
@@ -218,6 +221,13 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       (select(tagsMusicas)
             ..where((tabela) => tabela.idMusica.equals(idMusica))
             ..orderBy([(tabela) => OrderingTerm.asc(tabela.valor)]))
+          .get();
+
+  Future<List<TagsMusica>> listarTodasTagsMusicas() =>
+      (select(tagsMusicas)..orderBy([
+            (tabela) => OrderingTerm.asc(tabela.idMusica),
+            (tabela) => OrderingTerm.asc(tabela.valor),
+          ]))
           .get();
 
   Future<void> substituirTagsMusica(

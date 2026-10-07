@@ -10,6 +10,7 @@ class ClassificacaoMusica {
 
 abstract interface class RepositorioClassificacaoMusica {
   Future<ClassificacaoMusica> obter(IdMusica idMusica);
+  Future<Map<IdMusica, ClassificacaoMusica>> listar();
   Future<void> definirEnergia(IdMusica idMusica, EnergiaMusica? energia);
   Future<void> substituirTags(IdMusica idMusica, Iterable<TagMusica> tags);
   Future<void> removerPorMusica(IdMusica idMusica);

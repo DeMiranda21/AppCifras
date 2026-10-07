@@ -63,6 +63,23 @@ void main() {
     expect((await repositorio.obter(musicaB)).tags, [TagMusica('Ensaio')]);
   });
 
+  test('lista classificações de músicas em lote', () async {
+    final musicaA = IdMusica('musica-a');
+    final musicaB = IdMusica('musica-b');
+    await inserirMusica(musicaA.valor);
+    await inserirMusica(musicaB.valor);
+    await repositorio.definirEnergia(musicaA, EnergiaMusica.calma);
+    await repositorio.substituirTags(musicaA, [TagMusica('Ceia')]);
+    await repositorio.substituirTags(musicaB, [TagMusica('Ensaio')]);
+
+    final classificacoes = await repositorio.listar();
+
+    expect(classificacoes[musicaA]?.energia, EnergiaMusica.calma);
+    expect(classificacoes[musicaA]?.tags, [TagMusica('Ceia')]);
+    expect(classificacoes[musicaB]?.energia, isNull);
+    expect(classificacoes[musicaB]?.tags, [TagMusica('Ensaio')]);
+  });
+
   test(
     'exclusão da música remove classificação sem afetar outra música',
     () async {

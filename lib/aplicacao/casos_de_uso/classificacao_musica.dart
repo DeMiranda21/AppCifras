@@ -9,6 +9,14 @@ class ObterClassificacaoMusica {
   Future<ClassificacaoMusica> executar(IdMusica id) => _repositorio.obter(id);
 }
 
+class ListarClassificacoesMusicas {
+  const ListarClassificacoesMusicas(this._repositorio);
+  final RepositorioClassificacaoMusica _repositorio;
+
+  Future<Map<IdMusica, ClassificacaoMusica>> executar() =>
+      _repositorio.listar();
+}
+
 class SalvarClassificacaoMusica {
   const SalvarClassificacaoMusica(this._repositorio);
   final RepositorioClassificacaoMusica _repositorio;

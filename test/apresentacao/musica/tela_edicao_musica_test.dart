@@ -1894,6 +1894,10 @@ class _RepositorioClassificacao implements RepositorioClassificacaoMusica {
       dados[id] ?? const ClassificacaoMusica();
 
   @override
+  Future<Map<IdMusica, ClassificacaoMusica>> listar() async =>
+      Map.unmodifiable(dados);
+
+  @override
   Future<void> removerPorMusica(IdMusica id) async => dados.remove(id);
 
   @override
