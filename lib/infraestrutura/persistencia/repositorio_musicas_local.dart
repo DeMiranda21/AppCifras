@@ -199,6 +199,37 @@ class RepositorioMusicasLocal
     return Future.wait(indices.map(_reconstruirVersao));
   }
 
+  @override
+  Future<void> salvarVersao(VersaoMusica versao) async {
+    if (await _banco.obterVersaoPorId(versao.id.valor) != null ||
+        await _armazenamentoArquivos.existe(versao.id)) {
+      throw ArgumentError.value(versao.id, 'versao', 'A versão já existe.');
+    }
+    if (await _banco.obterPorId(versao.idMusica.valor) == null) {
+      throw MusicaNaoEncontrada(versao.idMusica);
+    }
+
+    final conteudo = versao.documento.conteudoOriginal;
+    await _armazenamentoArquivos.salvar(versao.id, conteudo);
+    try {
+      await _banco.inserirVersaoMusica(
+        id: versao.id.valor,
+        idMusica: versao.idMusica.valor,
+        nome: versao.nome,
+        arquivo: _armazenamentoArquivos.nomeArquivo(versao.id),
+        principal: versao.principal,
+        arquivada: versao.arquivada,
+      );
+    } catch (erro, pilha) {
+      try {
+        await _armazenamentoArquivos.excluir(versao.id);
+      } catch (_) {
+        throw EstadoPersistenciaMusicaInconsistente(versao.idMusica);
+      }
+      Error.throwWithStackTrace(erro, pilha);
+    }
+  }
+
   Future<Musica> _reconstruir(IdMusica id, IndiceMusica indice) async {
     final versao = await obterPrincipalPorMusica(id);
     if (versao == null) {

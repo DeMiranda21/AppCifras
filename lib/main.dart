@@ -71,6 +71,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       salvarUltimoTomExecucao: widget.composicao.salvarUltimoTomExecucao,
       removerUltimoTomExecucao: widget.composicao.removerUltimoTomExecucao,
       obterVersaoMusicaPorId: widget.composicao.obterVersaoMusicaPorId,
+      listarVersoesMusica: widget.composicao.listarVersoesMusica,
+      criarVersaoMusica: widget.composicao.criarVersaoMusica,
       obterClassificacaoMusica: widget.composicao.obterClassificacaoMusica,
       listarClassificacoesMusicas:
           widget.composicao.listarClassificacoesMusicas,

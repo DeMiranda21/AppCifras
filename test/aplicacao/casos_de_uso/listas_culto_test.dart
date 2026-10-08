@@ -213,4 +213,7 @@ class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
   @override
   Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async =>
       id == _principal.id ? _principal : null;
+
+  @override
+  Future<void> salvarVersao(VersaoMusica versao) async {}
 }

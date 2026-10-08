@@ -8,4 +8,6 @@ abstract interface class RepositorioVersoesMusicas {
   Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id);
 
   Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica);
+
+  Future<void> salvarVersao(VersaoMusica versao);
 }

@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/tom_execucao.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
+import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_tom_execucao.dart';
 import 'package:appcifras/apresentacao/musica/contexto_navegacao_lista_culto.dart';
 import 'package:appcifras/apresentacao/musica/controle_tela_ativa.dart';
 import 'package:appcifras/apresentacao/musica/tela_visualizacao_musica.dart';
+import 'package:appcifras/dominio/chordpro/documento_chordpro.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
@@ -15,6 +19,7 @@ import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -100,6 +105,8 @@ void main() {
     RepositorioMusicas repositorio, {
     TextScaler? textScaler,
     RepositorioTomExecucao? repositorioTomExecucao,
+    RepositorioVersoesMusicas? repositorioVersoes,
+    GeradorIdVersaoMusica? geradorIdVersao,
     ContextoNavegacaoListaCulto? contextoListaCulto,
     ControleTelaAtiva? controleTelaAtiva,
   }) {
@@ -111,6 +118,19 @@ void main() {
             idMusica:
                 contextoListaCulto?.itemAtual.idMusica ?? IdMusica('musica-1'),
             obterMusicaPorId: ObterMusicaPorId(repositorio),
+            obterVersaoMusicaPorId: repositorioVersoes == null
+                ? null
+                : ObterVersaoMusicaPorId(repositorioVersoes),
+            listarVersoesMusica: repositorioVersoes == null
+                ? null
+                : ListarVersoesMusica(repositorioVersoes),
+            criarVersaoMusica:
+                repositorioVersoes == null || geradorIdVersao == null
+                ? null
+                : CriarVersaoMusica(
+                    repositorio: repositorioVersoes,
+                    geradorId: geradorIdVersao,
+                  ),
             atualizarMusica: AtualizarMusica(
               repositorio: repositorio,
               parserDocumento: parser,
@@ -213,6 +233,203 @@ void main() {
     expect(find.text('Original: C'), findsNothing);
     expect(find.text('{title: Grande é o Senhor}'), findsNothing);
     expect(find.text('{appcifras_id: musica-1}'), findsNothing);
+  });
+
+  testWidgets('troca versões recuperando conteúdo e último tom próprios', (
+    tester,
+  ) async {
+    VersaoMusica versao({
+      required String id,
+      required String nome,
+      required String tom,
+      required String conteudo,
+      required bool principal,
+    }) => VersaoMusica(
+      id: IdVersaoMusica(id),
+      idMusica: IdMusica('musica-1'),
+      nome: nome,
+      documento: parser.interpretar(
+        '{title: Santo Pra Sempre}\n'
+        '{artist: Bethel Music}\n'
+        '{key: $tom}\n'
+        '{appcifras_schema: 1}\n'
+        '{appcifras_id: musica-1}\n'
+        '$conteudo',
+      ),
+      principal: principal,
+      arquivada: false,
+    );
+
+    final principal = versao(
+      id: 'principal',
+      nome: 'Principal',
+      tom: 'C',
+      conteudo: '[C]Conteúdo principal',
+      principal: true,
+    );
+    final igrejaA = versao(
+      id: 'igreja-a',
+      nome: 'Igreja A',
+      tom: 'D',
+      conteudo: '[D]Conteúdo Igreja A',
+      principal: false,
+    );
+    final catalogo = Musica(
+      id: IdMusica('musica-1'),
+      titulo: 'Santo Pra Sempre',
+      artista: 'Bethel Music',
+      versaoPrincipal: principal,
+    );
+    final repositorioVersoes = _RepositorioVersoesMemoria([principal, igrejaA]);
+    final repositorioTons = _RepositorioTomExecucaoFake()
+      .._tons[principal.id] = parser
+          .interpretar('{key: E}')
+          .elementos
+          .whereType<DiretivaTomChordPro>()
+          .single
+          .tom!
+      .._tons[igrejaA.id] = parser
+          .interpretar('{key: F}')
+          .elementos
+          .whereType<DiretivaTomChordPro>()
+          .single
+          .tom!;
+
+    await montarTelaComRepositorio(
+      tester,
+      _RepositorioMemoria(catalogo),
+      repositorioVersoes: repositorioVersoes,
+      repositorioTomExecucao: repositorioTons,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Versão: Principal (Principal)'), findsOneWidget);
+    expect(find.text('Tom: E'), findsOneWidget);
+    expect(find.text('Conteúdo principal'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('seletor-versoes-musica')));
+    await tester.pumpAndSettle();
+    expect(find.text('Igreja A'), findsOneWidget);
+    expect(find.text('Principal'), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey('selecionar-versao-igreja-a')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Versão: Igreja A'), findsOneWidget);
+    expect(find.text('Tom: F'), findsOneWidget);
+    expect(find.text('Conteúdo Igreja A'), findsOneWidget);
+    expect(
+      repositorioVersoes.versoes.singleWhere((versao) => versao.principal),
+      principal,
+    );
+  });
+
+  testWidgets('cria versão a partir da atual sem herdar último tom', (
+    tester,
+  ) async {
+    final principal = Musica(
+      id: IdMusica('musica-1'),
+      documento: parser.interpretar(
+        '{title: Grande é o Senhor}\n'
+        '{artist: Exemplo}\n'
+        '{key: C}\n'
+        '{appcifras_schema: 1}\n'
+        '{appcifras_id: musica-1}\n'
+        '[C]Conteúdo original',
+      ),
+    ).versaoPrincipal;
+    final catalogo = Musica(
+      id: IdMusica('musica-1'),
+      titulo: 'Grande é o Senhor',
+      artista: 'Exemplo',
+      versaoPrincipal: principal,
+    );
+    final repositorioVersoes = _RepositorioVersoesMemoria([principal]);
+    final repositorioTons = _RepositorioTomExecucaoFake()
+      .._tons[principal.id] = parser
+          .interpretar('{key: E}')
+          .elementos
+          .whereType<DiretivaTomChordPro>()
+          .single
+          .tom!;
+
+    await montarTelaComRepositorio(
+      tester,
+      _RepositorioMemoria(catalogo),
+      repositorioVersoes: repositorioVersoes,
+      repositorioTomExecucao: repositorioTons,
+      geradorIdVersao: _GeradorIdVersaoFake(IdVersaoMusica('simplificada')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('seletor-versoes-musica')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('criar-versao-musica')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), ' Simplificada ');
+    await tester.tap(find.text('Criar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Versão: Simplificada'), findsOneWidget);
+    expect(find.text('Tom: C'), findsOneWidget);
+    expect(find.text('Conteúdo original'), findsOneWidget);
+    expect(repositorioVersoes.versoes, hasLength(2));
+    expect(
+      repositorioVersoes.versoes.last.documento.conteudoOriginal,
+      principal.documento.conteudoOriginal,
+    );
+    expect(repositorioVersoes.versoes.last.principal, isFalse);
+    expect(repositorioVersoes.versoes.first.principal, isTrue);
+  });
+
+  testWidgets('mantém a versão registrada pela Lista sem mostrar seletor', (
+    tester,
+  ) async {
+    final principal = musica('[C]Principal').versaoPrincipal;
+    final alternativa = VersaoMusica(
+      id: IdVersaoMusica('alternativa'),
+      idMusica: principal.idMusica,
+      nome: 'Igreja A',
+      documento: parser.interpretar(
+        '{title: Grande é o Senhor}\n'
+        '{artist: Exemplo}\n'
+        '{key: D}\n'
+        '{appcifras_schema: 1}\n'
+        '{appcifras_id: musica-1}\n'
+        '[D]Alternativa',
+      ),
+      principal: false,
+      arquivada: false,
+    );
+    final catalogo = Musica(
+      id: principal.idMusica,
+      titulo: 'Grande é o Senhor',
+      artista: 'Exemplo',
+      versaoPrincipal: principal,
+    );
+    final contexto = ContextoNavegacaoListaCulto(
+      idLista: IdListaCulto('lista-1'),
+      itens: [
+        ItemListaCulto(
+          id: IdItemListaCulto('item-1'),
+          idLista: IdListaCulto('lista-1'),
+          idMusica: catalogo.id,
+          idVersaoMusica: alternativa.id,
+          posicao: 0,
+        ),
+      ],
+      indiceAtual: 0,
+    );
+
+    await montarTelaComRepositorio(
+      tester,
+      _RepositorioMemoria(catalogo),
+      repositorioVersoes: _RepositorioVersoesMemoria([principal, alternativa]),
+      contextoListaCulto: contexto,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Versão: Igreja A'), findsOneWidget);
+    expect(find.text('Alternativa'), findsOneWidget);
+    expect(find.byKey(const ValueKey('seletor-versoes-musica')), findsNothing);
   });
 
   testWidgets('exibe linha somente com letra', (tester) async {
@@ -896,6 +1113,42 @@ class _RepositorioTomExecucaoFake implements RepositorioTomExecucao {
   Future<void> salvarUltimoTom(IdVersaoMusica idVersaoMusica, Tom tom) async {
     _tons[idVersaoMusica] = tom;
   }
+}
+
+class _RepositorioVersoesMemoria implements RepositorioVersoesMusicas {
+  _RepositorioVersoesMemoria(Iterable<VersaoMusica> versoes)
+    : versoes = [...versoes];
+
+  final List<VersaoMusica> versoes;
+
+  @override
+  Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
+      versoes.where((versao) => versao.idMusica == idMusica).toList();
+
+  @override
+  Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica idMusica) async =>
+      (await listarPorMusica(idMusica))
+          .cast<VersaoMusica?>()
+          .firstWhere((versao) => versao!.principal, orElse: () => null);
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async => versoes
+      .cast<VersaoMusica?>()
+      .firstWhere((versao) => versao!.id == id, orElse: () => null);
+
+  @override
+  Future<void> salvarVersao(VersaoMusica versao) async {
+    versoes.add(versao);
+  }
+}
+
+class _GeradorIdVersaoFake implements GeradorIdVersaoMusica {
+  const _GeradorIdVersaoFake(this._id);
+
+  final IdVersaoMusica _id;
+
+  @override
+  IdVersaoMusica gerar() => _id;
 }
 
 class _ControleTelaAtivaFake implements ControleTelaAtiva {

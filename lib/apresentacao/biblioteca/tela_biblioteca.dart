@@ -30,6 +30,8 @@ class TelaBiblioteca extends StatefulWidget {
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
     this.obterVersaoMusicaPorId,
+    this.listarVersoesMusica,
+    this.criarVersaoMusica,
     this.obterClassificacaoMusica,
     this.listarClassificacoesMusicas,
     this.salvarClassificacaoMusica,
@@ -53,6 +55,8 @@ class TelaBiblioteca extends StatefulWidget {
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
   final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
+  final ListarVersoesMusica? listarVersoesMusica;
+  final CriarVersaoMusica? criarVersaoMusica;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final ListarClassificacoesMusicas? listarClassificacoesMusicas;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
@@ -125,6 +129,8 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           idMusica: musica.id,
           idVersaoMusica: musica.versaoPrincipal.id,
           obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
+          listarVersoesMusica: widget.listarVersoesMusica,
+          criarVersaoMusica: widget.criarVersaoMusica,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
           excluirMusica: widget.excluirMusica,

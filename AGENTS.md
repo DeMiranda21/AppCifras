@@ -51,8 +51,9 @@ Ficam fora do MVP atual: sincronização em nuvem, importação de PDF,
 compartilhamento, múltiplas bibliotecas públicas ou assináveis, coleções,
 histórico de execução autônomo, modo palco, rolagem automática, estatísticas,
 Bluetooth, MIDI, IA e colaboração. Versões/arranjos, contexto de ministração
-em Listas e importação em lote são evoluções aprovadas, mas ainda não
-implementadas.
+em Listas e importação em lote são evoluções aprovadas; versões possuem
+fundação, seleção e criação básica, enquanto seu ciclo de vida completo ainda
+não está implementado.
 
 ## Regras de domínio do MVP
 

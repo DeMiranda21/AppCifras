@@ -6,6 +6,7 @@ import '../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
+import '../aplicacao/portas/gerador_id_versao_musica.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/repositorio_tom_execucao.dart';
@@ -23,6 +24,7 @@ import '../dominio/servicos/parser_documento_chordpro.dart';
 import '../infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import '../infraestrutura/arquivos/codificador_chordpro_gerenciado.dart';
 import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
+import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_item_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_lista_culto_uuid.dart';
 import '../infraestrutura/persistencia/banco_biblioteca.dart';
@@ -40,6 +42,7 @@ class ComposicaoAppCifras {
     required RepositorioTomExecucao repositorioTomExecucao,
     required RepositorioClassificacaoMusica repositorioClassificacao,
     required GeradorIdMusica geradorId,
+    required GeradorIdVersaoMusica geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
@@ -50,6 +53,11 @@ class ComposicaoAppCifras {
          repositorioVersoes,
        ),
        obterVersaoMusicaPorId = ObterVersaoMusicaPorId(repositorioVersoes),
+       listarVersoesMusica = ListarVersoesMusica(repositorioVersoes),
+       criarVersaoMusica = CriarVersaoMusica(
+         repositorio: repositorioVersoes,
+         geradorId: geradorIdVersao,
+       ),
        excluirMusica = ExcluirMusica(
          repositorio,
          repositorioTomExecucao: repositorioTomExecucao,
@@ -121,6 +129,8 @@ class ComposicaoAppCifras {
   final ListarMusicas listarMusicas;
   final ObterVersaoPrincipalMusica obterVersaoPrincipalMusica;
   final ObterVersaoMusicaPorId obterVersaoMusicaPorId;
+  final ListarVersoesMusica listarVersoesMusica;
+  final CriarVersaoMusica criarVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final CadastrarMusica cadastrarMusica;
   final SalvarRascunhoChordPro salvarRascunhoChordPro;
@@ -151,6 +161,7 @@ class ComposicaoAppCifras {
     required RepositorioTomExecucao repositorioTomExecucao,
     RepositorioClassificacaoMusica? repositorioClassificacao,
     required GeradorIdMusica geradorId,
+    GeradorIdVersaoMusica? geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
@@ -164,6 +175,7 @@ class ComposicaoAppCifras {
     repositorioClassificacao:
         repositorioClassificacao ?? _RepositorioClassificacaoVazio(),
     geradorId: geradorId,
+    geradorIdVersao: geradorIdVersao ?? _GeradorIdVersaoLegado(),
     geradorIdListaCulto: geradorIdListaCulto,
     geradorIdItemListaCulto: geradorIdItemListaCulto,
     parserDocumento: parserDocumento,
@@ -200,6 +212,7 @@ class ComposicaoAppCifras {
         repositorioTomExecucao: repositorioTomExecucao,
         repositorioClassificacao: repositorioClassificacao,
         geradorId: GeradorIdMusicaUuid(),
+        geradorIdVersao: GeradorIdVersaoMusicaUuid(),
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
         geradorIdItemListaCulto: GeradorIdItemListaCultoUuid(),
         parserDocumento: parserDocumento,
@@ -233,6 +246,16 @@ class _RepositorioVersoesVazio implements RepositorioVersoesMusicas {
     final versao = await obterPrincipalPorMusica(idMusica);
     return versao == null ? const [] : [versao];
   }
+
+  @override
+  Future<void> salvarVersao(VersaoMusica versao) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+}
+
+class _GeradorIdVersaoLegado implements GeradorIdVersaoMusica {
+  @override
+  IdVersaoMusica gerar() =>
+      throw UnsupportedError('Geração de versões não está disponível.');
 }
 
 class _RepositorioClassificacaoVazio implements RepositorioClassificacaoMusica {

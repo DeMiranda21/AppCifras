@@ -76,6 +76,15 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - `{appcifras_id}` continua identificando IdMusica. Não existe diretiva de ID
   de versão nesta etapa; IdVersaoMusica é mantido pela persistência e pelo
   arquivo físico correspondente.
+- A Biblioteca mantém uma única entrada por Música e abre a versão principal.
+  Fora de uma Lista, a leitura permite selecionar somente versões ativas, sem
+  trocar a principal. A visualização aberta por Lista usa a versão concreta do
+  ItemListaCulto e não oferece troca visual nesta etapa.
+- Criar versão duplica integralmente o ChordPro da versão aberta, preserva
+  IdMusica e `{appcifras_id}`, gera IdVersaoMusica novo e cria versão ativa não
+  principal. O nome recebe trim e não pode ser vazio; unicidade de nome não é
+  exigida nesta etapa. A nova versão não herda último tom e inicia no próprio
+  tom original.
 
 ## Parser e acordes
 

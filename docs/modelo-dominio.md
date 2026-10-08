@@ -55,6 +55,16 @@ pode ser arquivada diretamente; trocar a principal apenas move essa marca para
 outra versão ativa, sem copiar conteúdo, apagar a versão anterior ou trocar
 identidades.
 
+A Biblioteca continua apresentando uma única entrada por Música e abre sua
+versão principal. Fora de uma Lista de Culto, a leitura pode alternar entre
+versões ativas sem mudar qual delas é principal. Ao abrir uma Lista, a leitura
+usa estritamente a versão registrada pelo ItemListaCulto.
+
+Uma nova versão nasce como cópia do DocumentoChordPro da versão de origem, com
+novo IdVersaoMusica, mesmo IdMusica, nome não vazio, principal=false e
+arquivada=false. A preferência de último tom não é copiada: por ser local à
+versão, a nova versão começa no seu tom original.
+
 O nome ou rótulo de VersaoMusica é editável e não determina sua identidade. Já
 o conteúdo musical — DocumentoChordPro, acordes, estrutura, arranjo e tom
 original — poderá ser alterado somente enquanto a versão não for referenciada

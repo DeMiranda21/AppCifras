@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:appcifras/dominio/chordpro/validador_schema_appcifras.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/erros/id_musica_ja_existente.dart';
 import 'package:appcifras/dominio/erros/musica_nao_encontrada.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
@@ -91,6 +92,37 @@ void main() {
       'arquivo',
     ]);
   });
+
+  test(
+    'persiste nova versão em arquivo próprio sem alterar a origem',
+    () async {
+      final original = musica('musica-1');
+      await repositorio.salvar(original);
+      final origem = (await repositorio.obterPrincipalPorMusica(original.id))!;
+      final nova = VersaoMusica(
+        id: IdVersaoMusica('versao-simplificada'),
+        idMusica: original.id,
+        nome: 'Simplificada',
+        documento: origem.documento,
+        principal: false,
+        arquivada: false,
+      );
+
+      await repositorio.salvarVersao(nova);
+
+      expect(await arquivos.existe(origem.id), isTrue);
+      expect(await arquivos.existe(nova.id), isTrue);
+      expect(await arquivos.obter(nova.id), await arquivos.obter(origem.id));
+      expect(
+        await repositorio.obterVersaoPorId(nova.id),
+        isA<VersaoMusica>()
+            .having((versao) => versao.idMusica, 'idMusica', original.id)
+            .having((versao) => versao.nome, 'nome', 'Simplificada')
+            .having((versao) => versao.principal, 'principal', isFalse),
+      );
+      expect(await repositorio.listarPorMusica(original.id), hasLength(2));
+    },
+  );
 
   test('retorna nulo para ID que não está indexado', () async {
     expect(await repositorio.obterPorId(IdMusica('inexistente')), isNull);

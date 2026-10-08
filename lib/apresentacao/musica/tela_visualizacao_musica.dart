@@ -10,6 +10,7 @@ import '../../aplicacao/visualizacao/alterar_tom_execucao.dart';
 import '../../aplicacao/visualizacao/projetar_musica_para_visualizacao.dart';
 import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
+import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/erros/musica_em_uso_em_lista.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -28,6 +29,8 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     this.idVersaoMusica,
     required this.obterMusicaPorId,
     this.obterVersaoMusicaPorId,
+    this.listarVersoesMusica,
+    this.criarVersaoMusica,
     required this.atualizarMusica,
     required this.excluirMusica,
     this.projetarMusicaParaVisualizacao,
@@ -45,6 +48,8 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final IdVersaoMusica? idVersaoMusica;
   final ObterMusicaPorId obterMusicaPorId;
   final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
+  final ListarVersoesMusica? listarVersoesMusica;
+  final CriarVersaoMusica? criarVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
@@ -75,7 +80,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   final _ponteirosDoZoom = <int, Offset>{};
   Tom? _tomExecucao;
   ProjecaoMusicaVisualizacao? _projecaoEmCache;
-  IdMusica? _idDaProjecaoEmCache;
+  IdVersaoMusica? _idVersaoDaProjecaoEmCache;
   Tom? _tomDaProjecaoEmCache;
   List<AcordeNaoTransponivelVisualizacao>? _problemasEmCache;
   var _escalaCifra = EscalaVisualizacaoCifra.padrao;
@@ -311,9 +316,127 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
 
   void _limparCacheDaVisualizacao() {
     _projecaoEmCache = null;
-    _idDaProjecaoEmCache = null;
+    _idVersaoDaProjecaoEmCache = null;
     _tomDaProjecaoEmCache = null;
     _problemasEmCache = null;
+  }
+
+  Future<void> _abrirSeletorVersoes(VersaoMusica versaoAtual) async {
+    final listarVersoes = widget.listarVersoesMusica;
+    if (listarVersoes == null || _contextoListaCulto != null) {
+      return;
+    }
+    final versoes = await listarVersoes.executar(_idMusicaAtual);
+    if (!mounted) {
+      return;
+    }
+    final resultado = await showModalBottomSheet<Object>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final versao in versoes)
+              ListTile(
+                key: ValueKey('selecionar-versao-${versao.id.valor}'),
+                title: Text(versao.nome),
+                subtitle: versao.principal ? const Text('Principal') : null,
+                trailing: versao.id == versaoAtual.id
+                    ? const Icon(Icons.check)
+                    : null,
+                selected: versao.id == versaoAtual.id,
+                onTap: () => Navigator.of(context).pop(versao),
+              ),
+            if (widget.criarVersaoMusica != null)
+              ListTile(
+                key: const ValueKey('criar-versao-musica'),
+                leading: const Icon(Icons.add),
+                title: const Text('Criar versão a partir desta'),
+                onTap: () => Navigator.of(context).pop(_CriarVersao()),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (resultado is VersaoMusica) {
+      _selecionarVersao(resultado.id);
+    } else if (resultado is _CriarVersao) {
+      await _criarVersao(versaoAtual);
+    }
+  }
+
+  void _selecionarVersao(IdVersaoMusica idVersao) {
+    if (idVersao == _idVersaoMusicaAtual) {
+      return;
+    }
+    setState(() {
+      _idVersaoMusicaAtual = idVersao;
+      _tomExecucao = null;
+      _limparCacheDaVisualizacao();
+      _dadosVisualizacao = _carregarDadosVisualizacao();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_rolagem.hasClients) {
+        _rolagem.jumpTo(0);
+      }
+    });
+  }
+
+  Future<void> _criarVersao(VersaoMusica origem) async {
+    final criarVersao = widget.criarVersaoMusica;
+    if (criarVersao == null) {
+      return;
+    }
+    var nomeDigitado = '';
+    final nome = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Criar nova versão'),
+        content: TextField(
+          autofocus: true,
+          onChanged: (valor) => nomeDigitado = valor,
+          decoration: const InputDecoration(labelText: 'Nome da versão'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(nomeDigitado),
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+    if (nome == null || !mounted) {
+      return;
+    }
+    try {
+      final novaVersao = await criarVersao.executar(origem: origem, nome: nome);
+      if (!mounted) {
+        return;
+      }
+      _selecionarVersao(novaVersao.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Versão "${novaVersao.nome}" criada.')),
+      );
+    } on ArgumentError {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe um nome para a versão.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível criar a versão.')),
+        );
+      }
+    }
   }
 
   Future<void> _excluir(Musica musica) async {
@@ -368,105 +491,113 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      FutureBuilder<_DadosVisualizacaoMusica?>(
-        future: _dadosVisualizacao,
-        builder: (context, resultado) {
-          final dadosVisualizacao = resultado.data;
-          final musica = dadosVisualizacao?.musica;
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Cifra'),
-              actions: [
-                if (resultado.connectionState == ConnectionState.done &&
-                    musica != null)
-                  IconButton(
-                    tooltip: 'Redefinir tamanho da cifra',
-                    icon: const Icon(Icons.restart_alt),
-                    onPressed: _escalaCifra == EscalaVisualizacaoCifra.padrao
-                        ? null
-                        : _redefinirEscalaDaCifra,
-                  ),
-                if (resultado.connectionState == ConnectionState.done &&
-                    !resultado.hasError &&
-                    musica != null)
-                  IconButton(
-                    tooltip: 'Editar música',
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: _excluindo ? null : () => _abrirEdicao(musica),
-                  ),
-                if (resultado.connectionState == ConnectionState.done &&
-                    musica != null)
-                  PopupMenuButton<String>(
-                    enabled: !_excluindo,
-                    onSelected: (_) => _excluir(musica),
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'excluir', child: Text('Excluir')),
-                    ],
-                  ),
-              ],
-            ),
-            body: switch (resultado.connectionState) {
-              ConnectionState.done when resultado.hasError || musica == null =>
-                const _EstadoErroMusica(),
-              ConnectionState.done => Column(
-                children: [
-                  if (_excluindo) const LinearProgressIndicator(),
-                  if (_erroExclusao != null)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        _erroExclusao!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: _ConteudoMusica(
-                      projecao: _projecaoAtual(
-                        musica!,
-                        dadosVisualizacao!.tomInicial,
-                      ),
-                      problemasTransposicao: _problemasTransposicaoAtuais(
-                        musica,
-                      ),
-                      aoRevisarProblema: (problema) => _abrirEdicao(
-                        musica,
-                        textoParaLocalizacao: problema.textoOriginal,
-                      ),
-                      aoDiminuirTom: _excluindo
-                          ? null
-                          : () => _alterarTom(
-                              musica,
-                              dadosVisualizacao.tomInicial,
-                              -1,
-                            ),
-                      aoAumentarTom: _excluindo
-                          ? null
-                          : () => _alterarTom(
-                              musica,
-                              dadosVisualizacao.tomInicial,
-                              1,
-                            ),
-                      controladorRolagem: _rolagem,
-                      escalaCifra: _escalaCifra,
-                      aoIniciarPonteiroDoZoom: _iniciarPonteiroDoZoom,
-                      aoAtualizarPonteiroDoZoom: _atualizarPonteiroDoZoom,
-                      aoEncerrarPonteiro: _encerrarPonteiro,
-                      aoCancelarPonteiro: _cancelarPonteiro,
-                    ),
-                  ),
+  Widget build(
+    BuildContext context,
+  ) => FutureBuilder<_DadosVisualizacaoMusica?>(
+    future: _dadosVisualizacao,
+    builder: (context, resultado) {
+      final dadosVisualizacao = resultado.data;
+      final musica = dadosVisualizacao?.musica;
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Cifra'),
+          actions: [
+            if (resultado.connectionState == ConnectionState.done &&
+                musica != null)
+              IconButton(
+                tooltip: 'Redefinir tamanho da cifra',
+                icon: const Icon(Icons.restart_alt),
+                onPressed: _escalaCifra == EscalaVisualizacaoCifra.padrao
+                    ? null
+                    : _redefinirEscalaDaCifra,
+              ),
+            if (resultado.connectionState == ConnectionState.done &&
+                !resultado.hasError &&
+                musica != null)
+              IconButton(
+                tooltip: 'Editar música',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _excluindo || !dadosVisualizacao!.versao.principal
+                    ? null
+                    : () => _abrirEdicao(musica),
+              ),
+            if (resultado.connectionState == ConnectionState.done &&
+                musica != null)
+              PopupMenuButton<String>(
+                enabled: !_excluindo,
+                onSelected: (_) => _excluir(musica),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'excluir', child: Text('Excluir')),
                 ],
               ),
-              _ => const Center(child: CircularProgressIndicator()),
-            },
-            bottomNavigationBar: _contextoListaCulto == null
-                ? null
-                : _BarraNavegacaoListaCulto(contexto: _contextoListaCulto!),
-          );
+          ],
+        ),
+        body: switch (resultado.connectionState) {
+          ConnectionState.done when resultado.hasError || musica == null =>
+            const _EstadoErroMusica(),
+          ConnectionState.done => Column(
+            children: [
+              if (_excluindo) const LinearProgressIndicator(),
+              if (_erroExclusao != null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _erroExclusao!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: _ConteudoMusica(
+                  projecao: _projecaoAtual(
+                    musica!,
+                    dadosVisualizacao!.tomInicial,
+                  ),
+                  problemasTransposicao: _problemasTransposicaoAtuais(musica),
+                  aoRevisarProblema: (problema) => _abrirEdicao(
+                    musica,
+                    textoParaLocalizacao: problema.textoOriginal,
+                  ),
+                  nomeVersao: dadosVisualizacao.versao.nome,
+                  versaoPrincipal: dadosVisualizacao.versao.principal,
+                  aoAbrirSeletorVersoes:
+                      _contextoListaCulto == null &&
+                          widget.listarVersoesMusica != null
+                      ? () => _abrirSeletorVersoes(dadosVisualizacao.versao)
+                      : null,
+                  aoDiminuirTom: _excluindo
+                      ? null
+                      : () => _alterarTom(
+                          musica,
+                          dadosVisualizacao.tomInicial,
+                          -1,
+                        ),
+                  aoAumentarTom: _excluindo
+                      ? null
+                      : () => _alterarTom(
+                          musica,
+                          dadosVisualizacao.tomInicial,
+                          1,
+                        ),
+                  controladorRolagem: _rolagem,
+                  escalaCifra: _escalaCifra,
+                  aoIniciarPonteiroDoZoom: _iniciarPonteiroDoZoom,
+                  aoAtualizarPonteiroDoZoom: _atualizarPonteiroDoZoom,
+                  aoEncerrarPonteiro: _encerrarPonteiro,
+                  aoCancelarPonteiro: _cancelarPonteiro,
+                ),
+              ),
+            ],
+          ),
+          _ => const Center(child: CircularProgressIndicator()),
         },
+        bottomNavigationBar: _contextoListaCulto == null
+            ? null
+            : _BarraNavegacaoListaCulto(contexto: _contextoListaCulto!),
       );
+    },
+  );
 
   Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() async {
     final catalogo = await widget.obterMusicaPorId.executar(_idMusicaAtual);
@@ -479,15 +610,26 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     if (versao.idMusica != catalogo.id) {
       return null;
     }
+    final versaoParaProjecao = versao.principal
+        ? versao
+        : VersaoMusica(
+            id: versao.id,
+            idMusica: versao.idMusica,
+            nome: versao.nome,
+            documento: versao.documento,
+            principal: true,
+            arquivada: false,
+          );
     final musica = Musica(
       id: catalogo.id,
       titulo: catalogo.titulo,
       artista: catalogo.artista,
-      versaoPrincipal: versao,
+      versaoPrincipal: versaoParaProjecao,
     );
     final ultimoTom = await widget.obterUltimoTomExecucao?.executar(versao.id);
     return _DadosVisualizacaoMusica(
       musica: musica,
+      versao: versao,
       tomInicial: ultimoTom ?? musica.tomOriginal,
     );
   }
@@ -496,7 +638,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     final tomExecucao = _tomExecucao ?? tomInicial;
     final projecaoEmCache = _projecaoEmCache;
     if (projecaoEmCache != null &&
-        _idDaProjecaoEmCache == musica.id &&
+        _idVersaoDaProjecaoEmCache == _idVersaoMusicaAtual &&
         _tomDaProjecaoEmCache == tomExecucao) {
       return projecaoEmCache;
     }
@@ -506,7 +648,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         : (resultado as TransposicaoVisualizacaoIndisponivel)
               .projecaoNoTomOriginal;
     _projecaoEmCache = projecao;
-    _idDaProjecaoEmCache = musica.id;
+    _idVersaoDaProjecaoEmCache = _idVersaoMusicaAtual;
     _tomDaProjecaoEmCache = tomExecucao;
     return projecao;
   }
@@ -515,7 +657,8 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     Musica musica,
   ) {
     final problemasEmCache = _problemasEmCache;
-    if (problemasEmCache != null && _idDaProjecaoEmCache == musica.id) {
+    if (problemasEmCache != null &&
+        _idVersaoDaProjecaoEmCache == _idVersaoMusicaAtual) {
       return problemasEmCache;
     }
     final problemas = _projetarMusica.problemasDeTransposicao(musica);
@@ -524,13 +667,17 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   }
 }
 
+class _CriarVersao {}
+
 class _DadosVisualizacaoMusica {
   const _DadosVisualizacaoMusica({
     required this.musica,
+    required this.versao,
     required this.tomInicial,
   });
 
   final Musica musica;
+  final VersaoMusica versao;
   final Tom tomInicial;
 }
 
@@ -547,6 +694,9 @@ class _ConteudoMusica extends StatelessWidget {
     required this.aoAtualizarPonteiroDoZoom,
     required this.aoEncerrarPonteiro,
     required this.aoCancelarPonteiro,
+    required this.nomeVersao,
+    required this.versaoPrincipal,
+    this.aoAbrirSeletorVersoes,
   });
 
   final ProjecaoMusicaVisualizacao projecao;
@@ -560,6 +710,9 @@ class _ConteudoMusica extends StatelessWidget {
   final PointerMoveEventListener aoAtualizarPonteiroDoZoom;
   final PointerUpEventListener aoEncerrarPonteiro;
   final PointerCancelEventListener aoCancelarPonteiro;
+  final String nomeVersao;
+  final bool versaoPrincipal;
+  final VoidCallback? aoAbrirSeletorVersoes;
 
   @override
   Widget build(BuildContext context) {
@@ -609,6 +762,17 @@ class _ConteudoMusica extends StatelessWidget {
             projecao.artista,
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          if (aoAbrirSeletorVersoes == null)
+            Text('Versão: $nomeVersao${versaoPrincipal ? ' (Principal)' : ''}')
+          else
+            TextButton.icon(
+              key: const ValueKey('seletor-versoes-musica'),
+              onPressed: aoAbrirSeletorVersoes,
+              icon: const Icon(Icons.library_music_outlined),
+              label: Text(
+                'Versão: $nomeVersao${versaoPrincipal ? ' (Principal)' : ''}',
+              ),
+            ),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
