@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
+import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../dominio/entidades/lista_culto.dart';
 import '../listas_culto/tela_detalhe_lista_culto.dart';
 
@@ -24,6 +25,7 @@ class TelaListasCulto extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.obterVersaoMusicaPorId,
   });
 
   final ListarListasCulto listarListasCulto;
@@ -41,6 +43,7 @@ class TelaListasCulto extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
 
   @override
   State<TelaListasCulto> createState() => _TelaListasCultoState();
@@ -144,6 +147,7 @@ class _TelaListasCultoState extends State<TelaListasCulto> {
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
           removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
+          obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
         ),
       ),
     );

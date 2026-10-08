@@ -11,6 +11,7 @@ import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
@@ -248,7 +249,7 @@ void main() {
       ..adicionarItem('item-2', 'musica-2', 1)
       ..adicionarItem('item-3', 'musica-3', 2);
     await cenario.toms.salvarUltimoTom(
-      IdMusica('musica-2'),
+      IdVersaoMusica('musica-2'),
       const Tom(
         notaFundamental: Nota(
           nome: NomeNota.f,
@@ -560,18 +561,19 @@ class _RepositorioMusicasFake implements RepositorioMusicas {
 }
 
 class _RepositorioTomExecucaoFake implements RepositorioTomExecucao {
-  final Map<IdMusica, Tom> _tons = {};
+  final Map<IdVersaoMusica, Tom> _tons = {};
 
   @override
-  Future<Tom?> obterUltimoTom(IdMusica idMusica) async => _tons[idMusica];
+  Future<Tom?> obterUltimoTom(IdVersaoMusica idVersaoMusica) async =>
+      _tons[idVersaoMusica];
 
   @override
-  Future<void> removerUltimoTom(IdMusica idMusica) async {
-    _tons.remove(idMusica);
+  Future<void> removerUltimoTom(IdVersaoMusica idVersaoMusica) async {
+    _tons.remove(idVersaoMusica);
   }
 
   @override
-  Future<void> salvarUltimoTom(IdMusica idMusica, Tom tom) async {
-    _tons[idMusica] = tom;
+  Future<void> salvarUltimoTom(IdVersaoMusica idVersaoMusica, Tom tom) async {
+    _tons[idVersaoMusica] = tom;
   }
 }

@@ -5,6 +5,7 @@ import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/erros/id_musica_ja_existente.dart';
 import 'package:appcifras/dominio/erros/musica_nao_encontrada.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
@@ -49,13 +50,18 @@ void main() {
     await repositorio.salvar(original);
 
     final recuperada = await repositorio.obterPorId(original.id);
+    final principal = await repositorio.obterPrincipalPorMusica(original.id);
     expect(recuperada, original);
     expect(recuperada!.titulo, 'Título');
     expect(recuperada.artista, 'Artista');
     expect(
       recuperada.documento.conteudoOriginal,
-      await arquivos.obter(original.id),
+      await arquivos.obter(original.versaoPrincipal.id),
     );
+    expect(principal, isNotNull);
+    expect(principal!.id, IdVersaoMusica(original.id.valor));
+    expect(principal.idMusica, original.id);
+    expect(await repositorio.obterVersaoPorId(principal.id), principal);
   });
 
   test('gera arquivo gerenciado com schema e ID sem alterar o documento original', () async {
@@ -64,7 +70,7 @@ void main() {
     await repositorio.salvar(original);
 
     expect(
-      await arquivos.obter(original.id),
+      await arquivos.obter(original.versaoPrincipal.id),
       '{appcifras_schema: 1}\n{appcifras_id: musica-1}\n${original.documento.conteudoOriginal}',
     );
     expect(original.documento.conteudoOriginal, startsWith('{title:'));
@@ -93,7 +99,7 @@ void main() {
   test('detecta índice que referencia arquivo inexistente', () async {
     final original = musica('musica-1');
     await repositorio.salvar(original);
-    await arquivos.excluir(original.id);
+    await arquivos.excluir(original.versaoPrincipal.id);
 
     await expectLater(
       repositorio.obterPorId(original.id),
@@ -107,7 +113,7 @@ void main() {
 
     await repositorio.excluir(original.id);
 
-    expect(await arquivos.existe(original.id), isFalse);
+    expect(await arquivos.existe(original.versaoPrincipal.id), isFalse);
     expect(await banco.obterPorId(original.id.valor), isNull);
   });
 
@@ -143,8 +149,55 @@ void main() {
     expect(recuperada.titulo, 'Título revisado');
     expect(recuperada.artista, 'Artista revisado');
     expect(await banco.listar(), hasLength(1));
-    expect(await arquivos.obter(original.id), contains('{comment: manter}'));
+    expect(
+      await arquivos.obter(original.versaoPrincipal.id),
+      contains('{comment: manter}'),
+    );
   });
+
+  test(
+    'sincroniza título e artista do catálogo nas versões já existentes',
+    () async {
+      final original = musica('musica-1');
+      final idAlternativa = IdVersaoMusica('versao-acustica');
+      const conteudoAlternativo =
+          '{appcifras_schema: 1}\n'
+          '{appcifras_id: musica-1}\n'
+          '{title: Título}\n'
+          '{artist: Artista}\n'
+          '{key: G}\n'
+          '{comment: manter}\n'
+          '[G]Arranjo acústico';
+      await repositorio.salvar(original);
+      await arquivos.salvar(idAlternativa, conteudoAlternativo);
+      await banco.inserirVersaoMusica(
+        id: idAlternativa.valor,
+        idMusica: original.id.valor,
+        nome: 'Acústica',
+        arquivo: arquivos.nomeArquivo(idAlternativa),
+        principal: false,
+        arquivada: false,
+      );
+
+      await repositorio.atualizar(
+        musica(
+          'musica-1',
+          conteudo:
+              '{title: Título revisado}\n'
+              '{artist: Artista revisado}\n'
+              '{key: C}\n'
+              '[C]Letra',
+        ),
+      );
+
+      final alternativo = await arquivos.obter(idAlternativa);
+      expect(alternativo, contains('{title: Título revisado}'));
+      expect(alternativo, contains('{artist: Artista revisado}'));
+      expect(alternativo, contains('{key: G}'));
+      expect(alternativo, contains('{comment: manter}'));
+      expect(alternativo, contains('[G]Arranjo acústico'));
+    },
+  );
 
   test('rejeita atualização de música inexistente', () async {
     await expectLater(
@@ -163,7 +216,7 @@ void main() {
 
     await repositorio.atualizar(atualizada);
 
-    final conteudo = await arquivos.obter(original.id);
+    final conteudo = await arquivos.obter(original.versaoPrincipal.id);
     expect(conteudo, contains('{appcifras_schema: 1}'));
     expect(conteudo, contains('{appcifras_id: musica-1}'));
   });
@@ -179,7 +232,7 @@ void main() {
       repositorio.salvar(original),
       throwsA(isA<SchemaAppCifrasNaoSuportado>()),
     );
-    expect(await arquivos.existe(original.id), isFalse);
+    expect(await arquivos.existe(original.versaoPrincipal.id), isFalse);
     expect(await banco.obterPorId(original.id.valor), isNull);
   });
 }

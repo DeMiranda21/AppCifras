@@ -6,6 +6,7 @@ import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/erros/item_lista_culto_nao_encontrado.dart';
 import 'package:appcifras/dominio/erros/lista_culto_nao_encontrada.dart';
+import 'package:appcifras/dominio/erros/musica_em_uso_em_lista.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
@@ -23,12 +24,22 @@ void main() {
   late RepositorioListasCultoLocal repositorio;
   var bancoDoSetUpFoiFechado = false;
 
-  Future<void> inserirMusicaIndice(String id) => banco.inserir(
-    id: id,
-    titulo: 'Título $id',
-    artista: 'Artista',
-    arquivo: '$id.cho',
-  );
+  Future<void> inserirMusicaIndice(String id) async {
+    await banco.inserir(
+      id: id,
+      titulo: 'Título $id',
+      artista: 'Artista',
+      arquivo: '$id.cho',
+    );
+    await banco.inserirVersaoMusica(
+      id: id,
+      idMusica: id,
+      nome: 'Principal',
+      arquivo: '$id.cho',
+      principal: true,
+      arquivada: false,
+    );
+  }
 
   ItemListaCulto item({
     required String id,
@@ -234,6 +245,14 @@ void main() {
         artista: 'Artista',
         arquivo: 'musica-$indice.cho',
       );
+      await primeiroBanco.inserirVersaoMusica(
+        id: 'musica-$indice',
+        idMusica: 'musica-$indice',
+        nome: 'Principal',
+        arquivo: 'musica-$indice.cho',
+        principal: true,
+        arquivada: false,
+      );
       await primeiroRepositorio.adicionarItem(
         item(
           id: 'item-$indice',
@@ -258,68 +277,71 @@ void main() {
     segundoBancoFechado = true;
   });
 
-  test(
-    'excluir música remove explicitamente todos os itens relacionados',
-    () async {
-      final diretorio = await Directory.systemTemp.createTemp(
-        'appcifras_exclusao_',
-      );
-      final arquivos = ArmazenamentoArquivosChordPro(diretorio);
-      final repositorioMusicas = RepositorioMusicasLocal(
-        banco: banco,
-        armazenamentoArquivos: arquivos,
-      );
-      final parser = ParserDocumentoChordPro();
-      final musicaA = Musica(
-        id: IdMusica('musica-a'),
-        documento: parser.interpretar(
-          '{title: A}\n{artist: Artista}\n{key: C}\n[C]Letra',
-        ),
-      );
-      final musicaB = Musica(
-        id: IdMusica('musica-b'),
-        documento: parser.interpretar(
-          '{title: B}\n{artist: Artista}\n{key: C}\n[C]Letra',
-        ),
-      );
-      final lista = ListaCulto(id: IdListaCulto('lista-1'), nome: 'Culto');
-      await repositorioMusicas.salvar(musicaA);
-      await repositorioMusicas.salvar(musicaB);
-      await repositorio.salvar(lista);
-      await repositorio.adicionarItem(
-        item(
-          id: 'item-1',
-          idLista: lista.id,
-          idMusica: musicaA.id.valor,
-          posicao: 0,
-        ),
-      );
-      await repositorio.adicionarItem(
-        item(
-          id: 'item-2',
-          idLista: lista.id,
-          idMusica: musicaB.id.valor,
-          posicao: 1,
-        ),
-      );
-      await repositorio.adicionarItem(
-        item(
-          id: 'item-3',
-          idLista: lista.id,
-          idMusica: musicaA.id.valor,
-          posicao: 2,
-        ),
-      );
+  test('bloqueia exclusão física da música usada em Lista', () async {
+    final diretorio = await Directory.systemTemp.createTemp(
+      'appcifras_exclusao_',
+    );
+    final arquivos = ArmazenamentoArquivosChordPro(diretorio);
+    final repositorioMusicas = RepositorioMusicasLocal(
+      banco: banco,
+      armazenamentoArquivos: arquivos,
+    );
+    final parser = ParserDocumentoChordPro();
+    final musicaA = Musica(
+      id: IdMusica('musica-a'),
+      documento: parser.interpretar(
+        '{title: A}\n{artist: Artista}\n{key: C}\n[C]Letra',
+      ),
+    );
+    final musicaB = Musica(
+      id: IdMusica('musica-b'),
+      documento: parser.interpretar(
+        '{title: B}\n{artist: Artista}\n{key: C}\n[C]Letra',
+      ),
+    );
+    final lista = ListaCulto(id: IdListaCulto('lista-1'), nome: 'Culto');
+    await repositorioMusicas.salvar(musicaA);
+    await repositorioMusicas.salvar(musicaB);
+    await repositorio.salvar(lista);
+    await repositorio.adicionarItem(
+      item(
+        id: 'item-1',
+        idLista: lista.id,
+        idMusica: musicaA.id.valor,
+        posicao: 0,
+      ),
+    );
+    await repositorio.adicionarItem(
+      item(
+        id: 'item-2',
+        idLista: lista.id,
+        idMusica: musicaB.id.valor,
+        posicao: 1,
+      ),
+    );
+    await repositorio.adicionarItem(
+      item(
+        id: 'item-3',
+        idLista: lista.id,
+        idMusica: musicaA.id.valor,
+        posicao: 2,
+      ),
+    );
 
-      await ExcluirMusica(repositorioMusicas)
-          .executar(musicaA.id, confirmada: true);
+    await expectLater(
+      ExcluirMusica(repositorioMusicas).executar(musicaA.id, confirmada: true),
+      throwsA(isA<MusicaEmUsoEmLista>()),
+    );
 
-      final itens = await repositorio.listarItens(lista.id);
-      expect(itens.map((item) => item.idMusica), [musicaB.id]);
-      expect(itens.single.posicao, 0);
-      await diretorio.delete(recursive: true);
-    },
-  );
+    final itens = await repositorio.listarItens(lista.id);
+    expect(itens.map((item) => item.idMusica), [
+      musicaA.id,
+      musicaB.id,
+      musicaA.id,
+    ]);
+    expect(await repositorioMusicas.obterPorId(musicaA.id), isNotNull);
+    await diretorio.delete(recursive: true);
+  });
 
   test('migra schema 2 preservando músicas e preferências de tom', () async {
     await fecharBancoDoSetUp();
@@ -370,7 +392,7 @@ void main() {
     await bancoMigrado.inicializar();
 
     expect(await bancoMigrado.obterPorId('musica-1'), isNotNull);
-    expect(await bancoMigrado.obterTomExecucaoPorMusica('musica-1'), isNotNull);
+    expect(await bancoMigrado.obterTomExecucaoPorVersao('musica-1'), isNotNull);
     await RepositorioListasCultoLocal(bancoMigrado)
         .salvar(ListaCulto(id: IdListaCulto('lista-1'), nome: 'Culto'));
     expect(await bancoMigrado.obterListaCultoPorId('lista-1'), isNotNull);

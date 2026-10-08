@@ -78,7 +78,7 @@ class AtualizarMusica {
     final musica = Musica(id: dados.id, documento: documento);
     await repositorio.atualizar(musica);
     if (existente.tomOriginal != musica.tomOriginal) {
-      await repositorioTomExecucao?.removerUltimoTom(musica.id);
+      await repositorioTomExecucao?.removerUltimoTom(musica.versaoPrincipal.id);
     }
     return musica;
   }
@@ -182,7 +182,6 @@ class ExcluirMusica {
       throw MusicaNaoEncontrada(id);
     }
     await _repositorio.excluir(id);
-    await repositorioTomExecucao?.removerUltimoTom(id);
     await repositorioClassificacao?.removerPorMusica(id);
   }
 }

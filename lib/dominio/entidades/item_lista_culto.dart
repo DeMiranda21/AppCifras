@@ -1,14 +1,16 @@
 import '../objetos_de_valor/id_item_lista_culto.dart';
 import '../objetos_de_valor/id_lista_culto.dart';
 import '../objetos_de_valor/id_musica.dart';
+import '../objetos_de_valor/id_versao_musica.dart';
 
 class ItemListaCulto {
   ItemListaCulto({
     required this.id,
     required this.idLista,
     required this.idMusica,
+    IdVersaoMusica? idVersaoMusica,
     required this.posicao,
-  }) {
+  }) : idVersaoMusica = idVersaoMusica ?? IdVersaoMusica(idMusica.valor) {
     if (posicao < 0) {
       throw ArgumentError.value(
         posicao,
@@ -21,6 +23,7 @@ class ItemListaCulto {
   final IdItemListaCulto id;
   final IdListaCulto idLista;
   final IdMusica idMusica;
+  final IdVersaoMusica idVersaoMusica;
   final int posicao;
 
   @override

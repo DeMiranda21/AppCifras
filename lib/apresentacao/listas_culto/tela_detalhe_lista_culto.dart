@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
+import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../dominio/entidades/item_lista_culto.dart';
 import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/entidades/musica.dart';
@@ -26,6 +27,7 @@ class TelaDetalheListaCulto extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.obterVersaoMusicaPorId,
   });
 
   final ListaCulto lista;
@@ -40,6 +42,7 @@ class TelaDetalheListaCulto extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
 
   @override
   State<TelaDetalheListaCulto> createState() => _TelaDetalheListaCultoState();
@@ -206,6 +209,8 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
       MaterialPageRoute<void>(
         builder: (context) => TelaVisualizacaoMusica(
           idMusica: contexto.itemAtual.idMusica,
+          idVersaoMusica: contexto.itemAtual.idVersaoMusica,
+          obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
           excluirMusica: widget.excluirMusica,

@@ -9,6 +9,7 @@ import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
@@ -73,7 +74,10 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Tom: C#'), findsOneWidget);
-    expect(await preferencias.obterUltimoTom(musica.id), isNotNull);
+    expect(
+      await preferencias.obterUltimoTom(musica.versaoPrincipal.id),
+      isNotNull,
+    );
 
     await tester.pageBack();
     await tester.pump();
@@ -118,19 +122,20 @@ class _RepositorioMusicasMemoria implements RepositorioMusicas {
 }
 
 class _RepositorioTomExecucaoMemoria implements RepositorioTomExecucao {
-  final Map<IdMusica, Tom> _tons = {};
+  final Map<IdVersaoMusica, Tom> _tons = {};
 
   @override
-  Future<Tom?> obterUltimoTom(IdMusica idMusica) async => _tons[idMusica];
+  Future<Tom?> obterUltimoTom(IdVersaoMusica idVersaoMusica) async =>
+      _tons[idVersaoMusica];
 
   @override
-  Future<void> removerUltimoTom(IdMusica idMusica) async {
-    _tons.remove(idMusica);
+  Future<void> removerUltimoTom(IdVersaoMusica idVersaoMusica) async {
+    _tons.remove(idVersaoMusica);
   }
 
   @override
-  Future<void> salvarUltimoTom(IdMusica idMusica, Tom tom) async {
-    _tons[idMusica] = tom;
+  Future<void> salvarUltimoTom(IdVersaoMusica idVersaoMusica, Tom tom) async {
+    _tons[idVersaoMusica] = tom;
   }
 }
 

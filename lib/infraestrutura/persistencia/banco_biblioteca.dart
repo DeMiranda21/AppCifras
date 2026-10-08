@@ -19,9 +19,27 @@ class IndiceMusicas extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-class PreferenciasTomExecucao extends Table {
+class VersoesMusicas extends Table {
+  TextColumn get id => text()();
+
   TextColumn get idMusica =>
       text().references(IndiceMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get nome => text()();
+
+  TextColumn get arquivo => text()();
+
+  BoolColumn get principal => boolean()();
+
+  BoolColumn get arquivada => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PreferenciasTomExecucao extends Table {
+  TextColumn get idVersaoMusica =>
+      text().references(VersoesMusicas, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get nomeNota => text()();
 
@@ -30,7 +48,7 @@ class PreferenciasTomExecucao extends Table {
   TextColumn get modo => text()();
 
   @override
-  Set<Column> get primaryKey => {idMusica};
+  Set<Column> get primaryKey => {idVersaoMusica};
 }
 
 class EnergiasMusicas extends Table {
@@ -71,6 +89,8 @@ class ItensListaCulto extends Table {
 
   TextColumn get idMusica => text().references(IndiceMusicas, #id)();
 
+  TextColumn get idVersaoMusica => text().references(VersoesMusicas, #id)();
+
   IntColumn get posicao => integer()();
 
   @override
@@ -80,6 +100,7 @@ class ItensListaCulto extends Table {
 @DriftDatabase(
   tables: [
     IndiceMusicas,
+    VersoesMusicas,
     PreferenciasTomExecucao,
     EnergiasMusicas,
     TagsMusicas,
@@ -93,7 +114,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +122,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       await migrator.createAll();
       await _criarIndiceItensListaCulto();
       await _criarIndiceTagsMusicas();
+      await _criarIndicesVersoesMusicas();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -115,6 +137,39 @@ class BancoBiblioteca extends _$BancoBiblioteca {
         await migrator.createTable(energiasMusicas);
         await migrator.createTable(tagsMusicas);
         await _criarIndiceTagsMusicas();
+      }
+      if (from < 5) {
+        await migrator.createTable(versoesMusicas);
+        await customStatement(
+          "INSERT INTO versoes_musicas "
+          "(id, id_musica, nome, arquivo, principal, arquivada) "
+          "SELECT id, id, 'Principal', arquivo, 1, 0 FROM indice_musicas",
+        );
+        await customStatement(
+          'ALTER TABLE preferencias_tom_execucao '
+          'RENAME TO preferencias_tom_execucao_legado',
+        );
+        await migrator.createTable(preferenciasTomExecucao);
+        await customStatement(
+          'INSERT INTO preferencias_tom_execucao '
+          '(id_versao_musica, nome_nota, alteracao, modo) '
+          'SELECT id_musica, nome_nota, alteracao, modo '
+          'FROM preferencias_tom_execucao_legado',
+        );
+        await customStatement('DROP TABLE preferencias_tom_execucao_legado');
+        await customStatement(
+          'ALTER TABLE itens_lista_culto RENAME TO itens_lista_culto_legado',
+        );
+        await migrator.createTable(itensListaCulto);
+        await customStatement(
+          'INSERT INTO itens_lista_culto '
+          '(id, id_lista, id_musica, id_versao_musica, posicao) '
+          'SELECT id, id_lista, id_musica, id_musica, posicao '
+          'FROM itens_lista_culto_legado',
+        );
+        await customStatement('DROP TABLE itens_lista_culto_legado');
+        await _criarIndiceItensListaCulto();
+        await _criarIndicesVersoesMusicas();
       }
     },
   );
@@ -157,45 +212,79 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     await (delete(indiceMusicas)..where((tabela) => tabela.id.equals(id))).go();
   }
 
-  Future<void> excluirMusicaEItensListaCulto(String idMusica) =>
-      transaction(() async {
-        final listasAfetadas = await (select(
-          itensListaCulto,
-        )..where((tabela) => tabela.idMusica.equals(idMusica))).get();
-        await (delete(
-          itensListaCulto,
-        )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
-        for (final idLista
-            in listasAfetadas.map((item) => item.idLista).toSet()) {
-          await _normalizarPosicoesItensListaCulto(idLista);
-        }
-        await excluirPorId(idMusica);
-      });
+  Future<VersoesMusica?> obterVersaoPrincipalPorMusica(String idMusica) =>
+      (select(versoesMusicas)..where(
+            (tabela) =>
+                tabela.idMusica.equals(idMusica) &
+                tabela.principal.equals(true),
+          ))
+          .getSingleOrNull();
 
-  Future<PreferenciasTomExecucaoData?> obterTomExecucaoPorMusica(
-    String idMusica,
-  ) => (select(
-    preferenciasTomExecucao,
-  )..where((tabela) => tabela.idMusica.equals(idMusica))).getSingleOrNull();
+  Future<VersoesMusica?> obterVersaoPorId(String id) => (select(
+    versoesMusicas,
+  )..where((tabela) => tabela.id.equals(id))).getSingleOrNull();
+
+  Future<List<VersoesMusica>> listarVersoesMusica(String idMusica) =>
+      (select(versoesMusicas)
+            ..where((tabela) => tabela.idMusica.equals(idMusica))
+            ..orderBy([
+              (tabela) => OrderingTerm.desc(tabela.principal),
+              (tabela) => OrderingTerm.asc(tabela.nome),
+            ]))
+          .get();
+
+  Future<void> inserirVersaoMusica({
+    required String id,
+    required String idMusica,
+    required String nome,
+    required String arquivo,
+    required bool principal,
+    required bool arquivada,
+  }) => into(versoesMusicas).insert(
+    VersoesMusicasCompanion.insert(
+      id: id,
+      idMusica: idMusica,
+      nome: nome,
+      arquivo: arquivo,
+      principal: principal,
+      arquivada: arquivada,
+    ),
+  );
+
+  Future<bool> possuiItemListaParaMusica(String idMusica) async {
+    final resultado = await customSelect(
+      'SELECT 1 FROM itens_lista_culto '
+      'WHERE id_musica = ? LIMIT 1',
+      variables: [Variable.withString(idMusica)],
+    ).get();
+    return resultado.isNotEmpty;
+  }
+
+  Future<PreferenciasTomExecucaoData?> obterTomExecucaoPorVersao(
+    String idVersaoMusica,
+  ) =>
+      (select(preferenciasTomExecucao)
+            ..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica)))
+          .getSingleOrNull();
 
   Future<void> salvarTomExecucao({
-    required String idMusica,
+    required String idVersaoMusica,
     required String nomeNota,
     required String alteracao,
     required String modo,
   }) => into(preferenciasTomExecucao).insertOnConflictUpdate(
     PreferenciasTomExecucaoCompanion.insert(
-      idMusica: idMusica,
+      idVersaoMusica: idVersaoMusica,
       nomeNota: nomeNota,
       alteracao: alteracao,
       modo: modo,
     ),
   );
 
-  Future<void> removerTomExecucao(String idMusica) async {
+  Future<void> removerTomExecucao(String idVersaoMusica) async {
     await (delete(
       preferenciasTomExecucao,
-    )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
+    )..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica))).go();
   }
 
   Future<EnergiasMusica?> obterEnergiaMusica(String idMusica) => (select(
@@ -298,12 +387,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     required String id,
     required String idLista,
     required String idMusica,
+    required String idVersaoMusica,
     required int posicao,
   }) => into(itensListaCulto).insert(
     ItensListaCultoCompanion.insert(
       id: id,
       idLista: idLista,
       idMusica: idMusica,
+      idVersaoMusica: idVersaoMusica,
       posicao: posicao,
     ),
   );
@@ -355,6 +446,17 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   Future<void> _criarIndiceTagsMusicas() => customStatement(
     'CREATE INDEX IF NOT EXISTS idx_tags_musicas_chave ON tags_musicas (chave)',
   );
+
+  Future<void> _criarIndicesVersoesMusicas() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_versoes_musicas_musica '
+      'ON versoes_musicas (id_musica)',
+    );
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_versoes_musicas_principal '
+      'ON versoes_musicas (id_musica) WHERE principal = 1',
+    );
+  }
 }
 
 LazyDatabase _abrirLocalmente() => LazyDatabase(() async {

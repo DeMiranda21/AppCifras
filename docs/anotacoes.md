@@ -13,7 +13,7 @@ edição em um editor de texto complexo.
 ## Último tom e novo Item de Lista
 
 Definir a regra exata para sugerir o tom inicial quando uma música for incluída
-em uma Lista de Culto: usar o último tom salvo para a Música, o tom original da
+em uma Lista de Culto: usar o último tom salvo para a versão, o tom original da
 versão escolhida ou outra regra explícita. Depois de criado, o tom snapshot do
 ItemListaCulto será independente da preferência de último tom.
 

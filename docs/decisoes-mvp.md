@@ -11,7 +11,7 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   alimentada pelo AppCifras. Nuvem, backup entre aparelhos,
   compartilhamento, colaboração, múltiplas bibliotecas públicas ou assináveis
   e IA não fazem parte da versão atual.
-- Cada música gerenciada usa arquivo UTF-8 .cho nomeado por IdMusica.
+- Cada versão gerenciada usa arquivo UTF-8 .cho nomeado por IdVersaoMusica.
   SQLite/Drift mantém índice e estado local derivado, não a cifra completa.
 - Arquivo da música é fonte canônica de conteúdo e metadados. Índices, Listas
   de Culto e preferências não pertencem ao ChordPro.
@@ -54,16 +54,17 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   trechos livres derivados. Ela não aparece na leitura nem no editor local.
 - Reanálise preserva ChordPro e rótulos existentes; converte somente pares
   inequívocos de linha textual de acordes e letra ainda não marcados.
-- Na evolução de versões, Musica será a identidade de catálogo com título e
-  artista, enquanto VersaoMusica será o arranjo concreto, com identidade,
-  ChordPro e tom original próprios. A cifra única atual migrará para a versão
-  principal; arranjos não duplicarão a Música no catálogo.
+- Musica é a identidade de catálogo com título e artista, enquanto
+  VersaoMusica é o arranjo concreto, com identidade, ChordPro e tom original
+  próprios. A cifra única anterior migra para a versão principal; arranjos não
+  duplicam a Música no catálogo. `title` e `artist` em cada ChordPro espelham
+  o catálogo; `key` pertence à versão.
 - Editar a versão principal deverá preservar seu conteúdo: o fluxo seguro será
   salvar como nova versão. Versões alternativas poderão receber alterações e
   também originar uma nova versão. A interface exata permanece futura.
-- Cada Música terá exatamente uma VersaoMusica principal. Trocar a principal
-  apenas move essa marca: não copia conteúdo, não exclui a anterior nem altera
-  identidades.
+- Cada Música tem exatamente uma VersaoMusica principal ativa. A principal não
+  pode ser arquivada diretamente; trocá-la apenas move essa marca para outra
+  versão ativa, sem copiar conteúdo, excluir a anterior ou alterar identidades.
 - O nome da versão permanece editável e não define sua identidade. O conteúdo
   musical — ChordPro, acordes, estrutura, arranjo e tom original — deixa de
   ser editável após a primeira referência por ItemListaCulto. A alteração
@@ -72,6 +73,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Versão usada por Lista não pode ser excluída fisicamente; ela poderá ser
   arquivada, preservando conteúdo e referências antigas e ficando fora das
   novas seleções usuais. Versão nunca usada poderá ser excluída.
+- `{appcifras_id}` continua identificando IdMusica. Não existe diretiva de ID
+  de versão nesta etapa; IdVersaoMusica é mantido pela persistência e pelo
+  arquivo físico correspondente.
 
 ## Parser e acordes
 
@@ -96,9 +100,10 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Com tom de destino conhecido, enarmonia segue tonalidade. Sem contexto,
   naturais prevalecem; com acidente, preserva-se a família original, ou
   sustenido para original natural.
-- Último tom é preferência local por música, salva automaticamente. Voltar ao
-  original remove a preferência; editar tom original ou excluir música a
-  invalida.
+- Último tom é preferência local por VersaoMusica, salva automaticamente.
+  Voltar ao original remove a preferência; editar o tom original daquela
+  versão ou excluir a música a invalida. Na migração, a preferência antiga é
+  associada à versão principal criada para a Música.
 - Acorde não interpretável bloqueia transposição integralmente; não há
   resultado parcial.
 - Graus usam menor natural em tons menores. Só acordes inteiramente diatônicos
@@ -123,11 +128,12 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 ## Lista de Culto v1 e evolução aprovada
 
 - Atualmente, Lista guarda IdListaCulto e nome. Item guarda IdItemListaCulto,
-  IdMusica e posição; não guarda ChordPro nem tom próprio.
+  IdMusica, IdVersaoMusica e posição; não guarda ChordPro nem tom próprio.
 - Domínio aceita ocorrências repetidas; UI v1 impede nova inclusão de música já
   presente, sem alterar dados preexistentes.
-- Excluir item ou Lista não exclui Música. Excluir Música remove itens de forma
-  explícita, sem depender apenas de ON DELETE CASCADE.
+- Excluir item ou Lista não exclui Música. A exclusão física de Música é
+  bloqueada se alguma de suas versões for referenciada por ItemListaCulto;
+  arquivamento de Música permanece evolução futura.
 - Remoção de item exige confirmação. Visualização aberta pela Lista navega na
   ordem capturada sem criar rota por música.
 - Uma Lista será normalmente criada para uma ministração e servirá como sua
@@ -137,8 +143,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - A evolução aprovada dará à Lista data e ministrante opcional, aplicado à
   Lista inteira; não haverá ministrante por música, múltiplos ministrantes ou
   override por item.
-- Quando VersaoMusica existir, ItemListaCulto registrará Música, versão
-  escolhida, posição e tom da ocasião. O tom será snapshot operacional e não
+- Em evolução posterior, ItemListaCulto também registrará o tom da ocasião. O
+  tom será snapshot operacional e não
   mudará quando a preferência de último tom, a versão principal ou outra Lista
   for alterada. O Item referencia a versão concreta e não armazena snapshot
   completo de ChordPro; a imutabilidade da versão após uso preserva a Lista.

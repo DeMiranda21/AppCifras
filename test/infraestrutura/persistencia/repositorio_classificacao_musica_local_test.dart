@@ -183,7 +183,10 @@ void main() {
       final migrado = BancoBiblioteca(NativeDatabase(arquivo));
       await migrado.inicializar();
       expect(await migrado.obterPorId('musica-1'), isNotNull);
-      expect(await migrado.obterTomExecucaoPorMusica('musica-1'), isNotNull);
+      expect(
+        await migrado.obterTomExecucaoPorVersao('musica-1'),
+        isNotNull,
+      );
       expect(await migrado.obterListaCultoPorId('lista-1'), isNotNull);
       expect(
         (await migrado.listarItensListaCulto('lista-1')).single.id,

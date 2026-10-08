@@ -5,6 +5,7 @@ import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
+import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
@@ -28,6 +29,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
     this.removerUltimoTomExecucao,
+    this.obterVersaoMusicaPorId,
     this.obterClassificacaoMusica,
     this.listarClassificacoesMusicas,
     this.salvarClassificacaoMusica,
@@ -50,6 +52,7 @@ class TelaBiblioteca extends StatefulWidget {
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
+  final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final ListarClassificacoesMusicas? listarClassificacoesMusicas;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
@@ -120,6 +123,8 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       MaterialPageRoute<void>(
         builder: (context) => TelaVisualizacaoMusica(
           idMusica: musica.id,
+          idVersaoMusica: musica.versaoPrincipal.id,
+          obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
           excluirMusica: widget.excluirMusica,
@@ -173,6 +178,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
           removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
+          obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
         ),
       ),
     );

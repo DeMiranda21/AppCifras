@@ -27,7 +27,7 @@ transposição insegura.
 ### Tom de execução
 
 O usuário altera temporariamente o tom por semitom. A alteração não reescreve
-a música nem o tom original. O último tom é uma preferência local por música e
+a música nem o tom original. O último tom é uma preferência local por versão e
 é restaurado ao reabrir.
 
 ### Listas de Culto

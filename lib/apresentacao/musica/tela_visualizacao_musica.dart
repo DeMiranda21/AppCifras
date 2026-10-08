@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
+import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/visualizacao/alterar_tom_execucao.dart';
 import '../../aplicacao/visualizacao/projetar_musica_para_visualizacao.dart';
 import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
+import '../../dominio/erros/musica_em_uso_em_lista.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
+import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/servicos/parser_acorde.dart';
 import 'contexto_navegacao_lista_culto.dart';
@@ -22,7 +25,9 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   const TelaVisualizacaoMusica({
     super.key,
     required this.idMusica,
+    this.idVersaoMusica,
     required this.obterMusicaPorId,
+    this.obterVersaoMusicaPorId,
     required this.atualizarMusica,
     required this.excluirMusica,
     this.projetarMusicaParaVisualizacao,
@@ -37,7 +42,9 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   });
 
   final IdMusica idMusica;
+  final IdVersaoMusica? idVersaoMusica;
   final ObterMusicaPorId obterMusicaPorId;
+  final ObterVersaoMusicaPorId? obterVersaoMusicaPorId;
   final AtualizarMusica atualizarMusica;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
@@ -62,6 +69,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   late final ProjetarMusicaParaVisualizacao _projetarMusica;
   late final AlterarTomExecucao _alterarTomExecucao;
   late IdMusica _idMusicaAtual;
+  late IdVersaoMusica _idVersaoMusicaAtual;
   ContextoNavegacaoListaCulto? _contextoListaCulto;
   final _rolagem = ScrollController();
   final _ponteirosDoZoom = <int, Offset>{};
@@ -84,6 +92,10 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     super.initState();
     _contextoListaCulto = widget.contextoListaCulto;
     _idMusicaAtual = _contextoListaCulto?.itemAtual.idMusica ?? widget.idMusica;
+    _idVersaoMusicaAtual =
+        _contextoListaCulto?.itemAtual.idVersaoMusica ??
+        widget.idVersaoMusica ??
+        IdVersaoMusica(_idMusicaAtual.valor);
     _dadosVisualizacao = _carregarDadosVisualizacao();
     _projetarMusica =
         widget.projetarMusicaParaVisualizacao ??
@@ -163,9 +175,12 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     });
     try {
       if (novoTom == musica.tomOriginal) {
-        await widget.removerUltimoTomExecucao?.executar(musica.id);
+        await widget.removerUltimoTomExecucao?.executar(_idVersaoMusicaAtual);
       } else {
-        await widget.salvarUltimoTomExecucao?.executar(musica.id, novoTom);
+        await widget.salvarUltimoTomExecucao?.executar(
+          _idVersaoMusicaAtual,
+          novoTom,
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -188,6 +203,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
     setState(() {
       _contextoListaCulto = contexto.comIndice(novoIndice);
       _idMusicaAtual = _contextoListaCulto!.itemAtual.idMusica;
+      _idVersaoMusicaAtual = _contextoListaCulto!.itemAtual.idVersaoMusica;
       _tomExecucao = null;
       _limparCacheDaVisualizacao();
       _dadosVisualizacao = _carregarDadosVisualizacao();
@@ -333,6 +349,14 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
           _erroExclusao = 'A música não foi encontrada na biblioteca.';
         });
       }
+    } on MusicaEmUsoEmLista {
+      if (mounted) {
+        setState(() {
+          _excluindo = false;
+          _erroExclusao =
+              'Não é possível excluir uma música usada em Lista de Culto.';
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -445,11 +469,23 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
       );
 
   Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() async {
-    final musica = await widget.obterMusicaPorId.executar(_idMusicaAtual);
-    if (musica == null) {
+    final catalogo = await widget.obterMusicaPorId.executar(_idMusicaAtual);
+    if (catalogo == null) {
       return null;
     }
-    final ultimoTom = await widget.obterUltimoTomExecucao?.executar(musica.id);
+    final versao =
+        await widget.obterVersaoMusicaPorId?.executar(_idVersaoMusicaAtual) ??
+        catalogo.versaoPrincipal;
+    if (versao.idMusica != catalogo.id) {
+      return null;
+    }
+    final musica = Musica(
+      id: catalogo.id,
+      titulo: catalogo.titulo,
+      artista: catalogo.artista,
+      versaoPrincipal: versao,
+    );
+    final ultimoTom = await widget.obterUltimoTomExecucao?.executar(versao.id);
     return _DadosVisualizacaoMusica(
       musica: musica,
       tomInicial: ultimoTom ?? musica.tomOriginal,

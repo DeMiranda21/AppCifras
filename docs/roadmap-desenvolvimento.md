@@ -9,7 +9,7 @@ consolidada, a especificacao-funcional.md.
 - Biblioteca offline, cadastro por colagem/importação, edição, exclusão
   confirmada e pesquisa textual por título, artista e letra.
 - ChordPro canônico, parser conservador e preservação de conteúdo desconhecido.
-- Visualização responsiva, transposição temporária, último tom por música,
+- Visualização responsiva, transposição temporária, último tom por versão,
   zoom com reflow, swipe entre itens da Lista de Culto e tela mantida ativa
   durante a leitura.
 - Listas de Culto: criar, renomear, excluir, adicionar, remover, reordenar e
@@ -71,12 +71,11 @@ consolidada, a especificacao-funcional.md.
 9. **Pesquisa ampliada e filtros:** busca textual offline por título, artista
    e letra, combinável com filtros por energia e tags. Resultados encontrados
    na letra exibem o primeiro trecho visível correspondente, entregue.
-10. **Versões e arranjos:** introduzir VersaoMusica como arranjo concreto de
-    uma Música, com versão principal protegida contra sobrescrita silenciosa.
-    Migrar a cifra única atual para a versão principal e permitir que uma nova
-    versão nasça de outra. Após uso em Lista, o conteúdo musical da versão será
-    imutável; versões usadas serão arquivadas, não excluídas, e a marca de
-    principal poderá ser trocada sem alterar identidade ou conteúdo.
+10. **Versões e arranjos:** fundação entregue: VersaoMusica é o arranjo
+    concreto, a cifra única anterior foi migrada à versão principal e Listas
+    registram a versão concreta. Permanecem futuras a criação, seleção,
+    renomeação, arquivamento/restauração e troca de principal pela interface,
+    além de salvar como nova versão.
 11. **Listas com contexto de ministração:** adicionar data e ministrante
     opcional à Lista; fazer o Item registrar Música, versão escolhida e tom
     snapshot da ocasião. A Lista é memória operacional do repertório, sem

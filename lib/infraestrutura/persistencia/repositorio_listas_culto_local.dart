@@ -6,6 +6,7 @@ import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
+import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_listas_culto.dart';
 import 'banco_biblioteca.dart';
 
@@ -67,6 +68,7 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
             id: IdItemListaCulto(item.id),
             idLista: IdListaCulto(item.idLista),
             idMusica: IdMusica(item.idMusica),
+            idVersaoMusica: IdVersaoMusica(item.idVersaoMusica),
             posicao: item.posicao,
           ),
         )
@@ -91,6 +93,7 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
       id: item.id.valor,
       idLista: item.idLista.valor,
       idMusica: item.idMusica.valor,
+      idVersaoMusica: item.idVersaoMusica.valor,
       posicao: item.posicao,
     );
   }

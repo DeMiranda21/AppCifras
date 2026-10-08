@@ -6,9 +6,10 @@ atual. Escopo e simplificações do MVP estão em decisoes-mvp.md.
 ## Modelo atual — Música e conteúdo
 
 Musica é entidade identificada por IdMusica. A identidade distingue músicas
-mesmo quando seus dados são iguais. Uma Música válida deriva título, artista e
-tom original de exatamente uma diretiva válida de cada tipo no
-DocumentoChordPro.
+mesmo quando seus dados são iguais. Ela é a identidade de catálogo: título e
+artista lhe pertencem. Cada VersaoMusica tem DocumentoChordPro e tom original
+próprios; a versão principal é a cifra apresentada enquanto não houver seleção
+de versão.
 
 DocumentoChordPro preserva o conteúdo original e produz representação
 interpretada ordenada para leitura e serviços musicais. Pode existir mesmo sem
@@ -38,20 +39,21 @@ fonte.
 
 ## Evolução aprovada — Música e versões
 
-O modelo atual ainda representa uma única cifra concreta em cada Musica. Na
-evolução aprovada, Musica será a identidade da música no catálogo: título e
-artista lhe pertencem conceitualmente. VersaoMusica será o arranjo concreto,
-com identidade própria, DocumentoChordPro e tom original próprios. Uma Música
-poderá ter várias versões, das quais uma será marcada como principal.
+Musica é a identidade da música no catálogo: título e artista lhe pertencem.
+VersaoMusica é o arranjo concreto, com identidade própria, DocumentoChordPro e
+tom original próprios. Uma Música poderá ter várias versões, das quais uma é
+marcada como principal.
 
-Quando essa evolução for implementada, a cifra única hoje existente em cada
-Música será migrada automaticamente para sua versão principal. Não se duplicará
-a entrada de catálogo para representar arranjos como Principal, Simplificada,
-Igreja A ou Acústica.
+A cifra única preexistente é migrada automaticamente para sua versão principal.
+Não se duplica a entrada de catálogo para representar arranjos como Principal,
+Simplificada, Igreja A ou Acústica. Na migração inicial, o valor textual do
+IdVersaoMusica principal coincide com o IdMusica e o arquivo ChordPro não é
+renomeado.
 
-Cada Música terá exatamente uma versão principal. Trocar a principal apenas
-remove essa marca da anterior e a atribui a outra versão, sem copiar conteúdo,
-apagar a versão anterior ou trocar identidades.
+Cada Música tem exatamente uma versão principal ativa. Uma versão principal não
+pode ser arquivada diretamente; trocar a principal apenas move essa marca para
+outra versão ativa, sem copiar conteúdo, apagar a versão anterior ou trocar
+identidades.
 
 O nome ou rótulo de VersaoMusica é editável e não determina sua identidade. Já
 o conteúdo musical — DocumentoChordPro, acordes, estrutura, arranjo e tom
@@ -65,6 +67,12 @@ permanecendo disponível para referências antigas, sem ser oferecida normalment
 em novas seleções. Versão nunca usada poderá ser excluída. O ItemListaCulto
 manterá referência à versão concreta, sem snapshot completo de ChordPro; a
 imutabilidade após o uso preserva o significado das Listas antigas.
+
+As diretivas `{title}` e `{artist}` presentes em cada ChordPro espelham os
+metadados atuais do catálogo e podem ser atualizadas sem alterar o conteúdo
+musical de uma versão. `{key}` pertence exclusivamente à versão. A diretiva
+`{appcifras_id}` continua identificando IdMusica; não há diretiva de ID de
+versão nesta etapa.
 
 ## Conceitos musicais
 
@@ -87,8 +95,9 @@ contrato.
 ## Modelo atual — Lista de Culto
 
 ListaCulto é entidade identificada por IdListaCulto e nome. ItemListaCulto é
-identificado por IdItemListaCulto, referencia Música por IdMusica e tem posição
-persistente. A Lista não contém ChordPro nem duplica conteúdo da Música.
+identificado por IdItemListaCulto, referencia Música por IdMusica e sua versão
+concreta por IdVersaoMusica, além de posição persistente. A Lista não contém
+ChordPro nem duplica conteúdo da Música.
 
 Itens são independentes: o domínio suporta ocorrências repetidas da mesma
 música. A interface pode aplicar restrições de conveniência sem alterar essa
@@ -102,8 +111,8 @@ separada de execução nem estados planejada, executada ou cancelada. A Lista
 terá futuramente data e ministrante opcional, aplicável à Lista inteira, sem
 ministrante por música, múltiplos ministrantes ou override por item.
 
-Quando VersaoMusica existir, cada ItemListaCulto registrará a Música, a versão
-escolhida, a posição e o tom daquela ocasião. Esse tom será snapshot
+Cada ItemListaCulto registra a Música, a versão escolhida e a posição. Em
+evolução posterior, também registrará o tom daquela ocasião. Esse tom será snapshot
 operacional: mudanças posteriores no último tom, na versão principal ou em
 outras Listas não alterarão uma Lista anterior. Pesquisa histórica e
 estatísticas futuras serão consultas derivadas das próprias Listas, não dados
@@ -111,8 +120,8 @@ persistidos separadamente.
 
 ## Preferência de tom de execução
 
-O último tom é preferência local associada a IdMusica, separada de Música e
-ChordPro. Não é histórico, tom original nem tom da Lista. A regra exata para
+O último tom é preferência local associada a IdVersaoMusica, separada de Música
+e ChordPro. Não é histórico, tom original nem tom da Lista. A regra exata para
 usá-lo como sugestão inicial de um novo ItemListaCulto permanece aberta; depois
 da inclusão, o tom snapshot do item será independente.
 
@@ -120,6 +129,6 @@ da inclusão, o tom snapshot do item será independente.
 
 Biblioteca Musical é escopo organizacional, não Aggregate Root formal no MVP.
 Não existem ainda entidades implementadas de Coleção, Fonte de Sincronização,
-VersaoMusica, Usuário, Equipe ou Ministrante. A Biblioteca atual é única,
+Usuário, Equipe ou Ministrante. A Biblioteca atual é única,
 principal e oficial; múltiplas bibliotecas públicas, assináveis ou comunitárias
 são possibilidade distante e não orientam a arquitetura atual.

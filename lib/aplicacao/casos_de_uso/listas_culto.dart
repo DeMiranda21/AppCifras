@@ -3,7 +3,9 @@ import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
+import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_listas_culto.dart';
+import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../portas/gerador_id_item_lista_culto.dart';
 import '../portas/gerador_id_lista_culto.dart';
 
@@ -63,20 +65,31 @@ class ListarItensListaCulto {
 }
 
 class AdicionarMusicaAListaCulto {
-  const AdicionarMusicaAListaCulto(this._repositorio, this._geradorId);
+  const AdicionarMusicaAListaCulto(
+    this._repositorio,
+    this._geradorId, {
+    this._repositorioVersoes,
+  });
 
   final RepositorioListasCulto _repositorio;
   final GeradorIdItemListaCulto _geradorId;
+  final RepositorioVersoesMusicas? _repositorioVersoes;
 
   Future<ItemListaCulto> executar(
     IdListaCulto idLista,
     IdMusica idMusica,
   ) async {
     final itens = await _repositorio.listarItens(idLista);
+    final versaoPrincipal = await _repositorioVersoes?.obterPrincipalPorMusica(
+      idMusica,
+    );
+    final idVersaoMusica =
+        versaoPrincipal?.id ?? IdVersaoMusica(idMusica.valor);
     final item = ItemListaCulto(
       id: _geradorId.gerar(),
       idLista: idLista,
       idMusica: idMusica,
+      idVersaoMusica: idVersaoMusica,
       posicao: itens.length,
     );
     await _repositorio.adicionarItem(item);

@@ -311,12 +311,21 @@ class IndiceMusicasCompanion extends UpdateCompanion<IndiceMusica> {
   }
 }
 
-class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
-    with TableInfo<$PreferenciasTomExecucaoTable, PreferenciasTomExecucaoData> {
+class $VersoesMusicasTable extends VersoesMusicas
+    with TableInfo<$VersoesMusicasTable, VersoesMusica> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PreferenciasTomExecucaoTable(this.attachedDatabase, [this._alias]);
+  $VersoesMusicasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _idMusicaMeta = const VerificationMeta(
     'idMusica',
   );
@@ -329,6 +338,414 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES indice_musicas (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _arquivoMeta = const VerificationMeta(
+    'arquivo',
+  );
+  @override
+  late final GeneratedColumn<String> arquivo = GeneratedColumn<String>(
+    'arquivo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _principalMeta = const VerificationMeta(
+    'principal',
+  );
+  @override
+  late final GeneratedColumn<bool> principal = GeneratedColumn<bool>(
+    'principal',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("principal" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _arquivadaMeta = const VerificationMeta(
+    'arquivada',
+  );
+  @override
+  late final GeneratedColumn<bool> arquivada = GeneratedColumn<bool>(
+    'arquivada',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("arquivada" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    idMusica,
+    nome,
+    arquivo,
+    principal,
+    arquivada,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'versoes_musicas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VersoesMusica> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('id_musica')) {
+      context.handle(
+        _idMusicaMeta,
+        idMusica.isAcceptableOrUnknown(data['id_musica']!, _idMusicaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_idMusicaMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('arquivo')) {
+      context.handle(
+        _arquivoMeta,
+        arquivo.isAcceptableOrUnknown(data['arquivo']!, _arquivoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_arquivoMeta);
+    }
+    if (data.containsKey('principal')) {
+      context.handle(
+        _principalMeta,
+        principal.isAcceptableOrUnknown(data['principal']!, _principalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_principalMeta);
+    }
+    if (data.containsKey('arquivada')) {
+      context.handle(
+        _arquivadaMeta,
+        arquivada.isAcceptableOrUnknown(data['arquivada']!, _arquivadaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_arquivadaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VersoesMusica map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VersoesMusica(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      idMusica: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id_musica'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      arquivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}arquivo'],
+      )!,
+      principal: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}principal'],
+      )!,
+      arquivada: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}arquivada'],
+      )!,
+    );
+  }
+
+  @override
+  $VersoesMusicasTable createAlias(String alias) {
+    return $VersoesMusicasTable(attachedDatabase, alias);
+  }
+}
+
+class VersoesMusica extends DataClass implements Insertable<VersoesMusica> {
+  final String id;
+  final String idMusica;
+  final String nome;
+  final String arquivo;
+  final bool principal;
+  final bool arquivada;
+  const VersoesMusica({
+    required this.id,
+    required this.idMusica,
+    required this.nome,
+    required this.arquivo,
+    required this.principal,
+    required this.arquivada,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['id_musica'] = Variable<String>(idMusica);
+    map['nome'] = Variable<String>(nome);
+    map['arquivo'] = Variable<String>(arquivo);
+    map['principal'] = Variable<bool>(principal);
+    map['arquivada'] = Variable<bool>(arquivada);
+    return map;
+  }
+
+  VersoesMusicasCompanion toCompanion(bool nullToAbsent) {
+    return VersoesMusicasCompanion(
+      id: Value(id),
+      idMusica: Value(idMusica),
+      nome: Value(nome),
+      arquivo: Value(arquivo),
+      principal: Value(principal),
+      arquivada: Value(arquivada),
+    );
+  }
+
+  factory VersoesMusica.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VersoesMusica(
+      id: serializer.fromJson<String>(json['id']),
+      idMusica: serializer.fromJson<String>(json['idMusica']),
+      nome: serializer.fromJson<String>(json['nome']),
+      arquivo: serializer.fromJson<String>(json['arquivo']),
+      principal: serializer.fromJson<bool>(json['principal']),
+      arquivada: serializer.fromJson<bool>(json['arquivada']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'idMusica': serializer.toJson<String>(idMusica),
+      'nome': serializer.toJson<String>(nome),
+      'arquivo': serializer.toJson<String>(arquivo),
+      'principal': serializer.toJson<bool>(principal),
+      'arquivada': serializer.toJson<bool>(arquivada),
+    };
+  }
+
+  VersoesMusica copyWith({
+    String? id,
+    String? idMusica,
+    String? nome,
+    String? arquivo,
+    bool? principal,
+    bool? arquivada,
+  }) => VersoesMusica(
+    id: id ?? this.id,
+    idMusica: idMusica ?? this.idMusica,
+    nome: nome ?? this.nome,
+    arquivo: arquivo ?? this.arquivo,
+    principal: principal ?? this.principal,
+    arquivada: arquivada ?? this.arquivada,
+  );
+  VersoesMusica copyWithCompanion(VersoesMusicasCompanion data) {
+    return VersoesMusica(
+      id: data.id.present ? data.id.value : this.id,
+      idMusica: data.idMusica.present ? data.idMusica.value : this.idMusica,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      arquivo: data.arquivo.present ? data.arquivo.value : this.arquivo,
+      principal: data.principal.present ? data.principal.value : this.principal,
+      arquivada: data.arquivada.present ? data.arquivada.value : this.arquivada,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VersoesMusica(')
+          ..write('id: $id, ')
+          ..write('idMusica: $idMusica, ')
+          ..write('nome: $nome, ')
+          ..write('arquivo: $arquivo, ')
+          ..write('principal: $principal, ')
+          ..write('arquivada: $arquivada')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, idMusica, nome, arquivo, principal, arquivada);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VersoesMusica &&
+          other.id == this.id &&
+          other.idMusica == this.idMusica &&
+          other.nome == this.nome &&
+          other.arquivo == this.arquivo &&
+          other.principal == this.principal &&
+          other.arquivada == this.arquivada);
+}
+
+class VersoesMusicasCompanion extends UpdateCompanion<VersoesMusica> {
+  final Value<String> id;
+  final Value<String> idMusica;
+  final Value<String> nome;
+  final Value<String> arquivo;
+  final Value<bool> principal;
+  final Value<bool> arquivada;
+  final Value<int> rowid;
+  const VersoesMusicasCompanion({
+    this.id = const Value.absent(),
+    this.idMusica = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.arquivo = const Value.absent(),
+    this.principal = const Value.absent(),
+    this.arquivada = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VersoesMusicasCompanion.insert({
+    required String id,
+    required String idMusica,
+    required String nome,
+    required String arquivo,
+    required bool principal,
+    required bool arquivada,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       idMusica = Value(idMusica),
+       nome = Value(nome),
+       arquivo = Value(arquivo),
+       principal = Value(principal),
+       arquivada = Value(arquivada);
+  static Insertable<VersoesMusica> custom({
+    Expression<String>? id,
+    Expression<String>? idMusica,
+    Expression<String>? nome,
+    Expression<String>? arquivo,
+    Expression<bool>? principal,
+    Expression<bool>? arquivada,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (idMusica != null) 'id_musica': idMusica,
+      if (nome != null) 'nome': nome,
+      if (arquivo != null) 'arquivo': arquivo,
+      if (principal != null) 'principal': principal,
+      if (arquivada != null) 'arquivada': arquivada,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VersoesMusicasCompanion copyWith({
+    Value<String>? id,
+    Value<String>? idMusica,
+    Value<String>? nome,
+    Value<String>? arquivo,
+    Value<bool>? principal,
+    Value<bool>? arquivada,
+    Value<int>? rowid,
+  }) {
+    return VersoesMusicasCompanion(
+      id: id ?? this.id,
+      idMusica: idMusica ?? this.idMusica,
+      nome: nome ?? this.nome,
+      arquivo: arquivo ?? this.arquivo,
+      principal: principal ?? this.principal,
+      arquivada: arquivada ?? this.arquivada,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (idMusica.present) {
+      map['id_musica'] = Variable<String>(idMusica.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (arquivo.present) {
+      map['arquivo'] = Variable<String>(arquivo.value);
+    }
+    if (principal.present) {
+      map['principal'] = Variable<bool>(principal.value);
+    }
+    if (arquivada.present) {
+      map['arquivada'] = Variable<bool>(arquivada.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VersoesMusicasCompanion(')
+          ..write('id: $id, ')
+          ..write('idMusica: $idMusica, ')
+          ..write('nome: $nome, ')
+          ..write('arquivo: $arquivo, ')
+          ..write('principal: $principal, ')
+          ..write('arquivada: $arquivada, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
+    with TableInfo<$PreferenciasTomExecucaoTable, PreferenciasTomExecucaoData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PreferenciasTomExecucaoTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idVersaoMusicaMeta = const VerificationMeta(
+    'idVersaoMusica',
+  );
+  @override
+  late final GeneratedColumn<String> idVersaoMusica = GeneratedColumn<String>(
+    'id_versao_musica',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES versoes_musicas (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _nomeNotaMeta = const VerificationMeta(
@@ -363,7 +780,12 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [idMusica, nomeNota, alteracao, modo];
+  List<GeneratedColumn> get $columns => [
+    idVersaoMusica,
+    nomeNota,
+    alteracao,
+    modo,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -376,13 +798,16 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id_musica')) {
+    if (data.containsKey('id_versao_musica')) {
       context.handle(
-        _idMusicaMeta,
-        idMusica.isAcceptableOrUnknown(data['id_musica']!, _idMusicaMeta),
+        _idVersaoMusicaMeta,
+        idVersaoMusica.isAcceptableOrUnknown(
+          data['id_versao_musica']!,
+          _idVersaoMusicaMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_idMusicaMeta);
+      context.missing(_idVersaoMusicaMeta);
     }
     if (data.containsKey('nome_nota')) {
       context.handle(
@@ -412,7 +837,7 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {idMusica};
+  Set<GeneratedColumn> get $primaryKey => {idVersaoMusica};
   @override
   PreferenciasTomExecucaoData map(
     Map<String, dynamic> data, {
@@ -420,9 +845,9 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
   }) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return PreferenciasTomExecucaoData(
-      idMusica: attachedDatabase.typeMapping.read(
+      idVersaoMusica: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}id_musica'],
+        data['${effectivePrefix}id_versao_musica'],
       )!,
       nomeNota: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -447,12 +872,12 @@ class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
 
 class PreferenciasTomExecucaoData extends DataClass
     implements Insertable<PreferenciasTomExecucaoData> {
-  final String idMusica;
+  final String idVersaoMusica;
   final String nomeNota;
   final String alteracao;
   final String modo;
   const PreferenciasTomExecucaoData({
-    required this.idMusica,
+    required this.idVersaoMusica,
     required this.nomeNota,
     required this.alteracao,
     required this.modo,
@@ -460,7 +885,7 @@ class PreferenciasTomExecucaoData extends DataClass
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id_musica'] = Variable<String>(idMusica);
+    map['id_versao_musica'] = Variable<String>(idVersaoMusica);
     map['nome_nota'] = Variable<String>(nomeNota);
     map['alteracao'] = Variable<String>(alteracao);
     map['modo'] = Variable<String>(modo);
@@ -469,7 +894,7 @@ class PreferenciasTomExecucaoData extends DataClass
 
   PreferenciasTomExecucaoCompanion toCompanion(bool nullToAbsent) {
     return PreferenciasTomExecucaoCompanion(
-      idMusica: Value(idMusica),
+      idVersaoMusica: Value(idVersaoMusica),
       nomeNota: Value(nomeNota),
       alteracao: Value(alteracao),
       modo: Value(modo),
@@ -482,7 +907,7 @@ class PreferenciasTomExecucaoData extends DataClass
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PreferenciasTomExecucaoData(
-      idMusica: serializer.fromJson<String>(json['idMusica']),
+      idVersaoMusica: serializer.fromJson<String>(json['idVersaoMusica']),
       nomeNota: serializer.fromJson<String>(json['nomeNota']),
       alteracao: serializer.fromJson<String>(json['alteracao']),
       modo: serializer.fromJson<String>(json['modo']),
@@ -492,7 +917,7 @@ class PreferenciasTomExecucaoData extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'idMusica': serializer.toJson<String>(idMusica),
+      'idVersaoMusica': serializer.toJson<String>(idVersaoMusica),
       'nomeNota': serializer.toJson<String>(nomeNota),
       'alteracao': serializer.toJson<String>(alteracao),
       'modo': serializer.toJson<String>(modo),
@@ -500,12 +925,12 @@ class PreferenciasTomExecucaoData extends DataClass
   }
 
   PreferenciasTomExecucaoData copyWith({
-    String? idMusica,
+    String? idVersaoMusica,
     String? nomeNota,
     String? alteracao,
     String? modo,
   }) => PreferenciasTomExecucaoData(
-    idMusica: idMusica ?? this.idMusica,
+    idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
     nomeNota: nomeNota ?? this.nomeNota,
     alteracao: alteracao ?? this.alteracao,
     modo: modo ?? this.modo,
@@ -514,7 +939,9 @@ class PreferenciasTomExecucaoData extends DataClass
     PreferenciasTomExecucaoCompanion data,
   ) {
     return PreferenciasTomExecucaoData(
-      idMusica: data.idMusica.present ? data.idMusica.value : this.idMusica,
+      idVersaoMusica: data.idVersaoMusica.present
+          ? data.idVersaoMusica.value
+          : this.idVersaoMusica,
       nomeNota: data.nomeNota.present ? data.nomeNota.value : this.nomeNota,
       alteracao: data.alteracao.present ? data.alteracao.value : this.alteracao,
       modo: data.modo.present ? data.modo.value : this.modo,
@@ -524,7 +951,7 @@ class PreferenciasTomExecucaoData extends DataClass
   @override
   String toString() {
     return (StringBuffer('PreferenciasTomExecucaoData(')
-          ..write('idMusica: $idMusica, ')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
           ..write('nomeNota: $nomeNota, ')
           ..write('alteracao: $alteracao, ')
           ..write('modo: $modo')
@@ -533,12 +960,12 @@ class PreferenciasTomExecucaoData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(idMusica, nomeNota, alteracao, modo);
+  int get hashCode => Object.hash(idVersaoMusica, nomeNota, alteracao, modo);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PreferenciasTomExecucaoData &&
-          other.idMusica == this.idMusica &&
+          other.idVersaoMusica == this.idVersaoMusica &&
           other.nomeNota == this.nomeNota &&
           other.alteracao == this.alteracao &&
           other.modo == this.modo);
@@ -546,37 +973,37 @@ class PreferenciasTomExecucaoData extends DataClass
 
 class PreferenciasTomExecucaoCompanion
     extends UpdateCompanion<PreferenciasTomExecucaoData> {
-  final Value<String> idMusica;
+  final Value<String> idVersaoMusica;
   final Value<String> nomeNota;
   final Value<String> alteracao;
   final Value<String> modo;
   final Value<int> rowid;
   const PreferenciasTomExecucaoCompanion({
-    this.idMusica = const Value.absent(),
+    this.idVersaoMusica = const Value.absent(),
     this.nomeNota = const Value.absent(),
     this.alteracao = const Value.absent(),
     this.modo = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PreferenciasTomExecucaoCompanion.insert({
-    required String idMusica,
+    required String idVersaoMusica,
     required String nomeNota,
     required String alteracao,
     required String modo,
     this.rowid = const Value.absent(),
-  }) : idMusica = Value(idMusica),
+  }) : idVersaoMusica = Value(idVersaoMusica),
        nomeNota = Value(nomeNota),
        alteracao = Value(alteracao),
        modo = Value(modo);
   static Insertable<PreferenciasTomExecucaoData> custom({
-    Expression<String>? idMusica,
+    Expression<String>? idVersaoMusica,
     Expression<String>? nomeNota,
     Expression<String>? alteracao,
     Expression<String>? modo,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (idMusica != null) 'id_musica': idMusica,
+      if (idVersaoMusica != null) 'id_versao_musica': idVersaoMusica,
       if (nomeNota != null) 'nome_nota': nomeNota,
       if (alteracao != null) 'alteracao': alteracao,
       if (modo != null) 'modo': modo,
@@ -585,14 +1012,14 @@ class PreferenciasTomExecucaoCompanion
   }
 
   PreferenciasTomExecucaoCompanion copyWith({
-    Value<String>? idMusica,
+    Value<String>? idVersaoMusica,
     Value<String>? nomeNota,
     Value<String>? alteracao,
     Value<String>? modo,
     Value<int>? rowid,
   }) {
     return PreferenciasTomExecucaoCompanion(
-      idMusica: idMusica ?? this.idMusica,
+      idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
       nomeNota: nomeNota ?? this.nomeNota,
       alteracao: alteracao ?? this.alteracao,
       modo: modo ?? this.modo,
@@ -603,8 +1030,8 @@ class PreferenciasTomExecucaoCompanion
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (idMusica.present) {
-      map['id_musica'] = Variable<String>(idMusica.value);
+    if (idVersaoMusica.present) {
+      map['id_versao_musica'] = Variable<String>(idVersaoMusica.value);
     }
     if (nomeNota.present) {
       map['nome_nota'] = Variable<String>(nomeNota.value);
@@ -624,7 +1051,7 @@ class PreferenciasTomExecucaoCompanion
   @override
   String toString() {
     return (StringBuffer('PreferenciasTomExecucaoCompanion(')
-          ..write('idMusica: $idMusica, ')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
           ..write('nomeNota: $nomeNota, ')
           ..write('alteracao: $alteracao, ')
           ..write('modo: $modo, ')
@@ -1368,6 +1795,20 @@ class $ItensListaCultoTable extends ItensListaCulto
       'REFERENCES indice_musicas (id)',
     ),
   );
+  static const VerificationMeta _idVersaoMusicaMeta = const VerificationMeta(
+    'idVersaoMusica',
+  );
+  @override
+  late final GeneratedColumn<String> idVersaoMusica = GeneratedColumn<String>(
+    'id_versao_musica',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES versoes_musicas (id)',
+    ),
+  );
   static const VerificationMeta _posicaoMeta = const VerificationMeta(
     'posicao',
   );
@@ -1380,7 +1821,13 @@ class $ItensListaCultoTable extends ItensListaCulto
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, idLista, idMusica, posicao];
+  List<GeneratedColumn> get $columns => [
+    id,
+    idLista,
+    idMusica,
+    idVersaoMusica,
+    posicao,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1414,6 +1861,17 @@ class $ItensListaCultoTable extends ItensListaCulto
     } else if (isInserting) {
       context.missing(_idMusicaMeta);
     }
+    if (data.containsKey('id_versao_musica')) {
+      context.handle(
+        _idVersaoMusicaMeta,
+        idVersaoMusica.isAcceptableOrUnknown(
+          data['id_versao_musica']!,
+          _idVersaoMusicaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_idVersaoMusicaMeta);
+    }
     if (data.containsKey('posicao')) {
       context.handle(
         _posicaoMeta,
@@ -1443,6 +1901,10 @@ class $ItensListaCultoTable extends ItensListaCulto
         DriftSqlType.string,
         data['${effectivePrefix}id_musica'],
       )!,
+      idVersaoMusica: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id_versao_musica'],
+      )!,
       posicao: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}posicao'],
@@ -1461,11 +1923,13 @@ class ItensListaCultoData extends DataClass
   final String id;
   final String idLista;
   final String idMusica;
+  final String idVersaoMusica;
   final int posicao;
   const ItensListaCultoData({
     required this.id,
     required this.idLista,
     required this.idMusica,
+    required this.idVersaoMusica,
     required this.posicao,
   });
   @override
@@ -1474,6 +1938,7 @@ class ItensListaCultoData extends DataClass
     map['id'] = Variable<String>(id);
     map['id_lista'] = Variable<String>(idLista);
     map['id_musica'] = Variable<String>(idMusica);
+    map['id_versao_musica'] = Variable<String>(idVersaoMusica);
     map['posicao'] = Variable<int>(posicao);
     return map;
   }
@@ -1483,6 +1948,7 @@ class ItensListaCultoData extends DataClass
       id: Value(id),
       idLista: Value(idLista),
       idMusica: Value(idMusica),
+      idVersaoMusica: Value(idVersaoMusica),
       posicao: Value(posicao),
     );
   }
@@ -1496,6 +1962,7 @@ class ItensListaCultoData extends DataClass
       id: serializer.fromJson<String>(json['id']),
       idLista: serializer.fromJson<String>(json['idLista']),
       idMusica: serializer.fromJson<String>(json['idMusica']),
+      idVersaoMusica: serializer.fromJson<String>(json['idVersaoMusica']),
       posicao: serializer.fromJson<int>(json['posicao']),
     );
   }
@@ -1506,6 +1973,7 @@ class ItensListaCultoData extends DataClass
       'id': serializer.toJson<String>(id),
       'idLista': serializer.toJson<String>(idLista),
       'idMusica': serializer.toJson<String>(idMusica),
+      'idVersaoMusica': serializer.toJson<String>(idVersaoMusica),
       'posicao': serializer.toJson<int>(posicao),
     };
   }
@@ -1514,11 +1982,13 @@ class ItensListaCultoData extends DataClass
     String? id,
     String? idLista,
     String? idMusica,
+    String? idVersaoMusica,
     int? posicao,
   }) => ItensListaCultoData(
     id: id ?? this.id,
     idLista: idLista ?? this.idLista,
     idMusica: idMusica ?? this.idMusica,
+    idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
     posicao: posicao ?? this.posicao,
   );
   ItensListaCultoData copyWithCompanion(ItensListaCultoCompanion data) {
@@ -1526,6 +1996,9 @@ class ItensListaCultoData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       idLista: data.idLista.present ? data.idLista.value : this.idLista,
       idMusica: data.idMusica.present ? data.idMusica.value : this.idMusica,
+      idVersaoMusica: data.idVersaoMusica.present
+          ? data.idVersaoMusica.value
+          : this.idVersaoMusica,
       posicao: data.posicao.present ? data.posicao.value : this.posicao,
     );
   }
@@ -1536,13 +2009,15 @@ class ItensListaCultoData extends DataClass
           ..write('id: $id, ')
           ..write('idLista: $idLista, ')
           ..write('idMusica: $idMusica, ')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
           ..write('posicao: $posicao')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, idLista, idMusica, posicao);
+  int get hashCode =>
+      Object.hash(id, idLista, idMusica, idVersaoMusica, posicao);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1550,6 +2025,7 @@ class ItensListaCultoData extends DataClass
           other.id == this.id &&
           other.idLista == this.idLista &&
           other.idMusica == this.idMusica &&
+          other.idVersaoMusica == this.idVersaoMusica &&
           other.posicao == this.posicao);
 }
 
@@ -1557,12 +2033,14 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
   final Value<String> id;
   final Value<String> idLista;
   final Value<String> idMusica;
+  final Value<String> idVersaoMusica;
   final Value<int> posicao;
   final Value<int> rowid;
   const ItensListaCultoCompanion({
     this.id = const Value.absent(),
     this.idLista = const Value.absent(),
     this.idMusica = const Value.absent(),
+    this.idVersaoMusica = const Value.absent(),
     this.posicao = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1570,16 +2048,19 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
     required String id,
     required String idLista,
     required String idMusica,
+    required String idVersaoMusica,
     required int posicao,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        idLista = Value(idLista),
        idMusica = Value(idMusica),
+       idVersaoMusica = Value(idVersaoMusica),
        posicao = Value(posicao);
   static Insertable<ItensListaCultoData> custom({
     Expression<String>? id,
     Expression<String>? idLista,
     Expression<String>? idMusica,
+    Expression<String>? idVersaoMusica,
     Expression<int>? posicao,
     Expression<int>? rowid,
   }) {
@@ -1587,6 +2068,7 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
       if (id != null) 'id': id,
       if (idLista != null) 'id_lista': idLista,
       if (idMusica != null) 'id_musica': idMusica,
+      if (idVersaoMusica != null) 'id_versao_musica': idVersaoMusica,
       if (posicao != null) 'posicao': posicao,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1596,6 +2078,7 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
     Value<String>? id,
     Value<String>? idLista,
     Value<String>? idMusica,
+    Value<String>? idVersaoMusica,
     Value<int>? posicao,
     Value<int>? rowid,
   }) {
@@ -1603,6 +2086,7 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
       id: id ?? this.id,
       idLista: idLista ?? this.idLista,
       idMusica: idMusica ?? this.idMusica,
+      idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
       posicao: posicao ?? this.posicao,
       rowid: rowid ?? this.rowid,
     );
@@ -1620,6 +2104,9 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
     if (idMusica.present) {
       map['id_musica'] = Variable<String>(idMusica.value);
     }
+    if (idVersaoMusica.present) {
+      map['id_versao_musica'] = Variable<String>(idVersaoMusica.value);
+    }
     if (posicao.present) {
       map['posicao'] = Variable<int>(posicao.value);
     }
@@ -1635,6 +2122,7 @@ class ItensListaCultoCompanion extends UpdateCompanion<ItensListaCultoData> {
           ..write('id: $id, ')
           ..write('idLista: $idLista, ')
           ..write('idMusica: $idMusica, ')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
           ..write('posicao: $posicao, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1646,6 +2134,7 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
   _$BancoBiblioteca(QueryExecutor e) : super(e);
   $BancoBibliotecaManager get managers => $BancoBibliotecaManager(this);
   late final $IndiceMusicasTable indiceMusicas = $IndiceMusicasTable(this);
+  late final $VersoesMusicasTable versoesMusicas = $VersoesMusicasTable(this);
   late final $PreferenciasTomExecucaoTable preferenciasTomExecucao =
       $PreferenciasTomExecucaoTable(this);
   late final $EnergiasMusicasTable energiasMusicas = $EnergiasMusicasTable(
@@ -1662,6 +2151,7 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     indiceMusicas,
+    versoesMusicas,
     preferenciasTomExecucao,
     energiasMusicas,
     tagsMusicas,
@@ -1673,6 +2163,13 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'indice_musicas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('versoes_musicas', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'versoes_musicas',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [
@@ -1722,26 +2219,20 @@ final class $$IndiceMusicasTableReferences
     super.$_typedResult,
   );
 
-  static MultiTypedResultKey<
-    $PreferenciasTomExecucaoTable,
-    List<PreferenciasTomExecucaoData>
-  >
-  _preferenciasTomExecucaoRefsTable(_$BancoBiblioteca db) =>
+  static MultiTypedResultKey<$VersoesMusicasTable, List<VersoesMusica>>
+  _versoesMusicasRefsTable(_$BancoBiblioteca db) =>
       MultiTypedResultKey.fromTable(
-        db.preferenciasTomExecucao,
-        aliasName: 'indice_musicas__id__preferencias_tom_execucao__id_musica',
+        db.versoesMusicas,
+        aliasName: 'indice_musicas__id__versoes_musicas__id_musica',
       );
 
-  $$PreferenciasTomExecucaoTableProcessedTableManager
-  get preferenciasTomExecucaoRefs {
-    final manager = $$PreferenciasTomExecucaoTableTableManager(
+  $$VersoesMusicasTableProcessedTableManager get versoesMusicasRefs {
+    final manager = $$VersoesMusicasTableTableManager(
       $_db,
-      $_db.preferenciasTomExecucao,
+      $_db.versoesMusicas,
     ).filter((f) => f.idMusica.id.sqlEquals($_itemColumn<String>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(
-      _preferenciasTomExecucaoRefsTable($_db),
-    );
+    final cache = $_typedResult.readTableOrNull(_versoesMusicasRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1837,29 +2328,28 @@ class $$IndiceMusicasTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  Expression<bool> preferenciasTomExecucaoRefs(
-    Expression<bool> Function($$PreferenciasTomExecucaoTableFilterComposer f) f,
+  Expression<bool> versoesMusicasRefs(
+    Expression<bool> Function($$VersoesMusicasTableFilterComposer f) f,
   ) {
-    final $$PreferenciasTomExecucaoTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.preferenciasTomExecucao,
-          getReferencedColumn: (t) => t.idMusica,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
+    final $$VersoesMusicasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.idMusica,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableFilterComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
                 $removeJoinBuilderFromRootComposer,
-              }) => $$PreferenciasTomExecucaoTableFilterComposer(
-                $db: $db,
-                $table: $db.preferenciasTomExecucao,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
+          ),
+    );
     return f(composer);
   }
 
@@ -1990,30 +2480,28 @@ class $$IndiceMusicasTableAnnotationComposer
   GeneratedColumn<String> get arquivo =>
       $composableBuilder(column: $table.arquivo, builder: (column) => column);
 
-  Expression<T> preferenciasTomExecucaoRefs<T extends Object>(
-    Expression<T> Function($$PreferenciasTomExecucaoTableAnnotationComposer a)
-    f,
+  Expression<T> versoesMusicasRefs<T extends Object>(
+    Expression<T> Function($$VersoesMusicasTableAnnotationComposer a) f,
   ) {
-    final $$PreferenciasTomExecucaoTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.preferenciasTomExecucao,
-          getReferencedColumn: (t) => t.idMusica,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
+    final $$VersoesMusicasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.idMusica,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
                 $removeJoinBuilderFromRootComposer,
-              }) => $$PreferenciasTomExecucaoTableAnnotationComposer(
-                $db: $db,
-                $table: $db.preferenciasTomExecucao,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
+          ),
+    );
     return f(composer);
   }
 
@@ -2107,7 +2595,7 @@ class $$IndiceMusicasTableTableManager
           (IndiceMusica, $$IndiceMusicasTableReferences),
           IndiceMusica,
           PrefetchHooks Function({
-            bool preferenciasTomExecucaoRefs,
+            bool versoesMusicasRefs,
             bool energiasMusicasRefs,
             bool tagsMusicasRefs,
             bool itensListaCultoRefs,
@@ -2164,7 +2652,7 @@ class $$IndiceMusicasTableTableManager
               .toList(),
           prefetchHooksCallback:
               ({
-                preferenciasTomExecucaoRefs = false,
+                versoesMusicasRefs = false,
                 energiasMusicasRefs = false,
                 tagsMusicasRefs = false,
                 itensListaCultoRefs = false,
@@ -2172,7 +2660,7 @@ class $$IndiceMusicasTableTableManager
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
-                    if (preferenciasTomExecucaoRefs) db.preferenciasTomExecucao,
+                    if (versoesMusicasRefs) db.versoesMusicas,
                     if (energiasMusicasRefs) db.energiasMusicas,
                     if (tagsMusicasRefs) db.tagsMusicas,
                     if (itensListaCultoRefs) db.itensListaCulto,
@@ -2180,21 +2668,21 @@ class $$IndiceMusicasTableTableManager
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
                     return [
-                      if (preferenciasTomExecucaoRefs)
+                      if (versoesMusicasRefs)
                         await $_getPrefetchedData<
                           IndiceMusica,
                           $IndiceMusicasTable,
-                          PreferenciasTomExecucaoData
+                          VersoesMusica
                         >(
                           currentTable: table,
                           referencedTable: $$IndiceMusicasTableReferences
-                              ._preferenciasTomExecucaoRefsTable(db),
+                              ._versoesMusicasRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$IndiceMusicasTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).preferenciasTomExecucaoRefs,
+                              ).versoesMusicasRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.idMusica == item.id,
@@ -2285,15 +2773,566 @@ typedef $$IndiceMusicasTableProcessedTableManager =
       (IndiceMusica, $$IndiceMusicasTableReferences),
       IndiceMusica,
       PrefetchHooks Function({
-        bool preferenciasTomExecucaoRefs,
+        bool versoesMusicasRefs,
         bool energiasMusicasRefs,
         bool tagsMusicasRefs,
         bool itensListaCultoRefs,
       })
     >;
+typedef $$VersoesMusicasTableCreateCompanionBuilder =
+    VersoesMusicasCompanion Function({
+      required String id,
+      required String idMusica,
+      required String nome,
+      required String arquivo,
+      required bool principal,
+      required bool arquivada,
+      Value<int> rowid,
+    });
+typedef $$VersoesMusicasTableUpdateCompanionBuilder =
+    VersoesMusicasCompanion Function({
+      Value<String> id,
+      Value<String> idMusica,
+      Value<String> nome,
+      Value<String> arquivo,
+      Value<bool> principal,
+      Value<bool> arquivada,
+      Value<int> rowid,
+    });
+
+final class $$VersoesMusicasTableReferences
+    extends
+        BaseReferences<_$BancoBiblioteca, $VersoesMusicasTable, VersoesMusica> {
+  $$VersoesMusicasTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $IndiceMusicasTable _idMusicaTable(_$BancoBiblioteca db) => db
+      .indiceMusicas
+      .createAlias('versoes_musicas__id_musica__indice_musicas__id');
+
+  $$IndiceMusicasTableProcessedTableManager get idMusica {
+    final $_column = $_itemColumn<String>('id_musica')!;
+
+    final manager = $$IndiceMusicasTableTableManager(
+      $_db,
+      $_db.indiceMusicas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_idMusicaTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $PreferenciasTomExecucaoTable,
+    List<PreferenciasTomExecucaoData>
+  >
+  _preferenciasTomExecucaoRefsTable(_$BancoBiblioteca db) =>
+      MultiTypedResultKey.fromTable(
+        db.preferenciasTomExecucao,
+        aliasName:
+            'versoes_musicas__id__preferencias_tom_execucao__id_versao_musica',
+      );
+
+  $$PreferenciasTomExecucaoTableProcessedTableManager
+  get preferenciasTomExecucaoRefs {
+    final manager = $$PreferenciasTomExecucaoTableTableManager(
+      $_db,
+      $_db.preferenciasTomExecucao,
+    ).filter((f) => f.idVersaoMusica.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _preferenciasTomExecucaoRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ItensListaCultoTable, List<ItensListaCultoData>>
+  _itensListaCultoRefsTable(_$BancoBiblioteca db) =>
+      MultiTypedResultKey.fromTable(
+        db.itensListaCulto,
+        aliasName: 'versoes_musicas__id__itens_lista_culto__id_versao_musica',
+      );
+
+  $$ItensListaCultoTableProcessedTableManager get itensListaCultoRefs {
+    final manager = $$ItensListaCultoTableTableManager(
+      $_db,
+      $_db.itensListaCulto,
+    ).filter((f) => f.idVersaoMusica.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _itensListaCultoRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$VersoesMusicasTableFilterComposer
+    extends Composer<_$BancoBiblioteca, $VersoesMusicasTable> {
+  $$VersoesMusicasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get arquivo => $composableBuilder(
+    column: $table.arquivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get principal => $composableBuilder(
+    column: $table.principal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get arquivada => $composableBuilder(
+    column: $table.arquivada,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$IndiceMusicasTableFilterComposer get idMusica {
+    final $$IndiceMusicasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idMusica,
+      referencedTable: $db.indiceMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IndiceMusicasTableFilterComposer(
+            $db: $db,
+            $table: $db.indiceMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> preferenciasTomExecucaoRefs(
+    Expression<bool> Function($$PreferenciasTomExecucaoTableFilterComposer f) f,
+  ) {
+    final $$PreferenciasTomExecucaoTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.preferenciasTomExecucao,
+          getReferencedColumn: (t) => t.idVersaoMusica,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PreferenciasTomExecucaoTableFilterComposer(
+                $db: $db,
+                $table: $db.preferenciasTomExecucao,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> itensListaCultoRefs(
+    Expression<bool> Function($$ItensListaCultoTableFilterComposer f) f,
+  ) {
+    final $$ItensListaCultoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.itensListaCulto,
+      getReferencedColumn: (t) => t.idVersaoMusica,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ItensListaCultoTableFilterComposer(
+            $db: $db,
+            $table: $db.itensListaCulto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VersoesMusicasTableOrderingComposer
+    extends Composer<_$BancoBiblioteca, $VersoesMusicasTable> {
+  $$VersoesMusicasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get arquivo => $composableBuilder(
+    column: $table.arquivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get principal => $composableBuilder(
+    column: $table.principal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get arquivada => $composableBuilder(
+    column: $table.arquivada,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$IndiceMusicasTableOrderingComposer get idMusica {
+    final $$IndiceMusicasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idMusica,
+      referencedTable: $db.indiceMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IndiceMusicasTableOrderingComposer(
+            $db: $db,
+            $table: $db.indiceMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VersoesMusicasTableAnnotationComposer
+    extends Composer<_$BancoBiblioteca, $VersoesMusicasTable> {
+  $$VersoesMusicasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get arquivo =>
+      $composableBuilder(column: $table.arquivo, builder: (column) => column);
+
+  GeneratedColumn<bool> get principal =>
+      $composableBuilder(column: $table.principal, builder: (column) => column);
+
+  GeneratedColumn<bool> get arquivada =>
+      $composableBuilder(column: $table.arquivada, builder: (column) => column);
+
+  $$IndiceMusicasTableAnnotationComposer get idMusica {
+    final $$IndiceMusicasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idMusica,
+      referencedTable: $db.indiceMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$IndiceMusicasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.indiceMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> preferenciasTomExecucaoRefs<T extends Object>(
+    Expression<T> Function($$PreferenciasTomExecucaoTableAnnotationComposer a)
+    f,
+  ) {
+    final $$PreferenciasTomExecucaoTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.preferenciasTomExecucao,
+          getReferencedColumn: (t) => t.idVersaoMusica,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PreferenciasTomExecucaoTableAnnotationComposer(
+                $db: $db,
+                $table: $db.preferenciasTomExecucao,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> itensListaCultoRefs<T extends Object>(
+    Expression<T> Function($$ItensListaCultoTableAnnotationComposer a) f,
+  ) {
+    final $$ItensListaCultoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.itensListaCulto,
+      getReferencedColumn: (t) => t.idVersaoMusica,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ItensListaCultoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.itensListaCulto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VersoesMusicasTableTableManager
+    extends
+        RootTableManager<
+          _$BancoBiblioteca,
+          $VersoesMusicasTable,
+          VersoesMusica,
+          $$VersoesMusicasTableFilterComposer,
+          $$VersoesMusicasTableOrderingComposer,
+          $$VersoesMusicasTableAnnotationComposer,
+          $$VersoesMusicasTableCreateCompanionBuilder,
+          $$VersoesMusicasTableUpdateCompanionBuilder,
+          (VersoesMusica, $$VersoesMusicasTableReferences),
+          VersoesMusica,
+          PrefetchHooks Function({
+            bool idMusica,
+            bool preferenciasTomExecucaoRefs,
+            bool itensListaCultoRefs,
+          })
+        > {
+  $$VersoesMusicasTableTableManager(
+    _$BancoBiblioteca db,
+    $VersoesMusicasTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VersoesMusicasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VersoesMusicasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VersoesMusicasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> idMusica = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> arquivo = const Value.absent(),
+                Value<bool> principal = const Value.absent(),
+                Value<bool> arquivada = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VersoesMusicasCompanion(
+                id: id,
+                idMusica: idMusica,
+                nome: nome,
+                arquivo: arquivo,
+                principal: principal,
+                arquivada: arquivada,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String idMusica,
+                required String nome,
+                required String arquivo,
+                required bool principal,
+                required bool arquivada,
+                Value<int> rowid = const Value.absent(),
+              }) => VersoesMusicasCompanion.insert(
+                id: id,
+                idMusica: idMusica,
+                nome: nome,
+                arquivo: arquivo,
+                principal: principal,
+                arquivada: arquivada,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VersoesMusicasTable, VersoesMusica>(table),
+                  $$VersoesMusicasTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                idMusica = false,
+                preferenciasTomExecucaoRefs = false,
+                itensListaCultoRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (preferenciasTomExecucaoRefs) db.preferenciasTomExecucao,
+                    if (itensListaCultoRefs) db.itensListaCulto,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (idMusica) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.idMusica,
+                            referencedTable: $$VersoesMusicasTableReferences
+                                ._idMusicaTable(db),
+                            referencedColumn: $$VersoesMusicasTableReferences
+                                ._idMusicaTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (preferenciasTomExecucaoRefs)
+                        await $_getPrefetchedData<
+                          VersoesMusica,
+                          $VersoesMusicasTable,
+                          PreferenciasTomExecucaoData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VersoesMusicasTableReferences
+                              ._preferenciasTomExecucaoRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VersoesMusicasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).preferenciasTomExecucaoRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.idVersaoMusica == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (itensListaCultoRefs)
+                        await $_getPrefetchedData<
+                          VersoesMusica,
+                          $VersoesMusicasTable,
+                          ItensListaCultoData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VersoesMusicasTableReferences
+                              ._itensListaCultoRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VersoesMusicasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).itensListaCultoRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.idVersaoMusica == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$VersoesMusicasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BancoBiblioteca,
+      $VersoesMusicasTable,
+      VersoesMusica,
+      $$VersoesMusicasTableFilterComposer,
+      $$VersoesMusicasTableOrderingComposer,
+      $$VersoesMusicasTableAnnotationComposer,
+      $$VersoesMusicasTableCreateCompanionBuilder,
+      $$VersoesMusicasTableUpdateCompanionBuilder,
+      (VersoesMusica, $$VersoesMusicasTableReferences),
+      VersoesMusica,
+      PrefetchHooks Function({
+        bool idMusica,
+        bool preferenciasTomExecucaoRefs,
+        bool itensListaCultoRefs,
+      })
+    >;
 typedef $$PreferenciasTomExecucaoTableCreateCompanionBuilder =
     PreferenciasTomExecucaoCompanion Function({
-      required String idMusica,
+      required String idVersaoMusica,
       required String nomeNota,
       required String alteracao,
       required String modo,
@@ -2301,7 +3340,7 @@ typedef $$PreferenciasTomExecucaoTableCreateCompanionBuilder =
     });
 typedef $$PreferenciasTomExecucaoTableUpdateCompanionBuilder =
     PreferenciasTomExecucaoCompanion Function({
-      Value<String> idMusica,
+      Value<String> idVersaoMusica,
       Value<String> nomeNota,
       Value<String> alteracao,
       Value<String> modo,
@@ -2321,18 +3360,19 @@ final class $$PreferenciasTomExecucaoTableReferences
     super.$_typedResult,
   );
 
-  static $IndiceMusicasTable _idMusicaTable(_$BancoBiblioteca db) => db
-      .indiceMusicas
-      .createAlias('preferencias_tom_execucao__id_musica__indice_musicas__id');
+  static $VersoesMusicasTable _idVersaoMusicaTable(_$BancoBiblioteca db) =>
+      db.versoesMusicas.createAlias(
+        'preferencias_tom_execucao__id_versao_musica__versoes_musicas__id',
+      );
 
-  $$IndiceMusicasTableProcessedTableManager get idMusica {
-    final $_column = $_itemColumn<String>('id_musica')!;
+  $$VersoesMusicasTableProcessedTableManager get idVersaoMusica {
+    final $_column = $_itemColumn<String>('id_versao_musica')!;
 
-    final manager = $$IndiceMusicasTableTableManager(
+    final manager = $$VersoesMusicasTableTableManager(
       $_db,
-      $_db.indiceMusicas,
+      $_db.versoesMusicas,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_idMusicaTable($_db));
+    final item = $_typedResult.readTableOrNull(_idVersaoMusicaTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2364,20 +3404,20 @@ class $$PreferenciasTomExecucaoTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  $$IndiceMusicasTableFilterComposer get idMusica {
-    final $$IndiceMusicasTableFilterComposer composer = $composerBuilder(
+  $$VersoesMusicasTableFilterComposer get idVersaoMusica {
+    final $$VersoesMusicasTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.idMusica,
-      referencedTable: $db.indiceMusicas,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IndiceMusicasTableFilterComposer(
+          }) => $$VersoesMusicasTableFilterComposer(
             $db: $db,
-            $table: $db.indiceMusicas,
+            $table: $db.versoesMusicas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2412,20 +3452,20 @@ class $$PreferenciasTomExecucaoTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  $$IndiceMusicasTableOrderingComposer get idMusica {
-    final $$IndiceMusicasTableOrderingComposer composer = $composerBuilder(
+  $$VersoesMusicasTableOrderingComposer get idVersaoMusica {
+    final $$VersoesMusicasTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.idMusica,
-      referencedTable: $db.indiceMusicas,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IndiceMusicasTableOrderingComposer(
+          }) => $$VersoesMusicasTableOrderingComposer(
             $db: $db,
-            $table: $db.indiceMusicas,
+            $table: $db.versoesMusicas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2454,20 +3494,20 @@ class $$PreferenciasTomExecucaoTableAnnotationComposer
   GeneratedColumn<String> get modo =>
       $composableBuilder(column: $table.modo, builder: (column) => column);
 
-  $$IndiceMusicasTableAnnotationComposer get idMusica {
-    final $$IndiceMusicasTableAnnotationComposer composer = $composerBuilder(
+  $$VersoesMusicasTableAnnotationComposer get idVersaoMusica {
+    final $$VersoesMusicasTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.idMusica,
-      referencedTable: $db.indiceMusicas,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$IndiceMusicasTableAnnotationComposer(
+          }) => $$VersoesMusicasTableAnnotationComposer(
             $db: $db,
-            $table: $db.indiceMusicas,
+            $table: $db.versoesMusicas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2494,7 +3534,7 @@ class $$PreferenciasTomExecucaoTableTableManager
             $$PreferenciasTomExecucaoTableReferences,
           ),
           PreferenciasTomExecucaoData,
-          PrefetchHooks Function({bool idMusica})
+          PrefetchHooks Function({bool idVersaoMusica})
         > {
   $$PreferenciasTomExecucaoTableTableManager(
     _$BancoBiblioteca db,
@@ -2520,13 +3560,13 @@ class $$PreferenciasTomExecucaoTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<String> idMusica = const Value.absent(),
+                Value<String> idVersaoMusica = const Value.absent(),
                 Value<String> nomeNota = const Value.absent(),
                 Value<String> alteracao = const Value.absent(),
                 Value<String> modo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PreferenciasTomExecucaoCompanion(
-                idMusica: idMusica,
+                idVersaoMusica: idVersaoMusica,
                 nomeNota: nomeNota,
                 alteracao: alteracao,
                 modo: modo,
@@ -2534,13 +3574,13 @@ class $$PreferenciasTomExecucaoTableTableManager
               ),
           createCompanionCallback:
               ({
-                required String idMusica,
+                required String idVersaoMusica,
                 required String nomeNota,
                 required String alteracao,
                 required String modo,
                 Value<int> rowid = const Value.absent(),
               }) => PreferenciasTomExecucaoCompanion.insert(
-                idMusica: idMusica,
+                idVersaoMusica: idVersaoMusica,
                 nomeNota: nomeNota,
                 alteracao: alteracao,
                 modo: modo,
@@ -2557,7 +3597,7 @@ class $$PreferenciasTomExecucaoTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({idMusica = false}) {
+          prefetchHooksCallback: ({idVersaoMusica = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -2577,16 +3617,16 @@ class $$PreferenciasTomExecucaoTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (idMusica) {
+                    if (idVersaoMusica) {
                       state = state.withJoin(
                         currentTable: table,
-                        currentColumn: table.idMusica,
+                        currentColumn: table.idVersaoMusica,
                         referencedTable:
                             $$PreferenciasTomExecucaoTableReferences
-                                ._idMusicaTable(db),
+                                ._idVersaoMusicaTable(db),
                         referencedColumn:
                             $$PreferenciasTomExecucaoTableReferences
-                                ._idMusicaTable(db)
+                                ._idVersaoMusicaTable(db)
                                 .id,
                       ) as T;
                     }
@@ -2614,7 +3654,7 @@ typedef $$PreferenciasTomExecucaoTableProcessedTableManager =
       $$PreferenciasTomExecucaoTableUpdateCompanionBuilder,
       (PreferenciasTomExecucaoData, $$PreferenciasTomExecucaoTableReferences),
       PreferenciasTomExecucaoData,
-      PrefetchHooks Function({bool idMusica})
+      PrefetchHooks Function({bool idVersaoMusica})
     >;
 typedef $$EnergiasMusicasTableCreateCompanionBuilder =
     EnergiasMusicasCompanion Function({
@@ -3409,6 +4449,7 @@ typedef $$ItensListaCultoTableCreateCompanionBuilder =
       required String id,
       required String idLista,
       required String idMusica,
+      required String idVersaoMusica,
       required int posicao,
       Value<int> rowid,
     });
@@ -3417,6 +4458,7 @@ typedef $$ItensListaCultoTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> idLista,
       Value<String> idMusica,
+      Value<String> idVersaoMusica,
       Value<int> posicao,
       Value<int> rowid,
     });
@@ -3463,6 +4505,24 @@ final class $$ItensListaCultoTableReferences
       $_db.indiceMusicas,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_idMusicaTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VersoesMusicasTable _idVersaoMusicaTable(_$BancoBiblioteca db) => db
+      .versoesMusicas
+      .createAlias('itens_lista_culto__id_versao_musica__versoes_musicas__id');
+
+  $$VersoesMusicasTableProcessedTableManager get idVersaoMusica {
+    final $_column = $_itemColumn<String>('id_versao_musica')!;
+
+    final manager = $$VersoesMusicasTableTableManager(
+      $_db,
+      $_db.versoesMusicas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_idVersaoMusicaTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -3526,6 +4586,29 @@ class $$ItensListaCultoTableFilterComposer
           }) => $$IndiceMusicasTableFilterComposer(
             $db: $db,
             $table: $db.indiceMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VersoesMusicasTableFilterComposer get idVersaoMusica {
+    final $$VersoesMusicasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableFilterComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3600,6 +4683,29 @@ class $$ItensListaCultoTableOrderingComposer
     );
     return composer;
   }
+
+  $$VersoesMusicasTableOrderingComposer get idVersaoMusica {
+    final $$VersoesMusicasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableOrderingComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ItensListaCultoTableAnnotationComposer
@@ -3662,6 +4768,29 @@ class $$ItensListaCultoTableAnnotationComposer
     );
     return composer;
   }
+
+  $$VersoesMusicasTableAnnotationComposer get idVersaoMusica {
+    final $$VersoesMusicasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ItensListaCultoTableTableManager
@@ -3677,7 +4806,11 @@ class $$ItensListaCultoTableTableManager
           $$ItensListaCultoTableUpdateCompanionBuilder,
           (ItensListaCultoData, $$ItensListaCultoTableReferences),
           ItensListaCultoData,
-          PrefetchHooks Function({bool idLista, bool idMusica})
+          PrefetchHooks Function({
+            bool idLista,
+            bool idMusica,
+            bool idVersaoMusica,
+          })
         > {
   $$ItensListaCultoTableTableManager(
     _$BancoBiblioteca db,
@@ -3697,12 +4830,14 @@ class $$ItensListaCultoTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> idLista = const Value.absent(),
                 Value<String> idMusica = const Value.absent(),
+                Value<String> idVersaoMusica = const Value.absent(),
                 Value<int> posicao = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ItensListaCultoCompanion(
                 id: id,
                 idLista: idLista,
                 idMusica: idMusica,
+                idVersaoMusica: idVersaoMusica,
                 posicao: posicao,
                 rowid: rowid,
               ),
@@ -3711,12 +4846,14 @@ class $$ItensListaCultoTableTableManager
                 required String id,
                 required String idLista,
                 required String idMusica,
+                required String idVersaoMusica,
                 required int posicao,
                 Value<int> rowid = const Value.absent(),
               }) => ItensListaCultoCompanion.insert(
                 id: id,
                 idLista: idLista,
                 idMusica: idMusica,
+                idVersaoMusica: idVersaoMusica,
                 posicao: posicao,
                 rowid: rowid,
               ),
@@ -3730,56 +4867,68 @@ class $$ItensListaCultoTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({idLista = false, idMusica = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (idLista) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.idLista,
-                        referencedTable: $$ItensListaCultoTableReferences
-                            ._idListaTable(db),
-                        referencedColumn: $$ItensListaCultoTableReferences
-                            ._idListaTable(db)
-                            .id,
-                      ) as T;
-                    }
-                    if (idMusica) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.idMusica,
-                        referencedTable: $$ItensListaCultoTableReferences
-                            ._idMusicaTable(db),
-                        referencedColumn: $$ItensListaCultoTableReferences
-                            ._idMusicaTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({idLista = false, idMusica = false, idVersaoMusica = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (idLista) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.idLista,
+                            referencedTable: $$ItensListaCultoTableReferences
+                                ._idListaTable(db),
+                            referencedColumn: $$ItensListaCultoTableReferences
+                                ._idListaTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (idMusica) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.idMusica,
+                            referencedTable: $$ItensListaCultoTableReferences
+                                ._idMusicaTable(db),
+                            referencedColumn: $$ItensListaCultoTableReferences
+                                ._idMusicaTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (idVersaoMusica) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.idVersaoMusica,
+                            referencedTable: $$ItensListaCultoTableReferences
+                                ._idVersaoMusicaTable(db),
+                            referencedColumn: $$ItensListaCultoTableReferences
+                                ._idVersaoMusicaTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -3796,7 +4945,7 @@ typedef $$ItensListaCultoTableProcessedTableManager =
       $$ItensListaCultoTableUpdateCompanionBuilder,
       (ItensListaCultoData, $$ItensListaCultoTableReferences),
       ItensListaCultoData,
-      PrefetchHooks Function({bool idLista, bool idMusica})
+      PrefetchHooks Function({bool idLista, bool idMusica, bool idVersaoMusica})
     >;
 
 class $BancoBibliotecaManager {
@@ -3804,6 +4953,8 @@ class $BancoBibliotecaManager {
   $BancoBibliotecaManager(this._db);
   $$IndiceMusicasTableTableManager get indiceMusicas =>
       $$IndiceMusicasTableTableManager(_db, _db.indiceMusicas);
+  $$VersoesMusicasTableTableManager get versoesMusicas =>
+      $$VersoesMusicasTableTableManager(_db, _db.versoesMusicas);
   $$PreferenciasTomExecucaoTableTableManager get preferenciasTomExecucao =>
       $$PreferenciasTomExecucaoTableTableManager(
         _db,

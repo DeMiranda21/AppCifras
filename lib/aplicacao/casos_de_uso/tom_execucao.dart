@@ -1,4 +1,4 @@
-import '../../dominio/objetos_de_valor/id_musica.dart';
+import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
 import '../portas/repositorio_tom_execucao.dart';
 
@@ -7,8 +7,8 @@ class ObterUltimoTomExecucao {
 
   final RepositorioTomExecucao _repositorio;
 
-  Future<Tom?> executar(IdMusica idMusica) =>
-      _repositorio.obterUltimoTom(idMusica);
+  Future<Tom?> executar(IdVersaoMusica idVersaoMusica) =>
+      _repositorio.obterUltimoTom(idVersaoMusica);
 }
 
 class SalvarUltimoTomExecucao {
@@ -16,8 +16,8 @@ class SalvarUltimoTomExecucao {
 
   final RepositorioTomExecucao _repositorio;
 
-  Future<void> executar(IdMusica idMusica, Tom tom) =>
-      _repositorio.salvarUltimoTom(idMusica, tom);
+  Future<void> executar(IdVersaoMusica idVersaoMusica, Tom tom) =>
+      _repositorio.salvarUltimoTom(idVersaoMusica, tom);
 }
 
 class RemoverUltimoTomExecucao {
@@ -25,6 +25,6 @@ class RemoverUltimoTomExecucao {
 
   final RepositorioTomExecucao _repositorio;
 
-  Future<void> executar(IdMusica idMusica) =>
-      _repositorio.removerUltimoTom(idMusica);
+  Future<void> executar(IdVersaoMusica idVersaoMusica) =>
+      _repositorio.removerUltimoTom(idVersaoMusica);
 }

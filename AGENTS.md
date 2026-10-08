@@ -60,9 +60,8 @@ implementadas.
   localmente.
 - Biblioteca Musical é um escopo organizacional, não um Aggregate Root formal
   no MVP.
-- Lista de Culto tem identidade própria e seus itens atualmente referenciam
-  músicas por ID. A evolução aprovada para versões fará o item registrar a
-  versão escolhida e o tom da ocasião.
+- Lista de Culto tem identidade própria e seus itens referenciam músicas e a
+  versão escolhida por ID. O tom da ocasião permanece evolução futura.
 - Registro de Tom, Tag e Fonte de Sincronização não são entidades completas no
   MVP; use valores ou estruturas simples somente quando forem necessários.
   Não criar subsistema separado de histórico de execução enquanto Listas de

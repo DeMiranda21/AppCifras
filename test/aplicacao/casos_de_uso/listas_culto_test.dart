@@ -3,10 +3,14 @@ import 'package:appcifras/aplicacao/portas/gerador_id_item_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/lista_culto.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
+import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -70,7 +74,36 @@ void main() {
       [0, 1],
     );
   });
+
+  test('adiciona a versão principal da música ao ItemListaCulto', () async {
+    final repositorio = _RepositorioListasCultoFake();
+    final idLista = IdListaCulto('lista-1');
+    final idMusica = IdMusica('musica-1');
+    final versao = _versaoPrincipal(idMusica, IdVersaoMusica('versao-1'));
+    await repositorio.salvar(ListaCulto(id: idLista, nome: 'Culto'));
+
+    final item = await AdicionarMusicaAListaCulto(
+      repositorio,
+      _GeradorItemFake([IdItemListaCulto('item-1')]),
+      repositorioVersoes: _RepositorioVersoesFake(versao),
+    ).executar(idLista, idMusica);
+
+    expect(item.idMusica, idMusica);
+    expect(item.idVersaoMusica, versao.id);
+  });
 }
+
+VersaoMusica _versaoPrincipal(IdMusica idMusica, IdVersaoMusica idVersao) =>
+    VersaoMusica(
+      id: idVersao,
+      idMusica: idMusica,
+      nome: 'Principal',
+      documento: ParserDocumentoChordPro().interpretar(
+        '{title: Título}\n{artist: Artista}\n{key: C}\n[C]Letra',
+      ),
+      principal: true,
+      arquivada: false,
+    );
 
 class _GeradorListaFake implements GeradorIdListaCulto {
   const _GeradorListaFake(this._id);
@@ -162,4 +195,22 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
   Future<void> salvar(ListaCulto lista) async {
     _listas[lista.id] = lista;
   }
+}
+
+class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
+  const _RepositorioVersoesFake(this._principal);
+
+  final VersaoMusica _principal;
+
+  @override
+  Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
+      idMusica == _principal.idMusica ? [_principal] : const [];
+
+  @override
+  Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica idMusica) async =>
+      idMusica == _principal.idMusica ? _principal : null;
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async =>
+      id == _principal.id ? _principal : null;
 }
