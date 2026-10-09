@@ -1,3 +1,4 @@
+import '../aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
 import '../aplicacao/casos_de_uso/listas_culto.dart';
 import '../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../aplicacao/casos_de_uso/musicas.dart';
@@ -58,6 +59,14 @@ class ComposicaoAppCifras {
          repositorio: repositorioVersoes,
          geradorId: geradorIdVersao,
        ),
+       avaliarPoliticaEdicaoVersao = AvaliarPoliticaEdicaoVersao(
+         repositorioVersoes,
+       ),
+       renomearVersaoMusica = RenomearVersaoMusica(repositorioVersoes),
+       definirVersaoPrincipal = DefinirVersaoPrincipal(repositorioVersoes),
+       arquivarVersaoMusica = ArquivarVersaoMusica(repositorioVersoes),
+       restaurarVersaoMusica = RestaurarVersaoMusica(repositorioVersoes),
+       excluirVersaoMusica = ExcluirVersaoMusica(repositorioVersoes),
        excluirMusica = ExcluirMusica(
          repositorio,
          repositorioTomExecucao: repositorioTomExecucao,
@@ -131,6 +140,12 @@ class ComposicaoAppCifras {
   final ObterVersaoMusicaPorId obterVersaoMusicaPorId;
   final ListarVersoesMusica listarVersoesMusica;
   final CriarVersaoMusica criarVersaoMusica;
+  final AvaliarPoliticaEdicaoVersao avaliarPoliticaEdicaoVersao;
+  final RenomearVersaoMusica renomearVersaoMusica;
+  final DefinirVersaoPrincipal definirVersaoPrincipal;
+  final ArquivarVersaoMusica arquivarVersaoMusica;
+  final RestaurarVersaoMusica restaurarVersaoMusica;
+  final ExcluirVersaoMusica excluirVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final CadastrarMusica cadastrarMusica;
   final SalvarRascunhoChordPro salvarRascunhoChordPro;
@@ -249,6 +264,25 @@ class _RepositorioVersoesVazio implements RepositorioVersoesMusicas {
 
   @override
   Future<void> salvarVersao(VersaoMusica versao) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+
+  @override
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => false;
+
+  @override
+  Future<void> renomear(IdVersaoMusica id, String nome) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+  @override
+  Future<void> definirComoPrincipal(IdVersaoMusica id) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+  @override
+  Future<void> arquivar(IdVersaoMusica id) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+  @override
+  Future<void> restaurar(IdVersaoMusica id) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
+  @override
+  Future<void> excluirVersao(IdVersaoMusica id) =>
       throw UnsupportedError('Versões não estão disponíveis nesta composição.');
 }
 

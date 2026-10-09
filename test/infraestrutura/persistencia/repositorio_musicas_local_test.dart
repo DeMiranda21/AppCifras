@@ -7,10 +7,17 @@ import 'package:appcifras/dominio/erros/id_musica_ja_existente.dart';
 import 'package:appcifras/dominio/erros/musica_nao_encontrada.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
+import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tag_musica.dart';
+import 'package:appcifras/dominio/erros/operacao_versao_musica_nao_permitida.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_musicas_local.dart';
+import 'package:appcifras/infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
+import 'package:appcifras/infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -266,5 +273,118 @@ void main() {
     );
     expect(await arquivos.existe(original.versaoPrincipal.id), isFalse);
     expect(await banco.obterPorId(original.id.valor), isNull);
+  });
+  test('persiste ciclo de vida de versões sem afetar listas, tom ou classificação indevidamente', () async {
+    final original = musica('musica-1');
+    await repositorio.salvar(original);
+    final principal = (await repositorio.obterPrincipalPorMusica(original.id))!;
+    VersaoMusica alternativa(String id, String nome) => VersaoMusica(
+      id: IdVersaoMusica(id),
+      idMusica: original.id,
+      nome: nome,
+      documento: principal.documento,
+      principal: false,
+      arquivada: false,
+    );
+    final usada = alternativa('usada', 'Usada');
+    final livre = alternativa('livre', 'Livre');
+    await repositorio.salvarVersao(usada);
+    await repositorio.salvarVersao(livre);
+    final tons = RepositorioTomExecucaoLocal(banco);
+    final tomD = Tom(
+      notaFundamental: Nota(nome: NomeNota.d),
+      modo: ModoTom.maior,
+    );
+    final tomE = Tom(
+      notaFundamental: Nota(nome: NomeNota.e),
+      modo: ModoTom.maior,
+    );
+    await tons.salvarUltimoTom(principal.id, tomD);
+    await tons.salvarUltimoTom(usada.id, tomE);
+    await banco.inserirListaCulto(id: 'lista-1', nome: 'Lista 1');
+    await banco.inserirListaCulto(id: 'lista-2', nome: 'Lista 2');
+    await banco.inserirItemListaCulto(
+      id: 'item-1',
+      idLista: 'lista-1',
+      idMusica: original.id.valor,
+      idVersaoMusica: usada.id.valor,
+      posicao: 0,
+    );
+    await banco.inserirItemListaCulto(
+      id: 'item-2',
+      idLista: 'lista-2',
+      idMusica: original.id.valor,
+      idVersaoMusica: usada.id.valor,
+      posicao: 0,
+    );
+    expect(await repositorio.estaUsadaEmLista(principal.id), isFalse);
+    expect(await repositorio.estaUsadaEmLista(usada.id), isTrue);
+    expect(await repositorio.estaUsadaEmLista(livre.id), isFalse);
+
+    await repositorio.renomear(usada.id, '  Arranjo usado  ');
+    final renomeada = (await repositorio.obterVersaoPorId(usada.id))!;
+    expect(renomeada.nome, 'Arranjo usado');
+    expect(renomeada.idMusica, original.id);
+    expect(
+      renomeada.documento.conteudoOriginal,
+      principal.documento.conteudoOriginal,
+    );
+    expect(await arquivos.existe(usada.id), isTrue);
+
+    await repositorio.definirComoPrincipal(livre.id);
+    final versoes = await repositorio.listarPorMusica(original.id);
+    expect(
+      versoes.where((versao) => versao.principal).map((versao) => versao.id),
+      [livre.id],
+    );
+    expect(await tons.obterUltimoTom(principal.id), tomD);
+    expect(await tons.obterUltimoTom(usada.id), tomE);
+    expect(
+      (await banco.listarItensListaCulto('lista-1')).single.idVersaoMusica,
+      usada.id.valor,
+    );
+
+    await repositorio.arquivar(usada.id);
+    expect((await repositorio.obterVersaoPorId(usada.id))!.arquivada, isTrue);
+    expect(await arquivos.existe(usada.id), isTrue);
+    expect(await tons.obterUltimoTom(usada.id), tomE);
+    expect(
+      (await banco.listarItensListaCulto('lista-2')).single.idVersaoMusica,
+      usada.id.valor,
+    );
+    await repositorio.restaurar(usada.id);
+    expect((await repositorio.obterVersaoPorId(usada.id))!.arquivada, isFalse);
+    await expectLater(
+      repositorio.arquivar(livre.id),
+      throwsA(isA<VersaoPrincipalNaoPodeSerArquivada>()),
+    );
+
+    final classificacoes = RepositorioClassificacaoMusicaLocal(banco);
+    await classificacoes.definirEnergia(original.id, EnergiaMusica.animada);
+    await classificacoes.substituirTags(original.id, [TagMusica('Culto')]);
+    await tons.salvarUltimoTom(principal.id, tomD);
+    await repositorio.excluirVersao(principal.id);
+    expect(await repositorio.obterVersaoPorId(principal.id), isNull);
+    expect(await arquivos.existe(principal.id), isFalse);
+    expect(await tons.obterUltimoTom(principal.id), isNull);
+    expect(await repositorio.obterPorId(original.id), isNotNull);
+    expect(await arquivos.existe(livre.id), isTrue);
+    expect(
+      (await classificacoes.obter(original.id)).energia,
+      EnergiaMusica.animada,
+    );
+    expect((await classificacoes.obter(original.id)).tags, [
+      TagMusica('Culto'),
+    ]);
+    await expectLater(
+      repositorio.excluirVersao(livre.id),
+      throwsA(isA<VersaoPrincipalNaoPodeSerExcluida>()),
+    );
+    await expectLater(
+      repositorio.excluirVersao(usada.id),
+      throwsA(isA<VersaoMusicaEmUsoEmLista>()),
+    );
+    expect(await arquivos.existe(usada.id), isTrue);
+    expect(await tons.obterUltimoTom(usada.id), tomE);
   });
 }

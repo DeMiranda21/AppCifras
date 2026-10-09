@@ -251,6 +251,41 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     ),
   );
 
+  Future<bool> possuiItemListaParaVersao(String idVersaoMusica) async {
+    final resultado = await customSelect(
+      'SELECT 1 FROM itens_lista_culto WHERE id_versao_musica = ? LIMIT 1',
+      variables: [Variable.withString(idVersaoMusica)],
+    ).get();
+    return resultado.isNotEmpty;
+  }
+
+  Future<void> renomearVersaoMusica(String id, String nome) async {
+    await (update(versoesMusicas)..where((tabela) => tabela.id.equals(id)))
+        .write(VersoesMusicasCompanion(nome: Value(nome)));
+  }
+
+  Future<void> definirVersaoPrincipal(String idMusica, String id) =>
+      transaction(() async {
+        await (update(versoesMusicas)
+              ..where((tabela) => tabela.idMusica.equals(idMusica)))
+            .write(const VersoesMusicasCompanion(principal: Value(false)));
+        await (update(versoesMusicas)..where((tabela) => tabela.id.equals(id)))
+            .write(const VersoesMusicasCompanion(principal: Value(true)));
+      });
+
+  Future<void> definirArquivadaVersao(String id, bool arquivada) async {
+    await (update(versoesMusicas)..where((tabela) => tabela.id.equals(id)))
+        .write(VersoesMusicasCompanion(arquivada: Value(arquivada)));
+  }
+
+  Future<void> excluirVersaoMusica(String id) => transaction(() async {
+    await (delete(
+      preferenciasTomExecucao,
+    )..where((tabela) => tabela.idVersaoMusica.equals(id))).go();
+    await (delete(
+      versoesMusicas,
+    )..where((tabela) => tabela.id.equals(id))).go();
+  });
   Future<bool> possuiItemListaParaMusica(String idMusica) async {
     final resultado = await customSelect(
       'SELECT 1 FROM itens_lista_culto '

@@ -4,6 +4,8 @@ import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/erros/id_musica_ja_existente.dart';
 import '../../dominio/erros/musica_em_uso_em_lista.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
+import '../../dominio/erros/operacao_versao_musica_nao_permitida.dart';
+import '../../dominio/erros/versao_musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_musicas.dart';
@@ -223,6 +225,74 @@ class RepositorioMusicasLocal
     } catch (erro, pilha) {
       try {
         await _armazenamentoArquivos.excluir(versao.id);
+      } catch (_) {
+        throw EstadoPersistenciaMusicaInconsistente(versao.idMusica);
+      }
+      Error.throwWithStackTrace(erro, pilha);
+    }
+  }
+
+  @override
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) =>
+      _banco.possuiItemListaParaVersao(id.valor);
+
+  @override
+  Future<void> renomear(IdVersaoMusica id, String nome) async {
+    final versao = await obterVersaoPorId(id);
+    if (versao == null) throw VersaoMusicaNaoEncontrada(id);
+    final nomeValidado = VersaoMusica(
+      id: versao.id,
+      idMusica: versao.idMusica,
+      nome: nome,
+      documento: versao.documento,
+      principal: versao.principal,
+      arquivada: versao.arquivada,
+    ).nome;
+    await _banco.renomearVersaoMusica(id.valor, nomeValidado);
+  }
+
+  @override
+  Future<void> definirComoPrincipal(IdVersaoMusica id) async {
+    final versao = await obterVersaoPorId(id);
+    if (versao == null) {
+      throw VersaoMusicaNaoEncontrada(id);
+    }
+    if (versao.arquivada) {
+      throw ArgumentError('A versão arquivada não pode ser principal.');
+    }
+    if (!versao.principal) {
+      await _banco.definirVersaoPrincipal(versao.idMusica.valor, id.valor);
+    }
+  }
+
+  @override
+  Future<void> arquivar(IdVersaoMusica id) async {
+    final versao = await obterVersaoPorId(id);
+    if (versao == null) throw VersaoMusicaNaoEncontrada(id);
+    if (versao.principal) throw VersaoPrincipalNaoPodeSerArquivada(versao);
+    if (!versao.arquivada) await _banco.definirArquivadaVersao(id.valor, true);
+  }
+
+  @override
+  Future<void> restaurar(IdVersaoMusica id) async {
+    final versao = await obterVersaoPorId(id);
+    if (versao == null) throw VersaoMusicaNaoEncontrada(id);
+    if (versao.arquivada) await _banco.definirArquivadaVersao(id.valor, false);
+  }
+
+  @override
+  Future<void> excluirVersao(IdVersaoMusica id) async {
+    final versao = await obterVersaoPorId(id);
+    if (versao == null) throw VersaoMusicaNaoEncontrada(id);
+    if (versao.principal) throw VersaoPrincipalNaoPodeSerExcluida(versao);
+    if (await estaUsadaEmLista(id)) throw VersaoMusicaEmUsoEmLista(versao);
+    final conteudo = await _armazenamentoArquivos.obter(id);
+    await _armazenamentoArquivos.excluir(id);
+    try {
+      await _banco.excluirVersaoMusica(id.valor);
+    } catch (erro, pilha) {
+      try {
+        await _armazenamentoArquivos.salvar(id, conteudo);
       } catch (_) {
         throw EstadoPersistenciaMusicaInconsistente(versao.idMusica);
       }

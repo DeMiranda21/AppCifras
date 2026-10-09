@@ -216,4 +216,22 @@ class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
 
   @override
   Future<void> salvarVersao(VersaoMusica versao) async {}
+
+  @override
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => false;
+
+  @override
+  Future<void> renomear(IdVersaoMusica id, String nome) async {}
+
+  @override
+  Future<void> definirComoPrincipal(IdVersaoMusica id) async {}
+
+  @override
+  Future<void> arquivar(IdVersaoMusica id) async {}
+
+  @override
+  Future<void> restaurar(IdVersaoMusica id) async {}
+
+  @override
+  Future<void> excluirVersao(IdVersaoMusica id) async {}
 }
