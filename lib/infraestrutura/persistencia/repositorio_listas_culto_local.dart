@@ -114,6 +114,21 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
   }
 
   @override
+  Future<void> atualizarVersaoItem(
+    IdListaCulto idLista,
+    IdItemListaCulto idItem,
+    IdVersaoMusica idVersaoMusica,
+  ) async {
+    await _exigirLista(idLista);
+    final atualizados = await _banco.atualizarVersaoItemListaCulto(
+      idLista: idLista.valor,
+      idItem: idItem.valor,
+      idVersaoMusica: idVersaoMusica.valor,
+    );
+    if (atualizados != 1) throw ItemListaCultoNaoEncontrado(idItem);
+  }
+
+  @override
   Future<void> reordenarItens(
     IdListaCulto idLista,
     List<IdItemListaCulto> ordem,

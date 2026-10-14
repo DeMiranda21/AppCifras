@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
@@ -7,6 +8,7 @@ import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../dominio/entidades/item_lista_culto.dart';
 import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/entidades/musica.dart';
+import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../compartilhado/normalizacao_pesquisa.dart';
 import '../musica/contexto_navegacao_lista_culto.dart';
@@ -19,10 +21,13 @@ class TelaDetalheListaCulto extends StatefulWidget {
     required this.listarItensListaCulto,
     required this.adicionarMusicaAListaCulto,
     required this.removerItemListaCulto,
+    required this.trocarVersaoItemListaCulto,
     required this.reordenarItensListaCulto,
+    required this.listarVersoesMusica,
     required this.listarMusicas,
     required this.obterMusicaPorId,
     required this.atualizarMusica,
+    required this.editarVersaoMusica,
     required this.excluirMusica,
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
@@ -34,9 +39,12 @@ class TelaDetalheListaCulto extends StatefulWidget {
   final ListarItensListaCulto listarItensListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
+  final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
+  final ListarVersoesMusica listarVersoesMusica;
   final ReordenarItensListaCulto reordenarItensListaCulto;
   final ListarMusicas listarMusicas;
   final ObterMusicaPorId obterMusicaPorId;
+  final EditarVersaoMusica editarVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final ExcluirMusica excluirMusica;
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
@@ -63,11 +71,18 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     final itens = await widget.listarItensListaCulto.executar(widget.lista.id);
     final musicas = await widget.listarMusicas.executar();
     final porId = {for (final musica in musicas) musica.id: musica};
-    return [
-      for (final item in itens)
-        if (porId[item.idMusica] case final musica?)
-          _ItemComMusica(item: item, musica: musica),
-    ];
+    final carregados = <_ItemComMusica>[];
+    for (final item in itens) {
+      final musica = porId[item.idMusica];
+      if (musica == null) continue;
+      final versao = await widget.obterVersaoMusicaPorId?.executar(
+        item.idVersaoMusica,
+      );
+      carregados.add(
+        _ItemComMusica(item: item, musica: musica, versao: versao),
+      );
+    }
+    return carregados;
   }
 
   void _recarregar() {
@@ -108,6 +123,46 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
       }
     } finally {
       if (mounted) _recarregar();
+    }
+  }
+
+  Future<void> _trocarVersao(_ItemComMusica item) async {
+    final versoes = await widget.listarVersoesMusica.executar(item.musica.id);
+    if (!mounted) return;
+    final escolhida = await showDialog<VersaoMusica>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Escolher versão'),
+        children: [
+          for (final versao in versoes)
+            SimpleDialogOption(
+              key: ValueKey('escolher-versao-${versao.id.valor}'),
+              onPressed: () => Navigator.pop(context, versao),
+              child: Row(
+                children: [
+                  Expanded(child: Text(versao.nome)),
+                  if (versao.id == item.item.idVersaoMusica)
+                    const Icon(Icons.check),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (escolhida == null || escolhida.id == item.item.idVersaoMusica) return;
+    try {
+      await widget.trocarVersaoItemListaCulto.executar(
+        widget.lista.id,
+        item.item.id,
+        escolhida.id,
+      );
+      if (mounted) _recarregar();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível trocar a versão.')),
+        );
+      }
     }
   }
 
@@ -213,6 +268,7 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
           obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
+          editarVersaoMusica: widget.editarVersaoMusica,
           excluirMusica: widget.excluirMusica,
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
@@ -257,10 +313,19 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
               key: ValueKey('item-lista-${item.item.id.valor}'),
               onTap: () => _abrirMusica(itens, indice),
               title: Text(item.musica.titulo),
-              subtitle: Text(item.musica.artista),
+              subtitle: Text(
+                '${item.musica.artista} · ${item.versao?.nome ?? 'Versão indisponível'}',
+              ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  IconButton(
+                    tooltip: 'Trocar versão',
+                    onPressed: _removendo || _reordenando
+                        ? null
+                        : () => _trocarVersao(item),
+                    icon: const Icon(Icons.library_music_outlined),
+                  ),
                   IconButton(
                     tooltip: 'Remover da lista',
                     onPressed: _removendo
@@ -283,10 +348,15 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
 }
 
 class _ItemComMusica {
-  const _ItemComMusica({required this.item, required this.musica});
+  const _ItemComMusica({
+    required this.item,
+    required this.musica,
+    required this.versao,
+  });
 
   final ItemListaCulto item;
   final Musica musica;
+  final VersaoMusica? versao;
 }
 
 class _EstadoItensVazio extends StatelessWidget {

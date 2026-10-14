@@ -1,3 +1,11 @@
+import 'package:appcifras/aplicacao/casos_de_uso/editar_versao_musica.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
+import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
+
 import 'dart:async';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
@@ -37,6 +45,16 @@ void main() {
         prepararEntradaMusica: PrepararEntradaMusica(),
         salvarRascunhoChordPro: salvador(repositorio),
         obterMusicaPorId: ObterMusicaPorId(repositorio),
+        editarVersaoMusica: EditarVersaoMusica(
+          repositorio: repositorio,
+          repositorioMusicas: repositorio,
+          criarVersao: CriarVersaoMusica(
+            repositorio: repositorio,
+            geradorId: _GeradorVersao(),
+          ),
+          avaliarPolitica: AvaliarPoliticaEdicaoVersao(repositorio),
+        ),
+        obterVersaoMusicaPorId: ObterVersaoMusicaPorId(repositorio),
         atualizarMusica: AtualizarMusica(
           repositorio: repositorio,
           parserDocumento: parser,
@@ -737,6 +755,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Editar música'));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Nome alterado');
     final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
     await tester.ensureVisible(salvar);
     await tester.tap(salvar);
@@ -768,6 +787,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Editar música'));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Nome alterado');
     final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
     await tester.ensureVisible(salvar);
     await tester.tap(salvar);
@@ -780,7 +800,45 @@ void main() {
   });
 }
 
-class _RepositorioFake implements RepositorioMusicas {
+class _RepositorioFake
+    implements RepositorioMusicas, RepositorioVersoesMusicas {
+  final List<VersaoMusica> alternativas = [];
+  @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    alternativas[alternativas.indexWhere((v) => v.id == versao.id)] = versao;
+  }
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async {
+    for (final v in [
+      ...musicas.map((m) => m.versaoPrincipal),
+      ...alternativas,
+    ]) {
+      if (v.id == id) return v;
+    }
+    return null;
+  }
+
+  @override
+  Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica id) async =>
+      (await obterPorId(id))?.versaoPrincipal;
+  @override
+  Future<List<VersaoMusica>> listarPorMusica(IdMusica id) async {
+    final principal = await obterPrincipalPorMusica(id);
+    return [
+      ?principal,
+      ...alternativas.where((v) => v.idMusica == id),
+    ];
+  }
+
+  @override
+  Future<void> salvarVersao(VersaoMusica versao) async =>
+      alternativas.add(versao);
+  @override
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => false;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<Musica> musicas = [];
   Object? erroAtualizar;
   Completer<void>? atualizacaoPendente;
@@ -860,4 +918,10 @@ class _GeradorIdFake implements GeradorIdMusica {
   final IdMusica _id;
   @override
   IdMusica gerar() => _id;
+}
+
+class _GeradorVersao implements GeradorIdVersaoMusica {
+  var numero = 0;
+  @override
+  IdVersaoMusica gerar() => IdVersaoMusica('nova-${++numero}');
 }

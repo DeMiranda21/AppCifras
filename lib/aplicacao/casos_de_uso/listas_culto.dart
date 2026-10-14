@@ -1,5 +1,7 @@
 import '../../dominio/entidades/item_lista_culto.dart';
 import '../../dominio/entidades/lista_culto.dart';
+import '../../dominio/erros/item_lista_culto_nao_encontrado.dart';
+import '../../dominio/erros/versao_musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -104,6 +106,45 @@ class RemoverItemListaCulto {
 
   Future<void> executar(IdListaCulto idLista, IdItemListaCulto idItem) =>
       _repositorio.removerItem(idLista, idItem);
+}
+
+class TrocarVersaoItemListaCulto {
+  const TrocarVersaoItemListaCulto(this._listas, this._versoes);
+
+  final RepositorioListasCulto _listas;
+  final RepositorioVersoesMusicas _versoes;
+
+  Future<ItemListaCulto> executar(
+    IdListaCulto idLista,
+    IdItemListaCulto idItem,
+    IdVersaoMusica idVersaoMusica,
+  ) async {
+    final itens = await _listas.listarItens(idLista);
+    ItemListaCulto? item;
+    for (final candidato in itens) {
+      if (candidato.id == idItem) item = candidato;
+    }
+    if (item == null) throw ItemListaCultoNaoEncontrado(idItem);
+
+    final versao = await _versoes.obterVersaoPorId(idVersaoMusica);
+    if (versao == null) throw VersaoMusicaNaoEncontrada(idVersaoMusica);
+    if (versao.idMusica != item.idMusica) {
+      throw ArgumentError('A versão deve pertencer à música do item.');
+    }
+    if (versao.arquivada) {
+      throw ArgumentError('Uma versão arquivada não pode ser selecionada.');
+    }
+    if (item.idVersaoMusica == versao.id) return item;
+
+    await _listas.atualizarVersaoItem(idLista, idItem, versao.id);
+    return ItemListaCulto(
+      id: item.id,
+      idLista: item.idLista,
+      idMusica: item.idMusica,
+      idVersaoMusica: versao.id,
+      posicao: item.posicao,
+    );
+  }
 }
 
 class ReordenarItensListaCulto {

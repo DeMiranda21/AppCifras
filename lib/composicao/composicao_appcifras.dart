@@ -1,38 +1,39 @@
 import '../aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
-import '../aplicacao/casos_de_uso/listas_culto.dart';
 import '../aplicacao/casos_de_uso/classificacao_musica.dart';
+import '../aplicacao/casos_de_uso/editar_versao_musica.dart';
+import '../aplicacao/casos_de_uso/listas_culto.dart';
 import '../aplicacao/casos_de_uso/musicas.dart';
 import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
-import '../aplicacao/portas/gerador_id_musica.dart';
-import '../aplicacao/portas/gerador_id_versao_musica.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
-import '../aplicacao/portas/repositorio_tom_execucao.dart';
+import '../aplicacao/portas/gerador_id_musica.dart';
+import '../aplicacao/portas/gerador_id_versao_musica.dart';
 import '../aplicacao/portas/repositorio_classificacao_musica.dart';
+import '../aplicacao/portas/repositorio_tom_execucao.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
 import '../dominio/entidades/versao_musica.dart';
 import '../dominio/objetos_de_valor/energia_musica.dart';
 import '../dominio/objetos_de_valor/id_musica.dart';
 import '../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../dominio/objetos_de_valor/tag_musica.dart';
+import '../dominio/repositorios/repositorio_listas_culto.dart';
 import '../dominio/repositorios/repositorio_musicas.dart';
 import '../dominio/repositorios/repositorio_versoes_musicas.dart';
-import '../dominio/repositorios/repositorio_listas_culto.dart';
 import '../dominio/servicos/parser_documento_chordpro.dart';
 import '../infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import '../infraestrutura/arquivos/codificador_chordpro_gerenciado.dart';
-import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
-import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_item_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_lista_culto_uuid.dart';
+import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
+import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
 import '../infraestrutura/persistencia/banco_biblioteca.dart';
-import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
-import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
-import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
 import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
+import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
+import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
+import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
 
 class ComposicaoAppCifras {
   ComposicaoAppCifras._({
@@ -47,7 +48,10 @@ class ComposicaoAppCifras {
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
-  }) : salvarMusica = SalvarMusica(repositorio),
+  }) : _repositorioMusicasEdicao = repositorio,
+       _repositorioVersoesEdicao = repositorioVersoes,
+       _repositorioTomEdicao = repositorioTomExecucao,
+       salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
        listarMusicas = ListarMusicas(repositorio),
        obterVersaoPrincipalMusica = ObterVersaoPrincipalMusica(
@@ -121,6 +125,10 @@ class ComposicaoAppCifras {
          repositorioVersoes: repositorioVersoes,
        ),
        removerItemListaCulto = RemoverItemListaCulto(repositorioListasCulto),
+       trocarVersaoItemListaCulto = TrocarVersaoItemListaCulto(
+         repositorioListasCulto,
+         repositorioVersoes,
+       ),
        reordenarItensListaCulto = ReordenarItensListaCulto(
          repositorioListasCulto,
        ),
@@ -146,6 +154,16 @@ class ComposicaoAppCifras {
   final ArquivarVersaoMusica arquivarVersaoMusica;
   final RestaurarVersaoMusica restaurarVersaoMusica;
   final ExcluirVersaoMusica excluirVersaoMusica;
+  EditarVersaoMusica get editarVersaoMusica => EditarVersaoMusica(
+    repositorio: _repositorioVersoesEdicao,
+    repositorioMusicas: _repositorioMusicasEdicao,
+    criarVersao: criarVersaoMusica,
+    avaliarPolitica: avaliarPoliticaEdicaoVersao,
+    repositorioTom: _repositorioTomEdicao,
+  );
+  final RepositorioMusicas _repositorioMusicasEdicao;
+  final RepositorioVersoesMusicas _repositorioVersoesEdicao;
+  final RepositorioTomExecucao _repositorioTomEdicao;
   final AtualizarMusica atualizarMusica;
   final CadastrarMusica cadastrarMusica;
   final SalvarRascunhoChordPro salvarRascunhoChordPro;
@@ -166,6 +184,7 @@ class ComposicaoAppCifras {
   final ListarItensListaCulto listarItensListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
+  final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto reordenarItensListaCulto;
 
   factory ComposicaoAppCifras.paraTeste({
@@ -245,6 +264,10 @@ class _RepositorioVersoesVazio implements RepositorioVersoesMusicas {
   const _RepositorioVersoesVazio(this._repositorioMusicas);
 
   final RepositorioMusicas _repositorioMusicas;
+
+  @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) =>
+      throw UnsupportedError('Versões não estão disponíveis nesta composição.');
 
   @override
   Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async {

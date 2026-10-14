@@ -11,6 +11,8 @@ abstract interface class RepositorioVersoesMusicas {
 
   Future<void> salvarVersao(VersaoMusica versao);
 
+  Future<void> atualizarConteudoVersao(VersaoMusica versao);
+
   Future<bool> estaUsadaEmLista(IdVersaoMusica id);
 
   Future<void> renomear(IdVersaoMusica id, String nome);

@@ -202,6 +202,37 @@ class RepositorioMusicasLocal
   }
 
   @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    final atual = await obterVersaoPorId(versao.id);
+    if (atual == null) throw VersaoMusicaNaoEncontrada(versao.id);
+    if (atual.idMusica != versao.idMusica) {
+      throw ArgumentError('Música da versão inválida.');
+    }
+    if (!atual.principal && await estaUsadaEmLista(atual.id)) {
+      throw StateError('Esta versão exige salvar como nova versão.');
+    }
+    _validadorSchema.validarParaIncorporacao(versao.documento);
+    final musica = await obterPorId(atual.idMusica);
+    final rascunho = RascunhoDocumentoChordPro.criar(
+      conteudoChordPro: versao.documento.conteudoOriginal,
+      parserDocumento: _parserDocumento,
+    );
+    final conteudo = rascunho
+        .comRevisao(
+          RevisaoMetadadosChordPro(
+            titulo: rascunho.tituloDetectado == musica!.titulo
+                ? null
+                : musica.titulo,
+            artista: rascunho.artistaDetectado == musica.artista
+                ? null
+                : musica.artista,
+          ),
+        )
+        .produzirConteudoFinal();
+    await _armazenamentoArquivos.substituir(atual.id, conteudo);
+  }
+
+  @override
   Future<void> salvarVersao(VersaoMusica versao) async {
     if (await _banco.obterVersaoPorId(versao.id.valor) != null ||
         await _armazenamentoArquivos.existe(versao.id)) {

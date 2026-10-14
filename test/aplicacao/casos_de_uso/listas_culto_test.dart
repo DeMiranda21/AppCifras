@@ -91,6 +91,90 @@ void main() {
     expect(item.idMusica, idMusica);
     expect(item.idVersaoMusica, versao.id);
   });
+  test(
+    'troca somente a versão do item por outra ativa da mesma música',
+    () async {
+      final listas = _RepositorioListasCultoFake();
+      final idLista = IdListaCulto('lista-1');
+      final idMusica = IdMusica('musica-1');
+      final principal = _versaoPrincipal(idMusica, IdVersaoMusica('principal'));
+      final alternativa = VersaoMusica(
+        id: IdVersaoMusica('alternativa'),
+        idMusica: idMusica,
+        nome: 'Acústica',
+        documento: principal.documento,
+        principal: false,
+        arquivada: false,
+      );
+      await listas.salvar(ListaCulto(id: idLista, nome: 'Culto'));
+      final item = ItemListaCulto(
+        id: IdItemListaCulto('item-1'),
+        idLista: idLista,
+        idMusica: idMusica,
+        idVersaoMusica: principal.id,
+        posicao: 0,
+      );
+      await listas.adicionarItem(item);
+
+      final trocado = await TrocarVersaoItemListaCulto(
+        listas,
+        _RepositorioVersoesColecao([principal, alternativa]),
+      ).executar(idLista, item.id, alternativa.id);
+
+      expect(trocado.id, item.id);
+      expect(trocado.idMusica, item.idMusica);
+      expect(trocado.posicao, item.posicao);
+      expect(trocado.idVersaoMusica, alternativa.id);
+      expect((await listas.listarItens(idLista)).single, trocado);
+    },
+  );
+
+  test('rejeita versão arquivada e versão de outra música', () async {
+    final listas = _RepositorioListasCultoFake();
+    final idLista = IdListaCulto('lista-1');
+    final principal = _versaoPrincipal(
+      IdMusica('musica-1'),
+      IdVersaoMusica('principal'),
+    );
+    final arquivada = VersaoMusica(
+      id: IdVersaoMusica('arquivada'),
+      idMusica: principal.idMusica,
+      nome: 'Arquivada',
+      documento: principal.documento,
+      principal: false,
+      arquivada: true,
+    );
+    final outra = _versaoPrincipal(
+      IdMusica('musica-2'),
+      IdVersaoMusica('outra'),
+    );
+    await listas.salvar(ListaCulto(id: idLista, nome: 'Culto'));
+    final item = ItemListaCulto(
+      id: IdItemListaCulto('item-1'),
+      idLista: idLista,
+      idMusica: principal.idMusica,
+      idVersaoMusica: principal.id,
+      posicao: 0,
+    );
+    await listas.adicionarItem(item);
+    final trocar = TrocarVersaoItemListaCulto(
+      listas,
+      _RepositorioVersoesColecao([principal, arquivada, outra]),
+    );
+
+    await expectLater(
+      trocar.executar(idLista, item.id, arquivada.id),
+      throwsArgumentError,
+    );
+    await expectLater(
+      trocar.executar(idLista, item.id, outra.id),
+      throwsArgumentError,
+    );
+    expect(
+      (await listas.listarItens(idLista)).single.idVersaoMusica,
+      principal.id,
+    );
+  });
 }
 
 VersaoMusica _versaoPrincipal(IdMusica idMusica, IdVersaoMusica idVersao) =>
@@ -164,6 +248,7 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
           id: itens[indice].id,
           idLista: itens[indice].idLista,
           idMusica: itens[indice].idMusica,
+          idVersaoMusica: itens[indice].idVersaoMusica,
           posicao: indice,
         ),
     ];
@@ -172,6 +257,24 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
   @override
   Future<void> renomear(IdListaCulto id, String nome) async {
     _listas[id] = ListaCulto(id: id, nome: nome);
+  }
+
+  @override
+  Future<void> atualizarVersaoItem(
+    IdListaCulto idLista,
+    IdItemListaCulto idItem,
+    IdVersaoMusica idVersaoMusica,
+  ) async {
+    final itens = _itens[idLista]!;
+    final indice = itens.indexWhere((item) => item.id == idItem);
+    final item = itens[indice];
+    itens[indice] = ItemListaCulto(
+      id: item.id,
+      idLista: item.idLista,
+      idMusica: item.idMusica,
+      idVersaoMusica: idVersaoMusica,
+      posicao: item.posicao,
+    );
   }
 
   @override
@@ -201,6 +304,11 @@ class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
   const _RepositorioVersoesFake(this._principal);
 
   final VersaoMusica _principal;
+
+  @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    throw UnimplementedError();
+  }
 
   @override
   Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
@@ -234,4 +342,20 @@ class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
 
   @override
   Future<void> excluirVersao(IdVersaoMusica id) async {}
+}
+
+class _RepositorioVersoesColecao implements RepositorioVersoesMusicas {
+  _RepositorioVersoesColecao(this.versoes);
+  final List<VersaoMusica> versoes;
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async {
+    for (final versao in versoes) {
+      if (versao.id == id) return versao;
+    }
+    return null;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

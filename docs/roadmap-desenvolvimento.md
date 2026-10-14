@@ -71,12 +71,15 @@ consolidada, a especificacao-funcional.md.
 9. **Pesquisa ampliada e filtros:** busca textual offline por título, artista
    e letra, combinável com filtros por energia e tags. Resultados encontrados
    na letra exibem o primeiro trecho visível correspondente, entregue.
-10. **Versões e arranjos:** fundação, seleção de versões ativas na leitura e
-    criação manual a partir da versão aberta entregues. VersaoMusica é o
-    arranjo concreto, a cifra única anterior foi migrada à versão principal e
-    Listas registram e abrem a versão concreta. Permanecem futuras renomeação,
-    arquivamento/restauração, troca de principal, escolha de versão ao incluir
-    em Lista e salvar como nova versão automático.
+10. **Versões e arranjos:** fundação, seleção e criação manual entregues. A
+    edição usa a VersaoMusica concreta aberta. Na principal, o usuário escolhe
+    atualizar o mesmo ID ou criar versão nomeada; alternativa nunca usada é
+    atualizada, e alternativa usada origina nova versão. Catálogo e classificação
+    não criam versão, e retries reutilizam qualquer persistência já concluída.
+    Renomeação, arquivamento/restauração, troca de principal e troca explícita da
+    versão de um ItemListaCulto por outra ativa da mesma Música estão entregues.
+    Itens antigos que referenciam versão arquivada continuam abrindo-a. Permanece
+    futura a escolha de versão durante a inclusão inicial em Lista.
 11. **Listas com contexto de ministração:** adicionar data e ministrante
     opcional à Lista; fazer o Item registrar Música, versão escolhida e tom
     snapshot da ocasião. A Lista é memória operacional do repertório, sem

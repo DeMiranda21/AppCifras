@@ -66,6 +66,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       salvarRascunhoChordPro: widget.composicao.salvarRascunhoChordPro,
       obterMusicaPorId: widget.composicao.obterMusicaPorId,
       atualizarMusica: widget.composicao.atualizarMusica,
+      editarVersaoMusica: widget.composicao.editarVersaoMusica,
       excluirMusica: widget.composicao.excluirMusica,
       obterUltimoTomExecucao: widget.composicao.obterUltimoTomExecucao,
       salvarUltimoTomExecucao: widget.composicao.salvarUltimoTomExecucao,
@@ -84,6 +85,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       listarItensListaCulto: widget.composicao.listarItensListaCulto,
       adicionarMusicaAListaCulto: widget.composicao.adicionarMusicaAListaCulto,
       removerItemListaCulto: widget.composicao.removerItemListaCulto,
+      trocarVersaoItemListaCulto: widget.composicao.trocarVersaoItemListaCulto,
       reordenarItensListaCulto: widget.composicao.reordenarItensListaCulto,
     ),
   );

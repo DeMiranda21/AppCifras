@@ -1,3 +1,6 @@
+import 'package:appcifras/aplicacao/casos_de_uso/editar_versao_musica.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
+
 import 'dart:async';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
@@ -110,6 +113,13 @@ void main() {
     ContextoNavegacaoListaCulto? contextoListaCulto,
     ControleTelaAtiva? controleTelaAtiva,
   }) {
+    final versoesEdicao =
+        repositorioVersoes ??
+        _RepositorioVersoesMemoria(
+          repositorio is _RepositorioMemoria
+              ? [repositorio.musica.versaoPrincipal]
+              : [],
+        );
     return tester.pumpWidget(
       MediaQuery(
         data: MediaQueryData(textScaler: textScaler ?? TextScaler.noScaling),
@@ -118,9 +128,7 @@ void main() {
             idMusica:
                 contextoListaCulto?.itemAtual.idMusica ?? IdMusica('musica-1'),
             obterMusicaPorId: ObterMusicaPorId(repositorio),
-            obterVersaoMusicaPorId: repositorioVersoes == null
-                ? null
-                : ObterVersaoMusicaPorId(repositorioVersoes),
+            obterVersaoMusicaPorId: ObterVersaoMusicaPorId(versoesEdicao),
             listarVersoesMusica: repositorioVersoes == null
                 ? null
                 : ListarVersoesMusica(repositorioVersoes),
@@ -131,6 +139,17 @@ void main() {
                     repositorio: repositorioVersoes,
                     geradorId: geradorIdVersao,
                   ),
+            editarVersaoMusica: EditarVersaoMusica(
+              repositorio: versoesEdicao,
+              repositorioMusicas: repositorio,
+              criarVersao: CriarVersaoMusica(
+                repositorio: versoesEdicao,
+                geradorId:
+                    geradorIdVersao ??
+                    _GeradorIdVersaoFake(IdVersaoMusica('nova-edicao')),
+              ),
+              avaliarPolitica: AvaliarPoliticaEdicaoVersao(versoesEdicao),
+            ),
             atualizarMusica: AtualizarMusica(
               repositorio: repositorio,
               parserDocumento: parser,
@@ -419,10 +438,12 @@ void main() {
       indiceAtual: 0,
     );
 
+    final repoVersoes = _RepositorioVersoesMemoria([principal, alternativa])
+      ..usadas.add(alternativa.id);
     await montarTelaComRepositorio(
       tester,
       _RepositorioMemoria(catalogo),
-      repositorioVersoes: _RepositorioVersoesMemoria([principal, alternativa]),
+      repositorioVersoes: repoVersoes,
       contextoListaCulto: contexto,
     );
     await tester.pumpAndSettle();
@@ -430,6 +451,46 @@ void main() {
     expect(find.text('Versão: Igreja A'), findsOneWidget);
     expect(find.text('Alternativa'), findsOneWidget);
     expect(find.byKey(const ValueKey('seletor-versoes-musica')), findsNothing);
+    await tester.tap(find.byTooltip('Editar música'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(find.byType(TextFormField).at(2))
+          .controller!
+          .text,
+      'D',
+    );
+    await tester.tap(find.text('ChordPro avançado'));
+    await tester.pump();
+    final conteudo = find.byType(TextFormField).last;
+    expect(
+      tester.widget<TextFormField>(conteudo).controller!.text,
+      contains('[D]Alternativa'),
+    );
+    expect(
+      tester.widget<TextFormField>(conteudo).controller!.text,
+      isNot(contains('[C]Principal')),
+    );
+    await tester.enterText(find.byType(TextFormField).at(2), 'E');
+    await tester.ensureVisible(find.text('Salvar alterações'));
+    await tester.tap(find.text('Salvar alterações'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.enterText(
+      find.byKey(const ValueKey('nome-nova-versao-edicao')),
+      'Nova da Lista',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Salvar versão'));
+    await tester.pumpAndSettle();
+    expect(find.text('Versão: Igreja A'), findsOneWidget);
+    expect(find.text('Tom: D'), findsOneWidget);
+    expect(contexto.itemAtual.idVersaoMusica, alternativa.id);
+    expect(repoVersoes.versoes.length, 3);
+    expect(
+      repoVersoes.versoes[1].documento.conteudoOriginal,
+      alternativa.documento.conteudoOriginal,
+    );
   });
 
   testWidgets('exibe linha somente com letra', (tester) async {
@@ -962,35 +1023,45 @@ void main() {
     expect(find.text('Original: C'), findsOneWidget);
   });
 
-  testWidgets(
-    'redefine o tom de execução após edição salvar novo tom original',
-    (tester) async {
-      final original = musica('[C]Letra');
-      final repositorio = _RepositorioMemoria(original);
-      await montarTelaComRepositorio(tester, repositorio);
-      await tester.pumpAndSettle();
+  testWidgets('abre nova versão editada sem alterar o tom da principal', (
+    tester,
+  ) async {
+    final original = musica('[C]Letra');
+    final repositorio = _RepositorioMemoria(original);
+    await montarTelaComRepositorio(tester, repositorio);
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Aumentar tom'));
-      await tester.pumpAndSettle();
-      expect(find.text('Tom: C#'), findsOneWidget);
+    await tester.tap(find.byTooltip('Aumentar tom'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tom: C#'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Editar música'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(2), 'D');
-      final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
-      await tester.ensureVisible(salvar);
-      await tester.tap(salvar);
-      await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Editar música'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(2), 'D');
+    final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Salvar como nova versão'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Tom: D'), findsOneWidget);
-      expect(find.text('Original: D'), findsNothing);
-      expect(repositorio.musica.id, original.id);
-      expect(
-        repositorio.musica.tomOriginal.notaFundamental,
-        const Nota(nome: NomeNota.d),
-      );
-    },
-  );
+    await tester.enterText(
+      find.byKey(const ValueKey('nome-nova-versao-edicao')),
+      'Novo tom',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Salvar versão'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tom: D'), findsOneWidget);
+    expect(find.text('Original: D'), findsNothing);
+    expect(repositorio.musica.id, original.id);
+    expect(
+      repositorio.musica.tomOriginal.notaFundamental,
+      const Nota(nome: NomeNota.c),
+    );
+  });
 
   testWidgets('mantém a tela ativa durante zoom, transposição e swipe', (
     tester,
@@ -1120,6 +1191,12 @@ class _RepositorioVersoesMemoria implements RepositorioVersoesMusicas {
     : versoes = [...versoes];
 
   final List<VersaoMusica> versoes;
+  final Set<IdVersaoMusica> usadas = {};
+
+  @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    versoes[versoes.indexWhere((v) => v.id == versao.id)] = versao;
+  }
 
   @override
   Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
@@ -1142,7 +1219,7 @@ class _RepositorioVersoesMemoria implements RepositorioVersoesMusicas {
   }
 
   @override
-  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => false;
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => usadas.contains(id);
 
   @override
   Future<void> renomear(IdVersaoMusica id, String nome) async {}

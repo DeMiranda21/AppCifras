@@ -10,6 +10,7 @@ import 'package:appcifras/dominio/erros/musica_em_uso_em_lista.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
@@ -139,6 +140,42 @@ void main() {
       final restantes = await repositorio.listarItens(lista.id);
       expect(restantes.map((item) => item.posicao), [0, 1]);
       expect(await banco.obterPorId('musica-a'), isNotNull);
+    },
+  );
+
+  test(
+    'atualiza somente a versão do item preservando música e posição',
+    () async {
+      final lista = ListaCulto(id: IdListaCulto('lista-1'), nome: 'Culto');
+      await repositorio.salvar(lista);
+      await inserirMusicaIndice('musica-1');
+      await banco.inserirVersaoMusica(
+        id: 'alternativa',
+        idMusica: 'musica-1',
+        nome: 'Alternativa',
+        arquivo: 'musica-1.cho',
+        principal: false,
+        arquivada: false,
+      );
+      final original = item(
+        id: 'item-1',
+        idLista: lista.id,
+        idMusica: 'musica-1',
+        posicao: 0,
+      );
+      await repositorio.adicionarItem(original);
+
+      await repositorio.atualizarVersaoItem(
+        lista.id,
+        original.id,
+        IdVersaoMusica('alternativa'),
+      );
+
+      final atualizado = (await repositorio.listarItens(lista.id)).single;
+      expect(atualizado.id, original.id);
+      expect(atualizado.idMusica, original.idMusica);
+      expect(atualizado.posicao, original.posicao);
+      expect(atualizado.idVersaoMusica, IdVersaoMusica('alternativa'));
     },
   );
 

@@ -1,45 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
+import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/edicao/criar_secao_chordpro.dart';
 import '../../aplicacao/edicao/dividir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/duplicar_bloco_chordpro.dart';
 import '../../aplicacao/edicao/editar_conteudo_secao_chordpro.dart';
-import '../../aplicacao/edicao/editar_trecho_nao_identificado_chordpro.dart';
 import '../../aplicacao/edicao/editar_secao_chordpro.dart';
+import '../../aplicacao/edicao/editar_trecho_nao_identificado_chordpro.dart';
 import '../../aplicacao/edicao/excluir_bloco_chordpro.dart';
 import '../../aplicacao/edicao/localizador_secao_chordpro.dart';
 import '../../aplicacao/edicao/reordenar_secoes_chordpro.dart';
 import '../../aplicacao/edicao/selecionar_token_texto.dart';
-import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/edicao/transformar_secao_chordpro.dart';
-import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
+import '../../aplicacao/edicao/transformar_selecao_chordpro.dart';
 import '../../aplicacao/entrada/conteudo_chordpro_editavel.dart';
+import '../../aplicacao/versoes/politica_edicao_versao.dart';
+import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
 import '../../aplicacao/entrada/reanalisador_conteudo_chordpro.dart';
 import '../../aplicacao/estrutura/estrutura_musica.dart';
 import '../../aplicacao/estrutura/reconhecedor_secao_musica.dart';
 import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
+import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
-import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/tag_musica.dart';
+import '../../dominio/objetos_de_valor/tom.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 
 class TelaEdicaoMusica extends StatefulWidget {
   const TelaEdicaoMusica({
     super.key,
     required this.musica,
-    required this.atualizarMusica,
+    required this.versao,
+    this.aoSalvarVersao,
+    required this.editarVersaoMusica,
     this.obterClassificacaoMusica,
     this.salvarClassificacaoMusica,
     this.textoParaLocalizacao,
   });
 
+  final ValueChanged<VersaoMusica>? aoSalvarVersao;
+  final VersaoMusica versao;
   final Musica musica;
-  final AtualizarMusica atualizarMusica;
+  final EditarVersaoMusica editarVersaoMusica;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
   final String? textoParaLocalizacao;
@@ -79,19 +85,22 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   var _modoEditor = _ModoEditor.estrutural;
   String? _erroTom;
   String? _erroGeral;
+  final _estadoSalvamento = EstadoSalvamentoEdicaoVersao();
+  String? _nomeNovaVersao;
+  AcaoEdicaoConteudoVersao? _acaoEdicaoConteudo;
 
   @override
   void initState() {
     super.initState();
     _titulo = TextEditingController(text: widget.musica.titulo);
     _artista = TextEditingController(text: widget.musica.artista);
-    final tom = widget.musica.tomOriginal;
+    final tom = widget.versao.tomOriginal;
     _tomInicial =
         '${tom.notaFundamental}${tom.modo == ModoTom.menor ? 'm' : ''}';
     _tom = TextEditingController(text: _tomInicial);
     _conteudo = TextEditingController(
       text: ConteudoChordProEditavel.extrair(
-        widget.musica.documento.conteudoOriginal,
+        widget.versao.documento.conteudoOriginal,
       ),
     );
     _snapshotInicial = _SnapshotEdicaoMusica(
@@ -722,6 +731,62 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
   String? _obrigatorio(String? valor, String nome) =>
       valor == null || valor.trim().isEmpty ? '$nome é obrigatório.' : null;
 
+  Future<AcaoEdicaoConteudoVersao?> _escolherComoSalvarPrincipal() =>
+      showDialog<AcaoEdicaoConteudoVersao>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Como salvar as alterações?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(
+                context,
+                AcaoEdicaoConteudoVersao.criarNovaVersao,
+              ),
+              child: const Text('Salvar como nova versão'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(context, AcaoEdicaoConteudoVersao.sobrescrever),
+              child: const Text('Salvar alterações nesta versão'),
+            ),
+          ],
+        ),
+      );
+
+  Future<String?> _pedirNomeNovaVersao() => showDialog<String>(
+    context: context,
+    builder: (context) {
+      var nome = '';
+      return StatefulBuilder(
+        builder: (context, atualizar) => AlertDialog(
+          title: const Text('Salvar como nova versão'),
+          content: TextField(
+            key: const ValueKey('nome-nova-versao-edicao'),
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Nome da versão'),
+            onChanged: (valor) => atualizar(() => nome = valor.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: nome.isEmpty
+                  ? null
+                  : () => Navigator.pop(context, nome),
+              child: const Text('Salvar versão'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
   Future<void> _salvar() async {
     if (_salvando) {
       return;
@@ -736,24 +801,57 @@ class _TelaEdicaoMusicaState extends State<TelaEdicaoMusica> {
 
     setState(() => _salvando = true);
     try {
-      await widget.atualizarMusica.executar(
-        DadosAtualizacaoMusica(
-          id: widget.musica.id,
-          conteudoChordPro: _conteudo.text,
-          revisaoMetadados: RevisaoMetadadosChordPro(
-            titulo: _titulo.text == widget.musica.titulo ? null : _titulo.text,
-            artista: _artista.text == widget.musica.artista
-                ? null
-                : _artista.text,
-            tom: _tom.text == _tomInicial ? null : _tom.text,
-          ),
+      final editar = widget.editarVersaoMusica;
+      final origem = widget.versao;
+      final editada = editar.preparar(
+        origem,
+        _conteudo.text,
+        RevisaoMetadadosChordPro(
+          titulo: _titulo.text == widget.musica.titulo ? null : _titulo.text,
+          artista: _artista.text == widget.musica.artista
+              ? null
+              : _artista.text,
+          tom: _tom.text == _tomInicial ? null : _tom.text,
         ),
+      );
+      if (_estadoSalvamento.versaoPersistida == null &&
+          editar.conteudoMusicalAlterado(origem, editada)) {
+        final decisao = await editar.avaliarPolitica.executar(origem);
+        if (_acaoEdicaoConteudo == null) {
+          _acaoEdicaoConteudo = decisao.exigeEscolha
+              ? await _escolherComoSalvarPrincipal()
+              : decisao.acaoAutomatica!;
+          if (!mounted) return;
+          if (_acaoEdicaoConteudo == null) {
+            setState(() => _salvando = false);
+            return;
+          }
+        }
+        if (_acaoEdicaoConteudo == AcaoEdicaoConteudoVersao.criarNovaVersao &&
+            _nomeNovaVersao == null) {
+          final nome = await _pedirNomeNovaVersao();
+          if (!mounted) return;
+          if (nome == null) {
+            _acaoEdicaoConteudo = null;
+            setState(() => _salvando = false);
+            return;
+          }
+          _nomeNovaVersao = nome;
+        }
+      }
+      final salva = await editar.executar(
+        origem: origem,
+        editada: editada,
+        nomeNovaVersao: _nomeNovaVersao,
+        acaoConteudo: _acaoEdicaoConteudo,
+        estadoSalvamento: _estadoSalvamento,
       );
       await widget.salvarClassificacaoMusica?.executar(
         widget.musica.id,
         energia: _energia,
         tags: _tags,
       );
+      widget.aoSalvarVersao?.call(salva);
       if (mounted) _sairPermitindoPop(true);
     } on RascunhoNaoPodeSerFinalizado catch (erro) {
       if (!mounted) {

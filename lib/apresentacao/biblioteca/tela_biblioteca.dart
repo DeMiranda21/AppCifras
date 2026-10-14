@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/classificacao_musica.dart';
+import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
+import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
-import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
+import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -25,6 +26,7 @@ class TelaBiblioteca extends StatefulWidget {
     required this.salvarRascunhoChordPro,
     required this.obterMusicaPorId,
     required this.atualizarMusica,
+    required this.editarVersaoMusica,
     required this.excluirMusica,
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
@@ -42,6 +44,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.listarItensListaCulto,
     this.adicionarMusicaAListaCulto,
     this.removerItemListaCulto,
+    this.trocarVersaoItemListaCulto,
     this.reordenarItensListaCulto,
   });
 
@@ -49,6 +52,7 @@ class TelaBiblioteca extends StatefulWidget {
   final PrepararEntradaMusica prepararEntradaMusica;
   final SalvarRascunhoChordPro salvarRascunhoChordPro;
   final ObterMusicaPorId obterMusicaPorId;
+  final EditarVersaoMusica editarVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final ExcluirMusica excluirMusica;
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
@@ -67,6 +71,7 @@ class TelaBiblioteca extends StatefulWidget {
   final ListarItensListaCulto? listarItensListaCulto;
   final AdicionarMusicaAListaCulto? adicionarMusicaAListaCulto;
   final RemoverItemListaCulto? removerItemListaCulto;
+  final TrocarVersaoItemListaCulto? trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto? reordenarItensListaCulto;
 
   @override
@@ -133,6 +138,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           criarVersaoMusica: widget.criarVersaoMusica,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
+          editarVersaoMusica: widget.editarVersaoMusica,
           excluirMusica: widget.excluirMusica,
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
@@ -155,6 +161,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     final listarItensListaCulto = widget.listarItensListaCulto;
     final adicionarMusicaAListaCulto = widget.adicionarMusicaAListaCulto;
     final removerItemListaCulto = widget.removerItemListaCulto;
+    final trocarVersaoItemListaCulto = widget.trocarVersaoItemListaCulto;
     final reordenarItensListaCulto = widget.reordenarItensListaCulto;
     if (listarListasCulto == null ||
         criarListaCulto == null ||
@@ -163,6 +170,9 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         listarItensListaCulto == null ||
         adicionarMusicaAListaCulto == null ||
         removerItemListaCulto == null ||
+        trocarVersaoItemListaCulto == null ||
+        widget.listarVersoesMusica == null ||
+        widget.obterVersaoMusicaPorId == null ||
         reordenarItensListaCulto == null) {
       return;
     }
@@ -176,10 +186,13 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           listarItensListaCulto: listarItensListaCulto,
           adicionarMusicaAListaCulto: adicionarMusicaAListaCulto,
           removerItemListaCulto: removerItemListaCulto,
+          trocarVersaoItemListaCulto: trocarVersaoItemListaCulto,
+          listarVersoesMusica: widget.listarVersoesMusica!,
           reordenarItensListaCulto: reordenarItensListaCulto,
           listarMusicas: widget.listarMusicas,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
+          editarVersaoMusica: widget.editarVersaoMusica,
           excluirMusica: widget.excluirMusica,
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,

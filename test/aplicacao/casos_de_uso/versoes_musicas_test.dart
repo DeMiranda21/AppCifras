@@ -113,6 +113,11 @@ class _RepositorioVersoesFake implements RepositorioVersoesMusicas {
   final List<VersaoMusica> versoes;
 
   @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
       versoes.where((versao) => versao.idMusica == idMusica).toList();
 

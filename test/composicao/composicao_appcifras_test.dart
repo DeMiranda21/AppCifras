@@ -54,6 +54,7 @@ void main() {
           salvarRascunhoChordPro: composicao.salvarRascunhoChordPro,
           obterMusicaPorId: composicao.obterMusicaPorId,
           atualizarMusica: composicao.atualizarMusica,
+          editarVersaoMusica: composicao.editarVersaoMusica,
           excluirMusica: composicao.excluirMusica,
           obterUltimoTomExecucao: composicao.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: composicao.salvarUltimoTomExecucao,
@@ -182,6 +183,13 @@ class _RepositorioListasCultoVazio implements RepositorioListasCulto {
 
   @override
   Future<void> renomear(IdListaCulto id, String nome) async {}
+
+  @override
+  Future<void> atualizarVersaoItem(
+    IdListaCulto idLista,
+    IdItemListaCulto idItem,
+    IdVersaoMusica idVersaoMusica,
+  ) async {}
 
   @override
   Future<void> reordenarItens(

@@ -22,13 +22,15 @@ void main() {
   group('PoliticaEdicaoVersao', () {
     const politica = PoliticaEdicaoVersao();
 
-    test('principal exige nova versão para alterar conteúdo', () {
+    test('principal oferece sobrescrever ou criar nova versão', () {
       final decisao = politica.decidir(
         versao: versao(principal: true),
         usadaEmLista: false,
       );
-      expect(decisao.podeSobrescreverConteudo, isFalse);
-      expect(decisao.deveCriarNovaVersao, isTrue);
+      expect(decisao.podeSobrescreverConteudo, isTrue);
+      expect(decisao.podeCriarNovaVersao, isTrue);
+      expect(decisao.exigeEscolha, isTrue);
+      expect(decisao.deveCriarNovaVersao, isFalse);
       expect(decisao.podeRenomear, isTrue);
     });
 
@@ -38,6 +40,8 @@ void main() {
         usadaEmLista: false,
       );
       expect(decisao.podeSobrescreverConteudo, isTrue);
+      expect(decisao.podeCriarNovaVersao, isFalse);
+      expect(decisao.exigeEscolha, isFalse);
       expect(decisao.deveCriarNovaVersao, isFalse);
       expect(decisao.podeRenomear, isTrue);
     });
@@ -48,6 +52,8 @@ void main() {
         usadaEmLista: true,
       );
       expect(decisao.podeSobrescreverConteudo, isFalse);
+      expect(decisao.podeCriarNovaVersao, isTrue);
+      expect(decisao.exigeEscolha, isFalse);
       expect(decisao.deveCriarNovaVersao, isTrue);
       expect(decisao.podeRenomear, isTrue);
     });

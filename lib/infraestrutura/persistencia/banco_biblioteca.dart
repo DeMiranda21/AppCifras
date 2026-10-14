@@ -450,6 +450,19 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     return removidos;
   });
 
+  Future<int> atualizarVersaoItemListaCulto({
+    required String idLista,
+    required String idItem,
+    required String idVersaoMusica,
+  }) =>
+      (update(itensListaCulto)..where(
+            (tabela) =>
+                tabela.id.equals(idItem) & tabela.idLista.equals(idLista),
+          ))
+          .write(
+            ItensListaCultoCompanion(idVersaoMusica: Value(idVersaoMusica)),
+          );
+
   Future<void> reordenarItensListaCulto({
     required String idLista,
     required List<String> idsNaOrdem,

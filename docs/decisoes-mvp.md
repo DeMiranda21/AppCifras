@@ -59,17 +59,19 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   próprios. A cifra única anterior migra para a versão principal; arranjos não
   duplicam a Música no catálogo. `title` e `artist` em cada ChordPro espelham
   o catálogo; `key` pertence à versão.
-- Editar a versão principal deverá preservar seu conteúdo: o fluxo seguro será
-  salvar como nova versão. Versões alternativas poderão receber alterações e
-  também originar uma nova versão. A interface exata permanece futura.
+- Ao alterar musicalmente a versão principal, o usuário escolhe explicitamente
+  entre atualizar essa versão ou salvar como nova versão. Atualizar preserva o
+  IdVersaoMusica e a preferência de último tom; itens de Listas que a referenciam
+  passam a exibir o conteúdo atualizado. Salvar como nova mantém a origem intacta,
+  gera novo ID e não herda o último tom.
 - Cada Música tem exatamente uma VersaoMusica principal ativa. A principal não
   pode ser arquivada diretamente; trocá-la apenas move essa marca para outra
   versão ativa, sem copiar conteúdo, excluir a anterior ou alterar identidades.
-- O nome da versão permanece editável e não define sua identidade. O conteúdo
-  musical — ChordPro, acordes, estrutura, arranjo e tom original — deixa de
-  ser editável após a primeira referência por ItemListaCulto. A alteração
-  musical de versão já usada cria nova versão; a proteção independe de ela ser
-  principal ou alternativa.
+- O nome da versão permanece editável e não define sua identidade. Uma versão
+  alternativa deixa de aceitar sobrescrita de conteúdo musical após a primeira
+  referência por ItemListaCulto; sua alteração musical cria nova versão. A
+  principal pode ser atualizada mesmo quando usada em Listas, mediante escolha
+  explícita do usuário, pois representa o arranjo corrente padrão da Música.
 - Versão usada por Lista não pode ser excluída fisicamente; ela poderá ser
   arquivada, preservando conteúdo e referências antigas e ficando fora das
   novas seleções usuais. Versão nunca usada poderá ser excluída.
@@ -79,7 +81,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - A Biblioteca mantém uma única entrada por Música e abre a versão principal.
   Fora de uma Lista, a leitura permite selecionar somente versões ativas, sem
   trocar a principal. A visualização aberta por Lista usa a versão concreta do
-  ItemListaCulto e não oferece troca visual nesta etapa.
+  ItemListaCulto. No detalhe da Lista, o usuário pode trocar esse item para
+  outra versão ativa da mesma Música; a operação preserva item, Música e posição.
 - Criar versão duplica integralmente o ChordPro da versão aberta, preserva
   IdMusica e `{appcifras_id}`, gera IdVersaoMusica novo e cria versão ativa não
   principal. O nome recebe trim e não pode ser vazio; unicidade de nome não é
@@ -153,10 +156,11 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   Lista inteira; não haverá ministrante por música, múltiplos ministrantes ou
   override por item.
 - Em evolução posterior, ItemListaCulto também registrará o tom da ocasião. O
-  tom será snapshot operacional e não
-  mudará quando a preferência de último tom, a versão principal ou outra Lista
-  for alterada. O Item referencia a versão concreta e não armazena snapshot
-  completo de ChordPro; a imutabilidade da versão após uso preserva a Lista.
+  tom será snapshot operacional e não mudará quando a preferência de último tom,
+  a versão principal ou outra Lista for alterada. O Item referencia a versão
+  concreta e não armazena snapshot completo de ChordPro. A Lista preserva a
+  memória operacional de repertório e da versão escolhida; não congela o arranjo.
+  Por isso, atualizar a principal também atualiza sua leitura em Listas antigas.
 - A regra de sugestão inicial entre último tom e tom original da versão ao
   incluir uma música em uma Lista permanece aberta. Pesquisa histórica e
   estatísticas futuras serão derivadas das Listas.

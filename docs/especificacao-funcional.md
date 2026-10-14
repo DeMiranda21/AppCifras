@@ -33,8 +33,10 @@ a música nem o tom original. O último tom é uma preferência local por versã
 ### Listas de Culto
 
 O usuário cria, renomeia e exclui Listas, inclui músicas, reordena itens e os
-remove mediante confirmação. Ao abrir uma música da Lista, percorre os itens
-na ordem preparada. A Lista atual não possui tom próprio por item.
+remove mediante confirmação. No detalhe, pode trocar a versão concreta de um
+item por outra versão ativa da mesma Música. Ao abrir uma música da Lista,
+percorre os itens na ordem preparada. A Lista atual não possui tom próprio por
+item.
 
 ## Visão de evolução
 
@@ -52,8 +54,10 @@ evoluirão em etapas. Uma evolução aprovada permitirá que uma Música tenha
 versões de arranjo, com uma versão principal; Listas futuras registrarão data,
 ministrante opcional, versão e tom da ocasião por item. Consultas históricas e
 estatísticas serão derivadas das próprias Listas, sem subsistema independente
-de execução nesta fase. Versões usadas por Listas preservarão seu conteúdo
-musical e serão arquivadas, em vez de excluídas, quando necessário. Ordem,
+de execução nesta fase. Versões usadas por Listas serão arquivadas, em vez de excluídas,
+quando necessário. Alternativas usadas preservam seu conteúdo; a principal pode evoluir
+no mesmo ID por escolha explícita, e Listas que a referenciam acompanham essa
+evolução. Ordem,
 dependências e prioridades estão em
 roadmap-desenvolvimento.md. Sincronização, colaboração e múltiplas bibliotecas
 não fazem parte da experiência atual.

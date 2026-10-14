@@ -1,4 +1,10 @@
-import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/editar_versao_musica.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
+import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
 import 'package:appcifras/apresentacao/musica/tela_edicao_musica.dart';
@@ -32,10 +38,8 @@ void main() {
       MaterialApp(
         home: TelaEdicaoMusica(
           musica: musicaAtual,
-          atualizarMusica: AtualizarMusica(
-            repositorio: repositorio,
-            parserDocumento: parser,
-          ),
+          versao: repositorio.alternativa,
+          editarVersaoMusica: repositorio.editor,
           obterClassificacaoMusica: classificacao == null
               ? null
               : ObterClassificacaoMusica(classificacao),
@@ -71,10 +75,8 @@ void main() {
                 MaterialPageRoute<bool>(
                   builder: (_) => TelaEdicaoMusica(
                     musica: musicaAtual,
-                    atualizarMusica: AtualizarMusica(
-                      repositorio: repositorio,
-                      parserDocumento: parser,
-                    ),
+                    versao: repositorio.alternativa,
+                    editarVersaoMusica: repositorio.editor,
                     obterClassificacaoMusica: classificacao == null
                         ? null
                         : ObterClassificacaoMusica(classificacao),
@@ -263,9 +265,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repositorio.atualizacoes, 1);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal,
+      repositorio.alternativa.documento.conteudoOriginal,
       contains('[Am7]'),
     );
   });
@@ -416,10 +416,8 @@ void main() {
                 MaterialPageRoute<void>(
                   builder: (_) => TelaEdicaoMusica(
                     musica: musica(),
-                    atualizarMusica: AtualizarMusica(
-                      repositorio: repositorio,
-                      parserDocumento: parser,
-                    ),
+                    versao: repositorio.alternativa,
+                    editarVersaoMusica: repositorio.editor,
                   ),
                 ),
               ),
@@ -452,9 +450,7 @@ void main() {
 
     expect(repositorio.atualizacoes, 0);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal,
+      repositorio.alternativa.documento.conteudoOriginal,
       isNot(contains('[Am7]')),
     );
   });
@@ -495,9 +491,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repositorio.atualizacoes, 1);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal,
+      repositorio.alternativa.documento.conteudoOriginal,
       contains('{start_of_chorus: label="Refrão"}'),
     );
   });
@@ -528,10 +522,8 @@ void main() {
                 MaterialPageRoute<void>(
                   builder: (_) => TelaEdicaoMusica(
                     musica: musica(),
-                    atualizarMusica: AtualizarMusica(
-                      repositorio: repositorio,
-                      parserDocumento: parser,
-                    ),
+                    versao: repositorio.alternativa,
+                    editarVersaoMusica: repositorio.editor,
                   ),
                 ),
               ),
@@ -562,9 +554,7 @@ void main() {
 
     expect(repositorio.atualizacoes, 0);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal,
+      repositorio.alternativa.documento.conteudoOriginal,
       isNot(contains('{start_of_chorus:')),
     );
   });
@@ -623,9 +613,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repositorio.atualizacoes, 1);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal,
+      repositorio.alternativa.documento.conteudoOriginal,
       contains('{start_of_chorus: label="Refrão 1"}'),
     );
   });
@@ -976,10 +964,16 @@ void main() {
     await tester.tap(salvar);
     await tester.pumpAndSettle();
 
-    final salva = await repositorio.obterPorId(IdMusica('musica-1'));
+    final salva = repositorio.alternativa;
     expect(repositorio.atualizacoes, 1);
-    expect(salva!.id, IdMusica('musica-1'));
+    expect(salva.id, IdVersaoMusica('alternativa'));
     expect(salva.documento.conteudoOriginal, contains('[D]Salvo'));
+    expect(
+      (await repositorio.obterPorId(IdMusica('musica-1')))!
+          .documento
+          .conteudoOriginal,
+      isNot(contains('[D]Salvo')),
+    );
   });
 
   testWidgets(
@@ -1276,15 +1270,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(repositorio.atualizacoes, 1);
     expect(
-      (await repositorio.obterPorId(IdMusica('musica-1')))!
-          .documento
-          .conteudoOriginal
-          .indexOf('{start_of_chorus'),
+      repositorio.alternativa.documento.conteudoOriginal.indexOf(
+        '{start_of_chorus',
+      ),
       lessThan(
-        (await repositorio.obterPorId(IdMusica('musica-1')))!
-            .documento
-            .conteudoOriginal
-            .indexOf('{start_of_verse'),
+        repositorio.alternativa.documento.conteudoOriginal.indexOf(
+          '{start_of_verse',
+        ),
       ),
     );
   });
@@ -1669,9 +1661,7 @@ void main() {
       expect(find.byKey(const ValueKey('abrir-edicao')), findsOneWidget);
       expect(repositorio.atualizacoes, 0);
       expect(
-        (await repositorio.obterPorId(IdMusica('musica-1')))!
-            .documento
-            .conteudoOriginal,
+        repositorio.alternativa.documento.conteudoOriginal,
         isNot(contains('Verso novo')),
       );
     },
@@ -1782,7 +1772,7 @@ void main() {
     await tester.tap(salvar);
     await tester.pumpAndSettle();
 
-    expect(repositorio.atualizacoes, 1);
+    expect(repositorio.atualizacoes, 0);
     final resultado = await classificacao.obter(IdMusica('musica-1'));
     expect(resultado.energia, EnergiaMusica.animada);
     expect(resultado.tags, [TagMusica('Ceia')]);
@@ -1861,11 +1851,56 @@ void main() {
   });
 }
 
-class _Repositorio implements RepositorioMusicas {
+class _Repositorio implements RepositorioMusicas, RepositorioVersoesMusicas {
+  late VersaoMusica alternativa;
+  EditarVersaoMusica get editor => EditarVersaoMusica(
+    repositorio: this,
+    repositorioMusicas: this,
+    criarVersao: CriarVersaoMusica(
+      repositorio: this,
+      geradorId: _GeradorVersao(),
+    ),
+    avaliarPolitica: AvaliarPoliticaEdicaoVersao(this),
+  );
+  @override
+  Future<void> atualizarConteudoVersao(VersaoMusica v) async {
+    alternativa = v;
+    atualizacoes++;
+  }
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async =>
+      alternativa;
+  @override
+  Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica id) async =>
+      dados[id]?.versaoPrincipal;
+  @override
+  Future<List<VersaoMusica>> listarPorMusica(IdMusica id) async => [
+    dados[id]!.versaoPrincipal,
+    alternativa,
+  ];
+  @override
+  Future<void> salvarVersao(VersaoMusica v) async => alternativa = v;
+  @override
+  Future<bool> estaUsadaEmLista(IdVersaoMusica id) async => false;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final Map<IdMusica, Musica> dados = {};
   var atualizacoes = 0;
   @override
-  Future<void> salvar(Musica musica) async => dados[musica.id] = musica;
+  Future<void> salvar(Musica musica) async {
+    dados[musica.id] = musica;
+    alternativa = VersaoMusica(
+      id: IdVersaoMusica('alternativa'),
+      idMusica: musica.id,
+      nome: 'Alternativa',
+      documento: musica.documento,
+      principal: false,
+      arquivada: false,
+    );
+  }
+
   @override
   Future<void> atualizar(Musica musica) async {
     atualizacoes++;
@@ -1908,4 +1943,9 @@ class _RepositorioClassificacao implements RepositorioClassificacaoMusica {
       tags: tags.toList(),
     );
   }
+}
+
+class _GeradorVersao implements GeradorIdVersaoMusica {
+  @override
+  IdVersaoMusica gerar() => IdVersaoMusica('nova');
 }

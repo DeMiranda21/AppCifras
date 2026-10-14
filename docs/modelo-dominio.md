@@ -65,18 +65,19 @@ novo IdVersaoMusica, mesmo IdMusica, nome não vazio, principal=false e
 arquivada=false. A preferência de último tom não é copiada: por ser local à
 versão, a nova versão começa no seu tom original.
 
-O nome ou rótulo de VersaoMusica é editável e não determina sua identidade. Já
-o conteúdo musical — DocumentoChordPro, acordes, estrutura, arranjo e tom
-original — poderá ser alterado somente enquanto a versão não for referenciada
-por ItemListaCulto. Após o primeiro uso em Lista, esse conteúdo será imutável;
-uma mudança musical criará nova versão a partir da existente. A proteção vale
-mesmo que a versão deixe de ser principal.
+O nome ou rótulo de VersaoMusica é editável e não determina sua identidade. O
+conteúdo musical de uma alternativa poderá ser sobrescrito enquanto ela não for
+referenciada por ItemListaCulto; depois do primeiro uso, uma mudança musical
+criará nova versão a partir dela. Para a versão principal, o usuário escolhe
+explicitamente entre sobrescrever o mesmo IdVersaoMusica ou criar uma nova
+versão. A sobrescrita é permitida mesmo quando a principal aparece em Listas.
 
 Versão usada por Lista não poderá ser excluída fisicamente: será arquivada,
 permanecendo disponível para referências antigas, sem ser oferecida normalmente
 em novas seleções. Versão nunca usada poderá ser excluída. O ItemListaCulto
-manterá referência à versão concreta, sem snapshot completo de ChordPro; a
-imutabilidade após o uso preserva o significado das Listas antigas.
+mantém referência à versão concreta, sem snapshot completo de ChordPro. Listas
+antigas que apontam para a principal acompanham sua evolução; sua memória
+operacional preserva repertório, versão escolhida e, futuramente, tom da ocasião.
 
 As diretivas `{title}` e `{artist}` presentes em cada ChordPro espelham os
 metadados atuais do catálogo e podem ser atualizadas sem alterar o conteúdo
@@ -121,12 +122,15 @@ separada de execução nem estados planejada, executada ou cancelada. A Lista
 terá futuramente data e ministrante opcional, aplicável à Lista inteira, sem
 ministrante por música, múltiplos ministrantes ou override por item.
 
-Cada ItemListaCulto registra a Música, a versão escolhida e a posição. Em
-evolução posterior, também registrará o tom daquela ocasião. Esse tom será snapshot
-operacional: mudanças posteriores no último tom, na versão principal ou em
-outras Listas não alterarão uma Lista anterior. Pesquisa histórica e
-estatísticas futuras serão consultas derivadas das próprias Listas, não dados
-persistidos separadamente.
+Cada ItemListaCulto registra a Música, a versão escolhida e a posição. O detalhe
+da Lista permite trocar a versão desse item por outra versão ativa da mesma
+Música, sem alterar a principal nem outros itens. Uma referência existente a uma
+versão arquivada continua válida e abrível, embora arquivadas não sejam oferecidas
+para nova escolha. Em evolução posterior, o item também registrará o tom daquela
+ocasião. Esse tom será snapshot operacional: mudanças posteriores no último tom,
+na versão principal ou em outras Listas não alterarão uma Lista anterior.
+Pesquisa histórica e estatísticas futuras serão consultas derivadas das próprias
+Listas, não dados persistidos separadamente.
 
 ## Preferência de tom de execução
 

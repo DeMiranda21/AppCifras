@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
@@ -17,10 +18,13 @@ class TelaListasCulto extends StatefulWidget {
     required this.listarItensListaCulto,
     required this.adicionarMusicaAListaCulto,
     required this.removerItemListaCulto,
+    required this.trocarVersaoItemListaCulto,
     required this.reordenarItensListaCulto,
+    required this.listarVersoesMusica,
     required this.listarMusicas,
     required this.obterMusicaPorId,
     required this.atualizarMusica,
+    required this.editarVersaoMusica,
     required this.excluirMusica,
     this.obterUltimoTomExecucao,
     this.salvarUltimoTomExecucao,
@@ -35,9 +39,12 @@ class TelaListasCulto extends StatefulWidget {
   final ListarItensListaCulto listarItensListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
+  final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
+  final ListarVersoesMusica listarVersoesMusica;
   final ReordenarItensListaCulto reordenarItensListaCulto;
   final ListarMusicas listarMusicas;
   final ObterMusicaPorId obterMusicaPorId;
+  final EditarVersaoMusica editarVersaoMusica;
   final AtualizarMusica atualizarMusica;
   final ExcluirMusica excluirMusica;
   final ObterUltimoTomExecucao? obterUltimoTomExecucao;
@@ -139,10 +146,13 @@ class _TelaListasCultoState extends State<TelaListasCulto> {
           listarItensListaCulto: widget.listarItensListaCulto,
           adicionarMusicaAListaCulto: widget.adicionarMusicaAListaCulto,
           removerItemListaCulto: widget.removerItemListaCulto,
+          trocarVersaoItemListaCulto: widget.trocarVersaoItemListaCulto,
+          listarVersoesMusica: widget.listarVersoesMusica,
           reordenarItensListaCulto: widget.reordenarItensListaCulto,
           listarMusicas: widget.listarMusicas,
           obterMusicaPorId: widget.obterMusicaPorId,
           atualizarMusica: widget.atualizarMusica,
+          editarVersaoMusica: widget.editarVersaoMusica,
           excluirMusica: widget.excluirMusica,
           obterUltimoTomExecucao: widget.obterUltimoTomExecucao,
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,

@@ -100,6 +100,11 @@ class _RepositorioMemoria implements RepositorioVersoesMusicas {
   final Map<IdVersaoMusica, VersaoMusica> _versoes;
   final Set<IdVersaoMusica> _usadas;
   @override
+  Future<void> atualizarConteudoVersao(VersaoMusica versao) async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<bool> estaUsadaEmLista(IdVersaoMusica id) async =>
       _usadas.contains(id);
   @override

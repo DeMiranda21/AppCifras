@@ -1,13 +1,18 @@
+import 'package:appcifras/aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/editar_versao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/listas_culto.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/tom_execucao.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_item_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_lista_culto.dart';
+import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_tom_execucao.dart';
 import 'package:appcifras/apresentacao/listas_culto/tela_listas_culto.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
@@ -16,6 +21,7 @@ import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_musicas.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -310,6 +316,65 @@ void main() {
     expect(find.text('Esperança'), findsOneWidget);
   });
 
+  testWidgets(
+    'troca versão do item, omite arquivadas e abre a referência concreta',
+    (tester) async {
+      final cenario = _Cenario()..criarLista('Culto');
+      final musica = (await cenario.musicas.obterPorId(IdMusica('musica-1')))!;
+      final arquivada = VersaoMusica(
+        id: IdVersaoMusica('arquivada'),
+        idMusica: musica.id,
+        nome: 'Arquivada',
+        documento: ParserDocumentoChordPro().interpretar(
+          '{title: Caminho}\n{artist: Banda}\n{key: C}\n[C]Arranjo arquivado',
+        ),
+        principal: false,
+        arquivada: true,
+      );
+      final alternativa = VersaoMusica(
+        id: IdVersaoMusica('alternativa'),
+        idMusica: musica.id,
+        nome: 'Acústica',
+        documento: ParserDocumentoChordPro().interpretar(
+          '{title: Caminho}\n{artist: Banda}\n{key: D}\n[D]Arranjo acústico',
+        ),
+        principal: false,
+        arquivada: false,
+      );
+      cenario.versoes
+        ..adicionar(arquivada)
+        ..adicionar(alternativa);
+      cenario.adicionarItem('item-1', 'musica-1', 0, idVersao: 'arquivada');
+      await cenario.montar(tester);
+      await tester.tap(find.byKey(const ValueKey('lista-lista-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Arquivada'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('item-lista-item-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('Arranjo arquivado'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Trocar versão'));
+      await tester.pumpAndSettle();
+      expect(find.text('Arquivada'), findsNothing);
+      expect(find.text('Principal'), findsOneWidget);
+      expect(find.text('Acústica'), findsOneWidget);
+      await tester.tap(find.text('Acústica'));
+      await tester.pumpAndSettle();
+
+      final item = (await cenario.listas.listarItens(IdListaCulto('lista-1')))
+          .single;
+      expect(item.id, IdItemListaCulto('item-1'));
+      expect(item.idVersaoMusica, alternativa.id);
+      expect(item.posicao, 0);
+      await tester.tap(find.byKey(const ValueKey('item-lista-item-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('Arranjo acústico'), findsOneWidget);
+    },
+  );
+
   testWidgets('reordena itens usando seus IDs próprios', (tester) async {
     final cenario = _Cenario()
       ..criarLista('Culto')
@@ -345,10 +410,13 @@ class _Cenario {
         _musica('musica-1', 'Caminho', 'Banda'),
         _musica('musica-2', 'Esperança', 'Ministério Luz'),
         _musica('musica-3', 'Coração', 'Outra Banda'),
-      ]);
+      ]) {
+    versoes = _RepositorioVersoesVazio(musicas.musicas);
+  }
 
   final _RepositorioListasFake listas = _RepositorioListasFake();
   final _RepositorioMusicasFake musicas;
+  late final _RepositorioVersoesVazio versoes;
   final _RepositorioTomExecucaoFake toms = _RepositorioTomExecucaoFake();
   var _proximoIdItem = 1;
 
@@ -356,12 +424,18 @@ class _Cenario {
     listas.salvar(ListaCulto(id: IdListaCulto('lista-1'), nome: nome));
   }
 
-  void adicionarItem(String idItem, String idMusica, int posicao) {
+  void adicionarItem(
+    String idItem,
+    String idMusica,
+    int posicao, {
+    String? idVersao,
+  }) {
     listas.adicionarItem(
       ItemListaCulto(
         id: IdItemListaCulto(idItem),
         idLista: IdListaCulto('lista-1'),
         idMusica: IdMusica(idMusica),
+        idVersaoMusica: IdVersaoMusica(idVersao ?? idMusica),
         posicao: posicao,
       ),
     );
@@ -396,6 +470,11 @@ class _Cenario {
             _GeradorItemFake(_gerarIdItem),
           ),
           removerItemListaCulto: RemoverItemListaCulto(listas),
+          trocarVersaoItemListaCulto: TrocarVersaoItemListaCulto(
+            listas,
+            versoes,
+          ),
+          listarVersoesMusica: ListarVersoesMusica(versoes),
           reordenarItensListaCulto: ReordenarItensListaCulto(listas),
           listarMusicas: ListarMusicas(musicas),
           obterMusicaPorId: ObterMusicaPorId(musicas),
@@ -403,10 +482,20 @@ class _Cenario {
             repositorio: musicas,
             parserDocumento: ParserDocumentoChordPro(),
           ),
+          editarVersaoMusica: EditarVersaoMusica(
+            repositorio: versoes,
+            repositorioMusicas: musicas,
+            criarVersao: CriarVersaoMusica(
+              repositorio: versoes,
+              geradorId: _GeradorVersaoVazio(),
+            ),
+            avaliarPolitica: AvaliarPoliticaEdicaoVersao(versoes),
+          ),
           excluirMusica: ExcluirMusica(musicas),
           obterUltimoTomExecucao: ObterUltimoTomExecucao(toms),
           salvarUltimoTomExecucao: SalvarUltimoTomExecucao(toms),
           removerUltimoTomExecucao: RemoverUltimoTomExecucao(toms),
+          obterVersaoMusicaPorId: ObterVersaoMusicaPorId(versoes),
         ),
       ),
     );
@@ -492,6 +581,24 @@ class _RepositorioListasFake implements RepositorioListasCulto {
   }
 
   @override
+  Future<void> atualizarVersaoItem(
+    IdListaCulto idLista,
+    IdItemListaCulto idItem,
+    IdVersaoMusica idVersaoMusica,
+  ) async {
+    final itens = _itens[idLista]!;
+    final indice = itens.indexWhere((item) => item.id == idItem);
+    final item = itens[indice];
+    itens[indice] = ItemListaCulto(
+      id: item.id,
+      idLista: item.idLista,
+      idMusica: item.idMusica,
+      idVersaoMusica: idVersaoMusica,
+      posicao: item.posicao,
+    );
+  }
+
+  @override
   Future<void> reordenarItens(
     IdListaCulto idLista,
     List<IdItemListaCulto> ordem,
@@ -517,6 +624,7 @@ class _RepositorioListasFake implements RepositorioListasCulto {
         id: itens[indice].id,
         idLista: idLista,
         idMusica: itens[indice].idMusica,
+        idVersaoMusica: itens[indice].idVersaoMusica,
         posicao: indice,
       ),
   ];
@@ -538,6 +646,8 @@ class _RepositorioMusicasFake implements RepositorioMusicas {
 
   final Map<IdMusica, Musica> _porId;
 
+  Iterable<Musica> get musicas => _porId.values;
+
   @override
   Future<void> atualizar(Musica musica) async {
     _porId[musica.id] = musica;
@@ -558,6 +668,42 @@ class _RepositorioMusicasFake implements RepositorioMusicas {
   Future<void> salvar(Musica musica) async {
     _porId[musica.id] = musica;
   }
+}
+
+class _RepositorioVersoesVazio implements RepositorioVersoesMusicas {
+  _RepositorioVersoesVazio(Iterable<Musica> musicas)
+    : _versoes = {
+        for (final musica in musicas)
+          musica.versaoPrincipal.id: musica.versaoPrincipal,
+      };
+
+  final Map<IdVersaoMusica, VersaoMusica> _versoes;
+
+  void adicionar(VersaoMusica versao) => _versoes[versao.id] = versao;
+
+  @override
+  Future<List<VersaoMusica>> listarPorMusica(IdMusica idMusica) async =>
+      _versoes.values.where((versao) => versao.idMusica == idMusica).toList();
+
+  @override
+  Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica idMusica) async {
+    for (final versao in _versoes.values) {
+      if (versao.idMusica == idMusica && versao.principal) return versao;
+    }
+    return null;
+  }
+
+  @override
+  Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async =>
+      _versoes[id];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _GeradorVersaoVazio implements GeradorIdVersaoMusica {
+  @override
+  IdVersaoMusica gerar() => IdVersaoMusica('versao-vazia');
 }
 
 class _RepositorioTomExecucaoFake implements RepositorioTomExecucao {

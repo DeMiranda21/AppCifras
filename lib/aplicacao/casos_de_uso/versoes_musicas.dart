@@ -1,3 +1,6 @@
+import '../../dominio/erros/versao_musica_nao_encontrada.dart';
+import '../portas/repositorio_tom_execucao.dart';
+import 'ciclo_vida_versoes_musicas.dart';
 import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
@@ -56,5 +59,29 @@ class CriarVersaoMusica {
     );
     await _repositorio.salvarVersao(versao);
     return versao;
+  }
+}
+
+/// Atualiza explicitamente uma versão quando a política permite sobrescrita.
+class AtualizarConteudoVersaoMusica {
+  const AtualizarConteudoVersaoMusica(this._repositorio, {this.repositorioTom});
+  final RepositorioVersoesMusicas _repositorio;
+  final RepositorioTomExecucao? repositorioTom;
+
+  Future<void> executar(VersaoMusica versao) async {
+    final atual = await _repositorio.obterVersaoPorId(versao.id);
+    if (atual == null) throw VersaoMusicaNaoEncontrada(versao.id);
+    if (atual.idMusica != versao.idMusica) {
+      throw ArgumentError('A edição deve preservar a música da versão.');
+    }
+    final decisao = await AvaliarPoliticaEdicaoVersao(_repositorio)
+        .executar(atual);
+    if (!decisao.podeSobrescreverConteudo) {
+      throw StateError('Esta versão exige salvar como nova versão.');
+    }
+    await _repositorio.atualizarConteudoVersao(versao);
+    if (!atual.principal && atual.tomOriginal != versao.tomOriginal) {
+      await repositorioTom?.removerUltimoTom(atual.id);
+    }
   }
 }
