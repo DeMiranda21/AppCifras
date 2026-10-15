@@ -3,6 +3,7 @@ import '../../dominio/servicos/parser_documento_chordpro.dart';
 import 'analisador_entrada_musica.dart';
 import 'conversor_cifra_textual.dart';
 import 'rascunho_documento_chordpro.dart';
+import 'revisao_contextual_entrada_musica.dart';
 import 'resultado_analise_entrada_musica.dart';
 
 /// Orquestra a preparação de texto recebido para a etapa transitória de revisão.
@@ -14,6 +15,7 @@ class PrepararEntradaMusica {
     AnalisadorEntradaMusica? analisador,
     ConversorCifraTextual? conversor,
     ParserDocumentoChordPro? parserDocumento,
+    AnalisadorProblemasDeCifra? analisadorProblemas,
   }) {
     final parser = parserDocumento ?? ParserDocumentoChordPro();
     return PrepararEntradaMusica._(
@@ -21,6 +23,7 @@ class PrepararEntradaMusica {
           analisador ?? AnalisadorEntradaMusica(parserDocumento: parser),
       conversor: conversor ?? ConversorCifraTextual(),
       parserDocumento: parser,
+      analisadorProblemas: analisadorProblemas ?? AnalisadorProblemasDeCifra(),
     );
   }
 
@@ -28,11 +31,13 @@ class PrepararEntradaMusica {
     required this._analisador,
     required this._conversor,
     required this._parserDocumento,
+    required this._analisadorProblemas,
   });
 
   final AnalisadorEntradaMusica _analisador;
   final ConversorCifraTextual _conversor;
   final ParserDocumentoChordPro _parserDocumento;
+  final AnalisadorProblemasDeCifra _analisadorProblemas;
 
   EntradaMusicaPreparada executar(String conteudoOriginal) {
     final analise = _analisador.analisar(conteudoOriginal);
@@ -43,6 +48,9 @@ class PrepararEntradaMusica {
         rascunho: RascunhoDocumentoChordPro.aPartirDaAnalise(
           analise: analise,
           parserDocumento: _parserDocumento,
+        ),
+        revisaoContextual: _analisadorProblemas.analisar(
+          conteudoChordPro: analise.conteudoOriginal,
         ),
       ),
       ClassificacaoEntradaMusica.cifraTextualProvavel => _prepararCifraTextual(
@@ -65,6 +73,10 @@ class PrepararEntradaMusica {
         conteudoChordPro: conversao.chordProSugerido,
         parserDocumento: _parserDocumento,
       ),
+      revisaoContextual: _analisadorProblemas.analisar(
+        conteudoChordPro: conversao.chordProSugerido,
+        avisosConversao: conversao.avisos,
+      ),
     );
   }
 }
@@ -78,11 +90,13 @@ class EntradaMusicaPreparada {
     required this.analise,
     this.conversao,
     this.rascunho,
+    this.revisaoContextual,
   });
 
   final ResultadoAnaliseEntradaMusica analise;
   final ResultadoConversaoCifraTextual? conversao;
   final RascunhoDocumentoChordPro? rascunho;
+  final RevisaoContextualEntradaMusica? revisaoContextual;
 
   String get conteudoOriginal => analise.conteudoOriginal;
   ClassificacaoEntradaMusica get classificacao => analise.classificacao;
@@ -109,6 +123,10 @@ class EntradaMusicaPreparada {
   List<AvisoAnaliseEntrada> get avisosAnalise => analise.avisos;
   List<AvisoConversaoCifra> get avisosConversao =>
       conversao?.avisos ?? const [];
+  List<ProblemaDeCifra> get problemasDeCifra =>
+      revisaoContextual?.problemas ?? const [];
+  List<AvisoConversaoNaoAcionavel> get avisosConversaoNaoAcionaveis =>
+      revisaoContextual?.avisosNaoAcionaveis ?? const [];
 
   bool get requerRevisao =>
       !possuiRascunhoParaRevisao ||

@@ -19,10 +19,24 @@ enum TipoAvisoConversaoCifra {
 }
 
 class AvisoConversaoCifra {
-  const AvisoConversaoCifra({required this.tipo, required this.linha});
+  const AvisoConversaoCifra({
+    required this.tipo,
+    required this.linha,
+    this.linhaChordPro,
+  });
 
   final TipoAvisoConversaoCifra tipo;
   final int linha;
+  final int? linhaChordPro;
+
+  AvisoConversaoCifra deslocarLinhaChordPro(int deslocamento) =>
+      AvisoConversaoCifra(
+        tipo: tipo,
+        linha: linha,
+        linhaChordPro: linhaChordPro == null
+            ? null
+            : linhaChordPro! + deslocamento,
+      );
 }
 
 class TrechoConversaoCifra {
@@ -202,6 +216,7 @@ class ConversorCifraTextual {
               AvisoConversaoCifra(
                 tipo: TipoAvisoConversaoCifra.acordeAposLetra,
                 linha: indice,
+                linhaChordPro: saida.length - 1,
               ),
             );
           }
@@ -210,6 +225,7 @@ class ConversorCifraTextual {
               AvisoConversaoCifra(
                 tipo: TipoAvisoConversaoCifra.acordesConvergentes,
                 linha: indice,
+                linhaChordPro: saida.length - 1,
               ),
             );
           }
@@ -220,6 +236,7 @@ class ConversorCifraTextual {
           AvisoConversaoCifra(
             tipo: TipoAvisoConversaoCifra.associacaoNaoSegura,
             linha: indice,
+            linhaChordPro: saida.length,
           ),
         );
       }
@@ -235,18 +252,22 @@ class ConversorCifraTextual {
         AvisoConversaoCifra(
           tipo: TipoAvisoConversaoCifra.linhaInstrumental,
           linha: indice,
+          linhaChordPro: saida.length - 1,
         ),
       );
       indice += 1;
     }
 
+    final deslocamentoCabecalho = tomExplicito == null ? 0 : 1;
     if (tomExplicito != null) {
       saida.insert(0, '{key: $tomExplicito}');
     }
     return ResultadoConversaoCifraTextual(
       conteudoOriginal: conteudo,
       chordProSugerido: saida.join(separador),
-      avisos: avisos,
+      avisos: avisos.map(
+        (aviso) => aviso.deslocarLinhaChordPro(deslocamentoCabecalho),
+      ),
       trechos: trechos,
     );
   }
