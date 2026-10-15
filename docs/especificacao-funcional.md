@@ -40,24 +40,53 @@ item.
 
 ## Visão de evolução
 
-O editor assistido será a experiência principal para alterações comuns: o
-usuário poderá atuar sobre um token, linha ou bloco para indicar acorde, texto
-ou seção, e o aplicativo produzirá a alteração correspondente no ChordPro.
-Exemplos incluem marcar texto como acorde, remover sua marcação, editar um
-acorde e marcar ou trocar o tipo de uma seção. A edição textual ChordPro
-permanece como modo avançado e fallback; ela não será removida nesta etapa.
+### Entrada manual e revisão
 
-Reconhecimento estrutural, edição assistida, edição por blocos, classificação,
-metadados, versões/arranjos, contexto de ministração nas Listas, consulta de
-repertórios anteriores, importação múltipla, BPM, backup e estatísticas
-evoluirão em etapas. Uma evolução aprovada permitirá que uma Música tenha
-versões de arranjo, com uma versão principal; Listas futuras registrarão data,
-ministrante opcional, versão e tom da ocasião por item. Consultas históricas e
+A experiência comum não expõe ChordPro. O usuário cola texto normal, o
+AppCifras analisa e converte apenas o que reconhece com segurança, mantém o
+ChordPro internamente e apresenta pontos de decisão em sequência. Cada etapa
+mostra `Problema X de N`, o trecho no contexto, o motivo e somente as ações
+compatíveis com aquela ocorrência.
+
+Na primeira fatia, as ações são `É acorde`, `É texto` e `Corrigir acorde`. Uma
+correção de acorde usa campo curto e validação musical antes de ser aplicada.
+Depois de cada decisão, o documento é analisado novamente e a revisão segue
+para o próximo problema atual. O usuário pode voltar ou avançar, mas não precisa
+localizar o trecho, selecioná-lo, lembrar avisos anteriores nem editar sintaxe.
+
+Trechos desconhecidos que possam ser preservados não impedem salvar. O
+aplicativo informa limitações concretas, como indisponibilidade de transposição,
+e bloqueia apenas quando não consegue formar um documento minimamente válido
+ou quando um campo obrigatório está inválido. Título, artista e tom original
+continuam fora da sequência, em campos próprios.
+
+### Edição comum e modo avançado
+
+A infraestrutura dessa revisão será reutilizada depois para localizar o trecho
+que bloqueia transposição. Em uma etapa posterior, o editor comum aplicará
+ações musicais sobre acordes, texto, linhas e seções sem depender de seleção
+automática, `RenderEditable`, busca textual ou menu contextual nativo. A base
+já entregue de reconhecimento estrutural, blocos e transformações puras será
+adaptada, sem trocar o ChordPro como fonte canônica.
+
+O editor textual ChordPro permanece como opção secundária para usuários
+avançados e como fallback. O ponto de acesso e sua apresentação ainda serão
+definidos.
+
+### Demais evoluções
+
+Versões e arranjos estão entregues até a edição da versão concreta e ficam
+pausados enquanto entrada e edição são retrabalhadas. Contexto de ministração
+nas Listas, consulta de repertórios anteriores, importação múltipla, BPM,
+backup e estatísticas evoluirão em etapas. Listas futuras registrarão data,
+ministrante opcional e tom da ocasião por item. Consultas históricas e
 estatísticas serão derivadas das próprias Listas, sem subsistema independente
-de execução nesta fase. Versões usadas por Listas serão arquivadas, em vez de excluídas,
-quando necessário. Alternativas usadas preservam seu conteúdo; a principal pode evoluir
-no mesmo ID por escolha explícita, e Listas que a referenciam acompanham essa
-evolução. Ordem,
-dependências e prioridades estão em
-roadmap-desenvolvimento.md. Sincronização, colaboração e múltiplas bibliotecas
-não fazem parte da experiência atual.
+de execução nesta fase.
+
+Sincronização e importação são fluxos distintos. A primeira sincronização
+futura trabalhará com uma pasta curada de arquivos `.cho` já revisados, fará
+validação técnica leve e atualizará a Biblioteca local sem conversão genérica
+de `.txt` nem revisão interativa. Importação genérica e em lote permanece uma
+evolução própria. Colaboração e múltiplas bibliotecas não fazem parte da
+experiência atual. Ordem, dependências e prioridades estão em
+roadmap-desenvolvimento.md.

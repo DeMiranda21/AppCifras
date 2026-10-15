@@ -7,10 +7,12 @@ implementação.
   essenciais funcionam sem internet.
 - **Biblioteca antes de arquivos isolados.** O usuário trabalha com repertório;
   arquivos externos são fontes de importação.
-- **ChordPro canônico, sintaxe opcional na UX.** O conteúdo musical tem fonte
-  preservada; leitura, transposição e graus são representações derivadas. Nas
-  tarefas comuns, a interface deve preferir ações semânticas a exigir que o
-  usuário escreva a sintaxe ChordPro.
+- **ChordPro canônico, invisível no uso comum.** O conteúdo musical tem fonte
+  preservada; leitura, transposição e graus são representações derivadas. O
+  usuário edita uma música; o AppCifras mantém o ChordPro por trás. Colagem,
+  revisão e operações musicais comuns usam letra, acordes, seções, problemas e
+  ações musicais, sem exigir que o usuário compreenda ou edite a sintaxe.
+  ChordPro textual permanece disponível como modo avançado e fallback.
 - **Poucos toques e uso real.** Em ensaios e cultos, rapidez, legibilidade,
   estabilidade e baixa distração superam efeitos visuais.
 - **Domínio independente.** Regras musicais não dependem de Flutter, banco,

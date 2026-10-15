@@ -2,13 +2,20 @@
 
 Este arquivo guarda apenas dúvidas ou hipóteses ainda não consolidadas.
 
-## Descoberta de "Tratar como texto"
+## Acesso ao ChordPro avançado
 
-Prioridade alta: a seleção automática de palavras e tokens musicais por toque
-foi entregue; a seleção manual por pressão longa continua disponível como
-alternativa. Ainda definir uma apresentação mais encontrável para `Tratar como
-texto`, que não dependa da posição variável do menu nativo, sem transformar a
-edição em um editor de texto complexo.
+Definir, depois de validar o fluxo comum, onde e como oferecer o editor textual
+ChordPro como opção secundária e fallback. O acesso deve ser encontrável para o
+usuário avançado sem apresentar sintaxe como caminho normal de entrada ou
+edição.
+
+## Critérios concretos de ambiguidade
+
+Calibrar com exemplos reais quais candidatos de acorde devem gerar
+ProblemaDeCifra na entrada manual. A decisão já fixada é conservadora: A–G
+continua sendo a notação aceita nesta etapa, rótulos conhecidos permanecem
+texto e a dúvida não vira acorde automaticamente. Permanecem abertos apenas os
+limites heurísticos necessários para manter baixa a taxa de falsos positivos.
 
 ## Último tom e novo Item de Lista
 

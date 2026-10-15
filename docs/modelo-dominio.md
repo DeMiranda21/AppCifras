@@ -37,6 +37,45 @@ ChordPro e o rótulo exibido deriva de seu atributo `label`; ambos permanecem
 distintos. A leitura também aceita aliases e rótulos legados sem alterar sua
 fonte.
 
+## Evolução aprovada — entrada e revisão contextual
+
+No fluxo comum, o rascunho que o usuário vê representa uma música em termos de
+letra, acordes e seções. DocumentoChordPro continua sendo a única fonte
+canônica persistida; a revisão assistida é uma projeção transitória usada para
+produzir ou transformar esse documento, não um segundo modelo musical salvo.
+
+A análise do rascunho classifica cada trecho relevante em um destes estados:
+
+- reconhecido com segurança, quando pode ser convertido automaticamente;
+- ambíguo, quando exige uma decisão localizada do usuário;
+- inválido ou problemático, quando uma interpretação pretendida precisa ser
+  corrigida;
+- desconhecido porém preservável, quando o texto deve permanecer intacto,
+  embora algum recurso possa ficar indisponível.
+
+ProblemaDeCifra é o valor transitório que descreve uma ocorrência concreta a
+ser revisada. Ele contém tipo, faixa no rascunho, texto encontrado, contexto,
+motivo, ações permitidas e revisão do rascunho em que foi produzido. A faixa e
+o texto esperado identificam a ocorrência, inclusive quando o mesmo texto se
+repete. Antes de transformar, a aplicação confirma que a revisão ainda é a
+mesma e que a faixa ainda contém o valor esperado.
+
+Depois de qualquer decisão, o rascunho inteiro é analisado novamente e os
+ProblemasDeCifra anteriores deixam de valer. As posições são dados laterais do
+rascunho para esta etapa; não passam a integrar todos os nós da representação
+interpretada. Diagnósticos não são persistidos.
+
+As ações iniciais são `É acorde`, `É texto` e `Corrigir acorde`. A correção só
+é aceita quando ParserAcorde reconhece o valor informado. A decisão afeta a
+ocorrência exibida, sem procurar outra ocorrência pelo texto e sem depender de
+seleção do editor. Dúvida sem decisão permanece texto. Conteúdo desconhecido
+preservável pode gerar limitação explícita, mas continua pertencendo ao
+DocumentoChordPro produzido.
+
+Título e artista continuam pertencendo à Musica, e tom original pertence à
+VersaoMusica. Esses metadados são editados em campos próprios e não são
+ProblemasDeCifra.
+
 ## Evolução aprovada — Música e versões
 
 Musica é a identidade da música no catálogo: título e artista lhe pertencem.

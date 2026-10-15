@@ -26,6 +26,8 @@ Domínio.
 - O usuário é dono de seus arquivos; prefira formatos acessíveis e não
   proprietários.
 - A Biblioteca Musical é o centro da experiência, não arquivos isolados.
+- O usuário edita a música por conceitos musicais comuns; o AppCifras mantém o
+  ChordPro canônico por trás. A sintaxe textual é modo avançado e fallback.
 - A lógica de domínio não depende de Flutter, telas, banco de dados ou APIs.
 - Clareza, baixo acoplamento e responsabilidade única valem mais que padrões
   sofisticados sem necessidade concreta.
@@ -43,17 +45,17 @@ Inclui:
 - conteúdo das músicas estruturado em ChordPro;
 - visualização de cifras, ajuste de fonte e transposição;
 - visualização por cifras, graus ou ambas;
-- Listas de Culto com criação, inclusão, reordenação e navegação; tom por item
-  e versão escolhida são evoluções aprovadas ainda não implementadas;
+- Listas de Culto com criação, inclusão, reordenação, navegação e versão
+  concreta por item; tom por item permanece evolução aprovada;
 - funcionamento offline.
 
 Ficam fora do MVP atual: sincronização em nuvem, importação de PDF,
 compartilhamento, múltiplas bibliotecas públicas ou assináveis, coleções,
 histórico de execução autônomo, modo palco, rolagem automática, estatísticas,
-Bluetooth, MIDI, IA e colaboração. Versões/arranjos, contexto de ministração
-em Listas e importação em lote são evoluções aprovadas; versões possuem
-fundação, seleção e criação básica, enquanto seu ciclo de vida completo ainda
-não está implementado.
+Bluetooth, MIDI, IA e colaboração. Contexto de ministração em Listas e
+importação em lote são evoluções aprovadas. Versões/arranjos têm fundação,
+seleção, criação, edição da versão concreta e ciclo de vida entregues até a
+Fatia C2; novas expansões ficam pausadas durante o rework de entrada e edição.
 
 ## Regras de domínio do MVP
 
@@ -105,8 +107,9 @@ não está implementado.
 - Não faça commit, push, exclusões destrutivas ou alterações fora da tarefa
   solicitada sem autorização explícita.
 
-## Pendências antes do parser
+## Referências técnicas consolidadas
 
-- Definir a versão mínima do Android.
-- Especificar a lista exata de notações básicas aceitas pelo parser ChordPro.
-- Definir o esquema versionado dos metadados associados ao arquivo ChordPro.
+- Android mínimo API 23.
+- O subconjunto de acordes aceito pelo parser está definido em
+  `docs/decisoes-mvp.md`; a notação atual usa fundamentais A–G.
+- Metadados associados ao ChordPro continuam sujeitos a esquema versionado.

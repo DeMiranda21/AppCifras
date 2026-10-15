@@ -20,6 +20,11 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   ChordPro; Tema e Momento não fazem parte desta etapa.
 - Importação introduz conteúdo novo na Biblioteca; sincronização futura mantém
   conteúdo já conhecido alinhado a uma origem externa. São conceitos distintos.
+- A primeira sincronização futura usará uma pasta curada pelo AppCifras, com
+  arquivos `.cho` previamente revisados. Ela fará apenas validação técnica leve
+  antes de atualizar a Biblioteca local; não converterá `.txt` genérico nem
+  abrirá revisão interativa. Importação genérica e importação em lote continuam
+  fluxos futuros separados.
 
 ## Música, ChordPro e edição
 
@@ -30,6 +35,47 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   transposição e graus é derivada. A futura edição assistida traduz ações
   semânticas do usuário em alterações controladas do documento, sem criar um
   segundo formato persistido concorrente.
+- No uso comum, o usuário edita uma música e o AppCifras mantém o ChordPro por
+  trás. A interface fala em letra, acordes, seções, problemas e ações musicais;
+  não exige conhecimento nem edição da sintaxe. O ChordPro textual permanece
+  disponível como modo avançado e fallback, com ponto de acesso ainda a definir.
+- A primeira fatia do rework cobre somente entrada manual: colar texto comum,
+  analisar, aplicar conversões automáticas seguras, gerar ChordPro interno,
+  identificar pontos de decisão, revisar cada ocorrência em sequência,
+  reanalisar depois de cada resolução e salvar. Título, artista e tom original
+  continuam campos próprios e não entram na sequência de problemas da cifra.
+- A revisão apresenta um problema por vez, com posição `Problema X de N`,
+  contexto, motivo e ações permitidas. Anterior e próximo podem existir, mas a
+  ação principal avança automaticamente. Cada ação vale somente para a
+  ocorrência concreta apresentada; depois dela, os diagnósticos anteriores são
+  descartados e o rascunho inteiro é analisado novamente.
+- A primeira fatia oferece somente `É acorde`, `É texto` e `Corrigir acorde`.
+  A correção recebe texto curto e só é aplicada quando `ParserAcorde` o valida.
+  Inserção semântica, seletor avançado e editor visual completo de acordes ficam
+  fora dessa fatia.
+- A análise distingue conteúdo reconhecido com segurança, ambíguo, inválido ou
+  problemático, e desconhecido porém preservável. Ambiguidade é tratada de modo
+  conservador e com baixa taxa de falso positivo; na dúvida, o trecho permanece
+  texto. Conteúdo desconhecido ou acorde não transponível pode limitar recursos
+  e gerar aviso, mas não bloqueia salvar quando pode ser preservado.
+- Só condições realmente incompatíveis bloqueiam salvar, como metadado
+  obrigatório inválido ou impossibilidade de produzir ChordPro minimamente
+  válido. Limitações de transposição e conteúdo desconhecido preservável não
+  são erros fatais.
+- `ProblemaDeCifra` é uma projeção transitória da revisão. Ele registra tipo,
+  faixa exata no rascunho, texto encontrado, contexto, motivo, ações permitidas
+  e revisão do rascunho. A ação valida que a faixa ainda contém o texto esperado
+  antes de transformar. Ocorrências duplicadas permanecem distinguíveis; não se
+  usa identidade de `TextSelection` nem busca por texto com `indexOf`.
+- Faixas laterais ao rascunho são a estratégia inicial. Esta etapa não adiciona
+  posições a toda a AST, não persiste diagnósticos e não cria um segundo modelo
+  semântico concorrente com ChordPro.
+- O rework reaproveita Parser ChordPro, `ParserAcorde`,
+  `ConversorCifraTextual`, `RascunhoDocumentoChordPro`, persistência e
+  salvamento de versões atuais, reconhecimento estrutural, editor e operações
+  por blocos, transformações puras existentes e o editor ChordPro avançado.
+  Esses componentes podem ser adaptados, mas não são substituídos sem uma
+  necessidade concreta descoberta na implementação.
 - Quando a futura edição semântica escrever uma seção, usará ambiente ChordPro
   de nome longo, par explícito `start_of_*`/`end_of_*` e `label="..."`.
   O ambiente define o tipo (`verse`, `chorus`, `bridge`, `intro`,
@@ -54,6 +100,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   trechos livres derivados. Ela não aparece na leitura nem no editor local.
 - Reanálise preserva ChordPro e rótulos existentes; converte somente pares
   inequívocos de linha textual de acordes e letra ainda não marcados.
+- Seleção automática, `RenderEditable` e menu contextual nativo deixam de ser a
+  fundação das operações musicais comuns. Podem continuar existindo no modo
+  textual avançado, sem orientar a entrada manual nem o futuro editor comum.
 - Musica é a identidade de catálogo com título e artista, enquanto
   VersaoMusica é o arranjo concreto, com identidade, ChordPro e tom original
   próprios. A cifra única anterior migra para a versão principal; arranjos não
@@ -95,6 +144,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   quinta, sexta, sétimas, extensões 9/11/13, adições 2/add9/add11,
   sus2/sus4, diminuto, aumentado, meio-diminuto, alterações b5/#5/b9/#9 e
   inversões.
+- A notação latina de fundamentais (`DÓ`, `RÉ`, `MI`, `FÁ`, `SOL`, `LÁ`, `SI`)
+  não entra nesta etapa; o contrato continua baseado em A–G.
 - C2 é segunda adicionada com terça preservada, não Csus2; C2(6) combina
   segunda adicionada e sexta. C5 não é maior nem menor.
 - Parênteses só têm significado para componentes aprovados, inclusive formas
