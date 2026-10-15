@@ -8,6 +8,7 @@ import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_listas_culto.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
+import '../portas/consulta_detalhe_lista_culto.dart';
 import '../portas/gerador_id_item_lista_culto.dart';
 import '../portas/gerador_id_lista_culto.dart';
 
@@ -64,6 +65,15 @@ class ListarItensListaCulto {
 
   Future<List<ItemListaCulto>> executar(IdListaCulto idLista) =>
       _repositorio.listarItens(idLista);
+}
+
+class CarregarDetalheListaCulto {
+  const CarregarDetalheListaCulto(this._consulta);
+
+  final ConsultaDetalheListaCulto _consulta;
+
+  Future<List<ItemDetalheListaCulto>> executar(IdListaCulto idLista) =>
+      _consulta.carregar(idLista);
 }
 
 class AdicionarMusicaAListaCulto {

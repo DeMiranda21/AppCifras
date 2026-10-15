@@ -184,6 +184,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
 
   Future<List<IndiceMusica>> listar() => select(indiceMusicas).get();
 
+  Future<List<IndiceMusica>> listarMusicasPorIds(Iterable<String> ids) {
+    final idsUnicos = ids.toSet();
+    if (idsUnicos.isEmpty) return Future.value(const []);
+    return (select(
+      indiceMusicas,
+    )..where((tabela) => tabela.id.isIn(idsUnicos))).get();
+  }
+
   Future<void> inserir({
     required String id,
     required String titulo,
@@ -223,6 +231,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   Future<VersoesMusica?> obterVersaoPorId(String id) => (select(
     versoesMusicas,
   )..where((tabela) => tabela.id.equals(id))).getSingleOrNull();
+
+  Future<List<VersoesMusica>> listarVersoesPorIds(Iterable<String> ids) {
+    final idsUnicos = ids.toSet();
+    if (idsUnicos.isEmpty) return Future.value(const []);
+    return (select(
+      versoesMusicas,
+    )..where((tabela) => tabela.id.isIn(idsUnicos))).get();
+  }
 
   Future<List<VersoesMusica>> listarVersoesMusica(String idMusica) =>
       (select(versoesMusicas)

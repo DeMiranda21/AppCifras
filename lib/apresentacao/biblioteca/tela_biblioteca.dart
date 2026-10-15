@@ -41,7 +41,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.criarListaCulto,
     this.renomearListaCulto,
     this.excluirListaCulto,
-    this.listarItensListaCulto,
+    this.carregarDetalheListaCulto,
     this.adicionarMusicaAListaCulto,
     this.removerItemListaCulto,
     this.trocarVersaoItemListaCulto,
@@ -68,7 +68,7 @@ class TelaBiblioteca extends StatefulWidget {
   final CriarListaCulto? criarListaCulto;
   final RenomearListaCulto? renomearListaCulto;
   final ExcluirListaCulto? excluirListaCulto;
-  final ListarItensListaCulto? listarItensListaCulto;
+  final CarregarDetalheListaCulto? carregarDetalheListaCulto;
   final AdicionarMusicaAListaCulto? adicionarMusicaAListaCulto;
   final RemoverItemListaCulto? removerItemListaCulto;
   final TrocarVersaoItemListaCulto? trocarVersaoItemListaCulto;
@@ -158,7 +158,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     final criarListaCulto = widget.criarListaCulto;
     final renomearListaCulto = widget.renomearListaCulto;
     final excluirListaCulto = widget.excluirListaCulto;
-    final listarItensListaCulto = widget.listarItensListaCulto;
+    final carregarDetalheListaCulto = widget.carregarDetalheListaCulto;
     final adicionarMusicaAListaCulto = widget.adicionarMusicaAListaCulto;
     final removerItemListaCulto = widget.removerItemListaCulto;
     final trocarVersaoItemListaCulto = widget.trocarVersaoItemListaCulto;
@@ -167,7 +167,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         criarListaCulto == null ||
         renomearListaCulto == null ||
         excluirListaCulto == null ||
-        listarItensListaCulto == null ||
+        carregarDetalheListaCulto == null ||
         adicionarMusicaAListaCulto == null ||
         removerItemListaCulto == null ||
         trocarVersaoItemListaCulto == null ||
@@ -183,7 +183,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           criarListaCulto: criarListaCulto,
           renomearListaCulto: renomearListaCulto,
           excluirListaCulto: excluirListaCulto,
-          listarItensListaCulto: listarItensListaCulto,
+          carregarDetalheListaCulto: carregarDetalheListaCulto,
           adicionarMusicaAListaCulto: adicionarMusicaAListaCulto,
           removerItemListaCulto: removerItemListaCulto,
           trocarVersaoItemListaCulto: trocarVersaoItemListaCulto,

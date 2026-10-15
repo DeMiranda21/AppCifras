@@ -82,7 +82,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       criarListaCulto: widget.composicao.criarListaCulto,
       renomearListaCulto: widget.composicao.renomearListaCulto,
       excluirListaCulto: widget.composicao.excluirListaCulto,
-      listarItensListaCulto: widget.composicao.listarItensListaCulto,
+      carregarDetalheListaCulto: widget.composicao.carregarDetalheListaCulto,
       adicionarMusicaAListaCulto: widget.composicao.adicionarMusicaAListaCulto,
       removerItemListaCulto: widget.composicao.removerItemListaCulto,
       trocarVersaoItemListaCulto: widget.composicao.trocarVersaoItemListaCulto,

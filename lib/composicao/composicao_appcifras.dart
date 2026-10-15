@@ -7,6 +7,7 @@ import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
+import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
@@ -30,6 +31,7 @@ import '../infraestrutura/identidade/gerador_id_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
 import '../infraestrutura/persistencia/banco_biblioteca.dart';
+import '../infraestrutura/persistencia/consulta_detalhe_lista_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
 import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
@@ -41,6 +43,7 @@ class ComposicaoAppCifras {
     required RepositorioMusicas repositorio,
     required RepositorioVersoesMusicas repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
+    required ConsultaDetalheListaCulto consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     required RepositorioClassificacaoMusica repositorioClassificacao,
     required GeradorIdMusica geradorId,
@@ -119,6 +122,9 @@ class ComposicaoAppCifras {
        renomearListaCulto = RenomearListaCulto(repositorioListasCulto),
        excluirListaCulto = ExcluirListaCulto(repositorioListasCulto),
        listarItensListaCulto = ListarItensListaCulto(repositorioListasCulto),
+       carregarDetalheListaCulto = CarregarDetalheListaCulto(
+         consultaDetalheListaCulto,
+       ),
        adicionarMusicaAListaCulto = AdicionarMusicaAListaCulto(
          repositorioListasCulto,
          geradorIdItemListaCulto,
@@ -182,6 +188,7 @@ class ComposicaoAppCifras {
   final RenomearListaCulto renomearListaCulto;
   final ExcluirListaCulto excluirListaCulto;
   final ListarItensListaCulto listarItensListaCulto;
+  final CarregarDetalheListaCulto carregarDetalheListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
   final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
@@ -192,6 +199,7 @@ class ComposicaoAppCifras {
     required RepositorioMusicas repositorio,
     RepositorioVersoesMusicas? repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
+    ConsultaDetalheListaCulto? consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     RepositorioClassificacaoMusica? repositorioClassificacao,
     required GeradorIdMusica geradorId,
@@ -205,6 +213,8 @@ class ComposicaoAppCifras {
     repositorioVersoes:
         repositorioVersoes ?? _RepositorioVersoesVazio(repositorio),
     repositorioListasCulto: repositorioListasCulto,
+    consultaDetalheListaCulto:
+        consultaDetalheListaCulto ?? const _ConsultaDetalheListaCultoVazia(),
     repositorioTomExecucao: repositorioTomExecucao,
     repositorioClassificacao:
         repositorioClassificacao ?? _RepositorioClassificacaoVazio(),
@@ -237,12 +247,20 @@ class ComposicaoAppCifras {
         banco,
       );
       final repositorioListasCulto = RepositorioListasCultoLocal(banco);
+      final consultaDetalheListaCulto = ConsultaDetalheListaCultoLocal(
+        repositorioListas: repositorioListasCulto,
+        banco: banco,
+        armazenamentoArquivos: armazenamentoArquivos,
+        parserDocumento: parserDocumento,
+        validadorSchema: validadorSchema,
+      );
 
       return ComposicaoAppCifras._(
         banco: banco,
         repositorio: repositorio,
         repositorioVersoes: repositorio,
         repositorioListasCulto: repositorioListasCulto,
+        consultaDetalheListaCulto: consultaDetalheListaCulto,
         repositorioTomExecucao: repositorioTomExecucao,
         repositorioClassificacao: repositorioClassificacao,
         geradorId: GeradorIdMusicaUuid(),
@@ -258,6 +276,13 @@ class ComposicaoAppCifras {
   }
 
   Future<void> encerrar() => _encerramento ??= _banco.close();
+}
+
+class _ConsultaDetalheListaCultoVazia implements ConsultaDetalheListaCulto {
+  const _ConsultaDetalheListaCultoVazia();
+
+  @override
+  Future<List<ItemDetalheListaCulto>> carregar(idLista) async => const [];
 }
 
 class _RepositorioVersoesVazio implements RepositorioVersoesMusicas {

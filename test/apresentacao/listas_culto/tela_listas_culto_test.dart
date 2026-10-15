@@ -4,6 +4,7 @@ import 'package:appcifras/aplicacao/casos_de_uso/listas_culto.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/tom_execucao.dart';
+import 'package:appcifras/aplicacao/portas/consulta_detalhe_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_item_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
@@ -131,6 +132,21 @@ void main() {
 
     expect(find.text('Culto'), findsOneWidget);
     expect(cenario.listas.listas, hasLength(1));
+  });
+
+  testWidgets('monta detalhe sem listar a Biblioteca inteira', (tester) async {
+    final cenario = _Cenario()..criarLista('Culto');
+    cenario
+      ..adicionarItem('item-1', 'musica-1', 0)
+      ..adicionarItem('item-2', 'musica-2', 1);
+    await cenario.montar(tester);
+
+    await tester.tap(find.byKey(const ValueKey('lista-lista-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Caminho'), findsOneWidget);
+    expect(find.text('Esperança'), findsOneWidget);
+    expect(cenario.musicas.listagensCompletas, 0);
   });
 
   testWidgets('adiciona várias músicas, remove uma e preserva as demais', (
@@ -464,7 +480,9 @@ class _Cenario {
           ),
           renomearListaCulto: RenomearListaCulto(listas),
           excluirListaCulto: ExcluirListaCulto(listas),
-          listarItensListaCulto: ListarItensListaCulto(listas),
+          carregarDetalheListaCulto: CarregarDetalheListaCulto(
+            _ConsultaDetalheListaCultoFake(listas, musicas, versoes),
+          ),
           adicionarMusicaAListaCulto: AdicionarMusicaAListaCulto(
             listas,
             _GeradorItemFake(_gerarIdItem),
@@ -640,6 +658,35 @@ class _ObservadorNavegacao extends NavigatorObserver {
   }
 }
 
+class _ConsultaDetalheListaCultoFake implements ConsultaDetalheListaCulto {
+  const _ConsultaDetalheListaCultoFake(
+    this._listas,
+    this._musicas,
+    this._versoes,
+  );
+
+  final _RepositorioListasFake _listas;
+  final _RepositorioMusicasFake _musicas;
+  final _RepositorioVersoesVazio _versoes;
+
+  @override
+  Future<List<ItemDetalheListaCulto>> carregar(IdListaCulto idLista) async {
+    final itens = await _listas.listarItens(idLista);
+    return Future.wait([for (final item in itens) _carregarItem(item)]);
+  }
+
+  Future<ItemDetalheListaCulto> _carregarItem(ItemListaCulto item) async {
+    final musica = await _musicas.obterPorId(item.idMusica);
+    if (musica == null) throw StateError('Música ausente no cenário.');
+    return ItemDetalheListaCulto(
+      item: item,
+      titulo: musica.titulo,
+      artista: musica.artista,
+      versao: await _versoes.obterVersaoPorId(item.idVersaoMusica),
+    );
+  }
+}
+
 class _RepositorioMusicasFake implements RepositorioMusicas {
   _RepositorioMusicasFake(List<Musica> musicas)
     : _porId = {for (final musica in musicas) musica.id: musica};
@@ -658,8 +705,13 @@ class _RepositorioMusicasFake implements RepositorioMusicas {
     _porId.remove(id);
   }
 
+  var listagensCompletas = 0;
+
   @override
-  Future<List<Musica>> listar() async => _porId.values.toList();
+  Future<List<Musica>> listar() async {
+    listagensCompletas++;
+    return _porId.values.toList();
+  }
 
   @override
   Future<Musica?> obterPorId(IdMusica id) async => _porId[id];

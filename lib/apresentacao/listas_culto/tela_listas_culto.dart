@@ -15,7 +15,7 @@ class TelaListasCulto extends StatefulWidget {
     required this.criarListaCulto,
     required this.renomearListaCulto,
     required this.excluirListaCulto,
-    required this.listarItensListaCulto,
+    required this.carregarDetalheListaCulto,
     required this.adicionarMusicaAListaCulto,
     required this.removerItemListaCulto,
     required this.trocarVersaoItemListaCulto,
@@ -36,7 +36,7 @@ class TelaListasCulto extends StatefulWidget {
   final CriarListaCulto criarListaCulto;
   final RenomearListaCulto renomearListaCulto;
   final ExcluirListaCulto excluirListaCulto;
-  final ListarItensListaCulto listarItensListaCulto;
+  final CarregarDetalheListaCulto carregarDetalheListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
   final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
@@ -143,7 +143,7 @@ class _TelaListasCultoState extends State<TelaListasCulto> {
       MaterialPageRoute<void>(
         builder: (context) => TelaDetalheListaCulto(
           lista: lista,
-          listarItensListaCulto: widget.listarItensListaCulto,
+          carregarDetalheListaCulto: widget.carregarDetalheListaCulto,
           adicionarMusicaAListaCulto: widget.adicionarMusicaAListaCulto,
           removerItemListaCulto: widget.removerItemListaCulto,
           trocarVersaoItemListaCulto: widget.trocarVersaoItemListaCulto,

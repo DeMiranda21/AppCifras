@@ -5,7 +5,7 @@ import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
-import '../../dominio/entidades/item_lista_culto.dart';
+import '../../aplicacao/portas/consulta_detalhe_lista_culto.dart';
 import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/entidades/versao_musica.dart';
@@ -18,7 +18,7 @@ class TelaDetalheListaCulto extends StatefulWidget {
   const TelaDetalheListaCulto({
     super.key,
     required this.lista,
-    required this.listarItensListaCulto,
+    required this.carregarDetalheListaCulto,
     required this.adicionarMusicaAListaCulto,
     required this.removerItemListaCulto,
     required this.trocarVersaoItemListaCulto,
@@ -36,7 +36,7 @@ class TelaDetalheListaCulto extends StatefulWidget {
   });
 
   final ListaCulto lista;
-  final ListarItensListaCulto listarItensListaCulto;
+  final CarregarDetalheListaCulto carregarDetalheListaCulto;
   final AdicionarMusicaAListaCulto adicionarMusicaAListaCulto;
   final RemoverItemListaCulto removerItemListaCulto;
   final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
@@ -57,7 +57,7 @@ class TelaDetalheListaCulto extends StatefulWidget {
 }
 
 class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
-  late Future<List<_ItemComMusica>> _itens;
+  late Future<List<ItemDetalheListaCulto>> _itens;
   var _reordenando = false;
   var _removendo = false;
 
@@ -67,23 +67,8 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     _itens = _carregarItens();
   }
 
-  Future<List<_ItemComMusica>> _carregarItens() async {
-    final itens = await widget.listarItensListaCulto.executar(widget.lista.id);
-    final musicas = await widget.listarMusicas.executar();
-    final porId = {for (final musica in musicas) musica.id: musica};
-    final carregados = <_ItemComMusica>[];
-    for (final item in itens) {
-      final musica = porId[item.idMusica];
-      if (musica == null) continue;
-      final versao = await widget.obterVersaoMusicaPorId?.executar(
-        item.idVersaoMusica,
-      );
-      carregados.add(
-        _ItemComMusica(item: item, musica: musica, versao: versao),
-      );
-    }
-    return carregados;
-  }
+  Future<List<ItemDetalheListaCulto>> _carregarItens() =>
+      widget.carregarDetalheListaCulto.executar(widget.lista.id);
 
   void _recarregar() {
     setState(() {
@@ -126,8 +111,10 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     }
   }
 
-  Future<void> _trocarVersao(_ItemComMusica item) async {
-    final versoes = await widget.listarVersoesMusica.executar(item.musica.id);
+  Future<void> _trocarVersao(ItemDetalheListaCulto item) async {
+    final versoes = await widget.listarVersoesMusica.executar(
+      item.item.idMusica,
+    );
     if (!mounted) return;
     final escolhida = await showDialog<VersaoMusica>(
       context: context,
@@ -166,7 +153,7 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     }
   }
 
-  Future<void> _removerItem(_ItemComMusica item) async {
+  Future<void> _removerItem(ItemDetalheListaCulto item) async {
     if (_removendo) return;
     setState(() {
       _removendo = true;
@@ -192,11 +179,11 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     }
   }
 
-  Future<void> _confirmarRemocao(_ItemComMusica item) async {
+  Future<void> _confirmarRemocao(ItemDetalheListaCulto item) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Remover "${item.musica.titulo}"?'),
+        title: Text('Remover "${item.titulo}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -215,13 +202,13 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
   }
 
   Future<void> _reordenar(
-    List<_ItemComMusica> itens,
+    List<ItemDetalheListaCulto> itens,
     int indiceAntigo,
     int indiceNovo,
   ) async {
     if (_reordenando) return;
-    final ordemAnterior = List<_ItemComMusica>.from(itens);
-    final novaOrdem = List<_ItemComMusica>.from(itens);
+    final ordemAnterior = List<ItemDetalheListaCulto>.from(itens);
+    final novaOrdem = List<ItemDetalheListaCulto>.from(itens);
     final movido = novaOrdem.removeAt(indiceAntigo);
     novaOrdem.insert(indiceNovo, movido);
 
@@ -254,7 +241,10 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     }
   }
 
-  Future<void> _abrirMusica(List<_ItemComMusica> itens, int indiceAtual) async {
+  Future<void> _abrirMusica(
+    List<ItemDetalheListaCulto> itens,
+    int indiceAtual,
+  ) async {
     final contexto = ContextoNavegacaoListaCulto(
       idLista: widget.lista.id,
       itens: [for (final item in itens) item.item],
@@ -289,7 +279,7 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
       icon: const Icon(Icons.add),
       label: const Text('Adicionar músicas'),
     ),
-    body: FutureBuilder<List<_ItemComMusica>>(
+    body: FutureBuilder<List<ItemDetalheListaCulto>>(
       future: _itens,
       builder: (context, resultado) {
         if (resultado.connectionState != ConnectionState.done) {
@@ -312,9 +302,9 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
             return ListTile(
               key: ValueKey('item-lista-${item.item.id.valor}'),
               onTap: () => _abrirMusica(itens, indice),
-              title: Text(item.musica.titulo),
+              title: Text(item.titulo),
               subtitle: Text(
-                '${item.musica.artista} · ${item.versao?.nome ?? 'Versão indisponível'}',
+                '${item.artista} · ${item.versao?.nome ?? 'Versão indisponível'}',
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -345,18 +335,6 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
       },
     ),
   );
-}
-
-class _ItemComMusica {
-  const _ItemComMusica({
-    required this.item,
-    required this.musica,
-    required this.versao,
-  });
-
-  final ItemListaCulto item;
-  final Musica musica;
-  final VersaoMusica? versao;
 }
 
 class _EstadoItensVazio extends StatelessWidget {
