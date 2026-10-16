@@ -10,12 +10,6 @@ class MensagensEntradaMusica {
       'Há informações repetidas no documento que precisam ser corrigidas.',
     if (entrada.tomDetectado == null && entrada.possuiRascunhoParaRevisao)
       'O tom não pôde ser identificado.',
-    if (entrada.avisosConversao.any(
-      (aviso) =>
-          aviso.tipo == TipoAvisoConversaoCifra.associacaoNaoSegura ||
-          aviso.tipo == TipoAvisoConversaoCifra.linhaInstrumental,
-    ))
-      'Alguns trechos não puderam ser convertidos com segurança. Confira a prévia.',
   ];
 
   static String conflito(RascunhoNaoPodeSerFinalizado erro) =>

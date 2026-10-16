@@ -734,18 +734,31 @@ class _ConteudoMusica extends StatelessWidget {
     final linhas = <Widget>[];
     var emRefrao = false;
     var indiceLinha = 0;
+    var ultimaLinhaRenderizadaVazia = false;
+    var houveDiretivaInvisivelDesdeUltimaLinha = false;
 
     for (final elemento in projecao.elementos) {
       if (elemento is InicioRefraoChordPro) {
         emRefrao = true;
+        houveDiretivaInvisivelDesdeUltimaLinha = true;
         continue;
       }
       if (elemento is FimRefraoChordPro) {
         emRefrao = false;
+        houveDiretivaInvisivelDesdeUltimaLinha = true;
         continue;
       }
       if (elemento is LinhaChordPro ||
           elemento is LinhaNaoInterpretadaChordPro) {
+        final linhaVisualmenteVazia =
+            elemento is LinhaChordPro &&
+            elemento.conteudoOriginal.trim().isEmpty;
+        if (linhaVisualmenteVazia &&
+            ultimaLinhaRenderizadaVazia &&
+            houveDiretivaInvisivelDesdeUltimaLinha) {
+          houveDiretivaInvisivelDesdeUltimaLinha = false;
+          continue;
+        }
         linhas.add(
           _LinhaDaMusica(
             key: ValueKey('linha-$indiceLinha'),
@@ -755,7 +768,11 @@ class _ConteudoMusica extends StatelessWidget {
           ),
         );
         indiceLinha += 1;
+        ultimaLinhaRenderizadaVazia = linhaVisualmenteVazia;
+        houveDiretivaInvisivelDesdeUltimaLinha = false;
+        continue;
       }
+      houveDiretivaInvisivelDesdeUltimaLinha = true;
     }
 
     return Listener(
@@ -909,10 +926,11 @@ class _LinhaDaMusica extends StatelessWidget {
       fontSize: (estiloBase.fontSize ?? 16) * escalaCifra.valor,
     );
     final conteudo = switch (elemento) {
-      LinhaChordPro linha when linha.elementos.isEmpty => SizedBox(
-        key: const ValueKey('linha-vazia'),
-        height: 16 * escalaCifra.valor,
-      ),
+      LinhaChordPro linha when linha.conteudoOriginal.trim().isEmpty =>
+        SizedBox(
+          key: const ValueKey('linha-vazia'),
+          height: 16 * escalaCifra.valor,
+        ),
       LinhaChordPro linha => _LinhaInterpretada(
         linha: linha,
         estiloLetra: estiloLetra,
@@ -1049,7 +1067,8 @@ class _UnidadeMusical extends StatelessWidget {
           )
         else
           Text('', style: estiloLetra),
-        Text(unidade.texto, style: estiloLetra),
+        if (unidade.acorde == null || unidade.texto.trim().isNotEmpty)
+          Text(unidade.texto, style: estiloLetra),
       ],
     );
   }

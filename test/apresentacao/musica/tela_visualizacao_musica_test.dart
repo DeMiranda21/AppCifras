@@ -500,6 +500,23 @@ void main() {
     expect(find.text('Somente letra'), findsOneWidget);
   });
 
+  testWidgets('não cria faixa de letra vazia em linha instrumental', (
+    tester,
+  ) async {
+    await montarTela(tester, (_) async => musica('[Am7] [F] [G]'));
+    await tester.pumpAndSettle();
+
+    final linhaMusical = find.byKey(const ValueKey('linha-0'));
+    final textos = tester
+        .widgetList<Text>(
+          find.descendant(of: linhaMusical, matching: find.byType(Text)),
+        )
+        .map((texto) => texto.data)
+        .toList();
+
+    expect(textos, ['Am7', 'F', 'G']);
+  });
+
   testWidgets('associa um acorde ao trecho de letra subsequente', (
     tester,
   ) async {
@@ -556,6 +573,34 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsNothing);
     },
   );
+
+  testWidgets('reflow instrumental não recria faixas de letra vazias', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(240, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await montarTela(
+      tester,
+      (_) async => musica('[Am7] [F] [G] [C] [Dm7] [E7]'),
+    );
+    await tester.pumpAndSettle();
+
+    final linhaMusical = find.byKey(const ValueKey('linha-0'));
+    expect(
+      find.descendant(
+        of: linhaMusical,
+        matching: find.byKey(const ValueKey('fragmento-1')),
+      ),
+      findsOneWidget,
+    );
+    final textos = tester.widgetList<Text>(
+      find.descendant(of: linhaMusical, matching: find.byType(Text)),
+    );
+    expect(
+      textos.every((texto) => texto.data?.trim().isNotEmpty ?? false),
+      isTrue,
+    );
+  });
 
   testWidgets('permite quebra interna da letra em unidade maior que a tela', (
     tester,
@@ -659,6 +704,87 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('linha-vazia')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('linha-vazia'))).height,
+      greaterThan(0),
+    );
+  });
+
+  testWidgets('trata linha com whitespace como linha vazia literal', (
+    tester,
+  ) async {
+    await montarTela(
+      tester,
+      (_) async => musica('Primeira linha\n \nSegunda linha\n\nÚltima linha'),
+    );
+    await tester.pumpAndSettle();
+
+    final separadores = tester
+        .widgetList<SizedBox>(find.byKey(const ValueKey('linha-vazia')))
+        .toList();
+    expect(separadores, hasLength(2));
+    expect(separadores[0].height, separadores[1].height);
+  });
+
+  testWidgets('condensa vazios separados somente por diretiva invisível', (
+    tester,
+  ) async {
+    await montarTela(
+      tester,
+      (_) async => musica(
+        'Primeira linha\n\n{comment: [Primeira Parte]}\n \nÚltima linha',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('linha-vazia')), findsOneWidget);
+    expect(find.text('{comment: [Primeira Parte]}'), findsNothing);
+  });
+
+  testWidgets('preserva múltiplas linhas vazias sem diretiva entre elas', (
+    tester,
+  ) async {
+    await montarTela(
+      tester,
+      (_) async => musica('Primeira linha\n\n\nÚltima linha'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('linha-vazia')), findsNWidgets(2));
+  });
+
+  testWidgets('linhas musicais consecutivas não criam separador vazio', (
+    tester,
+  ) async {
+    await montarTela(tester, (_) async => musica('[C]Primeira\n[D]Segunda'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('linha-vazia')), findsNothing);
+    expect(find.byKey(const ValueKey('linha-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('linha-1')), findsOneWidget);
+  });
+
+  testWidgets('fragmento real não acumula separadores ao redor da seção', (
+    tester,
+  ) async {
+    await montarTela(
+      tester,
+      (_) async => musica(
+        '[Am7] [F] [G]\n'
+        '[Am7] [F] [G]\n'
+        '\n'
+        '{comment: [Primeira Parte]}\n'
+        ' \n'
+        '[Am7]   Ao [F]erguermos as [G]mãos pra...',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('linha-vazia')), findsOneWidget);
+    expect(find.text('Am7'), findsNWidgets(3));
+    expect(find.textContaining('Ao '), findsOneWidget);
+    expect(find.text('erguermos as '), findsOneWidget);
+    expect(find.text('mãos pra...'), findsOneWidget);
   });
 
   testWidgets('preserva acorde não interpretável como texto do acorde', (

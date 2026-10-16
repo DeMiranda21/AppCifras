@@ -113,9 +113,8 @@ void main() {
     expect(tester.widget<TextFormField>(campos.at(0)).controller!.text, '');
     expect(tester.widget<TextFormField>(campos.at(1)).controller!.text, '');
     expect(tester.widget<TextFormField>(campos.at(2)).controller!.text, 'E');
-    await tester.tap(find.text('Prévia do conteúdo'));
-    await tester.pump();
-    expect(find.textContaining('[E5]Senhor'), findsOneWidget);
+    expect(find.text('A cifra está pronta para salvar.'), findsOneWidget);
+    expect(find.byType(SelectableText), findsNothing);
   });
 
   testWidgets('ChordPro completo preenche os metadados', (tester) async {

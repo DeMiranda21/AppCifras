@@ -71,6 +71,12 @@ class RascunhoDocumentoChordPro {
         revisao: novaRevisao,
       );
 
+  RascunhoDocumentoChordPro comConteudo(String novoConteudo) =>
+      RascunhoDocumentoChordPro.criar(
+        conteudoChordPro: novoConteudo,
+        parserDocumento: ParserDocumentoChordPro(),
+      ).comRevisao(revisao);
+
   String produzirConteudoFinal() {
     if (conflitos.isNotEmpty) {
       throw RascunhoNaoPodeSerFinalizado(conflitos);
