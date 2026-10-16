@@ -11,6 +11,7 @@ import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
+import '../../aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -49,6 +50,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.trocarVersaoItemListaCulto,
     this.reordenarItensListaCulto,
     this.gerenciarPastaCurada,
+    this.sincronizarPastaCurada,
   });
 
   final ListarMusicas listarMusicas;
@@ -77,6 +79,7 @@ class TelaBiblioteca extends StatefulWidget {
   final TrocarVersaoItemListaCulto? trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto? reordenarItensListaCulto;
   final GerenciarPastaCurada? gerenciarPastaCurada;
+  final Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -215,10 +218,15 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     if (gerenciarPastaCurada == null) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (context) =>
-            TelaPastaCurada(gerenciarPastaCurada: gerenciarPastaCurada),
+        builder: (context) => TelaPastaCurada(
+          gerenciarPastaCurada: gerenciarPastaCurada,
+          sincronizarPastaCurada: widget.sincronizarPastaCurada,
+        ),
       ),
     );
+    if (mounted) {
+      setState(_recarregarMusicas);
+    }
   }
 
   @override

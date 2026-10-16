@@ -7,13 +7,19 @@ import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import 'package:appcifras/aplicacao/entrada/preparar_entrada_musica.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_musica.dart';
+import 'package:appcifras/aplicacao/portas/pasta_curada_externa.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
+import 'package:appcifras/aplicacao/portas/repositorio_sincronizacao.dart';
+import 'package:appcifras/aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
+import 'package:appcifras/aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
+import 'package:appcifras/aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
 import 'package:appcifras/apresentacao/biblioteca/tela_biblioteca.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
@@ -38,6 +44,8 @@ void main() {
     WidgetTester tester,
     _RepositorioFake repositorio, {
     _RepositorioClassificacaoFake? classificacao,
+    GerenciarPastaCurada? gerenciarPastaCurada,
+    Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada,
   }) => tester.pumpWidget(
     MaterialApp(
       home: TelaBiblioteca(
@@ -69,6 +77,8 @@ void main() {
         salvarClassificacaoMusica: classificacao == null
             ? null
             : SalvarClassificacaoMusica(classificacao),
+        gerenciarPastaCurada: gerenciarPastaCurada,
+        sincronizarPastaCurada: sincronizarPastaCurada,
       ),
     ),
   );
@@ -797,6 +807,97 @@ void main() {
     repositorio.atualizacaoPendente!.complete();
     await tester.pumpAndSettle();
   });
+
+  testWidgets('retorno da sincronização recarrega Biblioteca e pesquisa', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    final configuracao = _RepositorioConfiguracaoPastaFake()
+      ..configuracao = ConfiguracaoPastaSincronizada(
+        uriArvore: 'content://provider/tree/curada',
+        autorizacaoPersistente: true,
+        nomeLegivel: 'Cifras',
+      );
+    await montar(
+      tester,
+      repositorio,
+      gerenciarPastaCurada: GerenciarPastaCurada(
+        _PastaExternaBibliotecaFake(),
+        configuracao,
+      ),
+      sincronizarPastaCurada: () async {
+        repositorio.musicas.add(
+          Musica(
+            id: IdMusica('sincronizada'),
+            documento: parser.interpretar(
+              '{title: Nova sincronizada}\n'
+              '{artist: Curadoria}\n'
+              '{key: C}\n'
+              '[C]Graça sincronizada',
+            ),
+          ),
+        );
+        return ResultadoSincronizacao(
+          adicionadas: 1,
+          atualizadas: 0,
+          inalteradas: 0,
+          origensAusentes: 0,
+          erros: const [],
+          avisos: const [],
+          enumeracaoCompleta: true,
+        );
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sincronizada')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('abrir-pasta-curada')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('sincronizar-pasta-curada')));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'graça sincronizada');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
+  });
+}
+
+class _RepositorioConfiguracaoPastaFake
+    implements RepositorioConfiguracaoPastaSincronizada {
+  ConfiguracaoPastaSincronizada? configuracao;
+
+  @override
+  Future<void> limpar() async => configuracao = null;
+
+  @override
+  Future<ConfiguracaoPastaSincronizada?> obter() async => configuracao;
+
+  @override
+  Future<void> salvarConfiguracao(
+    ConfiguracaoPastaSincronizada configuracao,
+  ) async {
+    this.configuracao = configuracao;
+  }
+}
+
+class _PastaExternaBibliotecaFake implements PastaCuradaExterna {
+  @override
+  Future<Uint8List> lerBytes(DocumentoPastaCurada documento) async =>
+      Uint8List(0);
+
+  @override
+  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+    String uriArvore,
+  ) async => const [];
+
+  @override
+  Future<PastaCuradaSelecionada?> selecionarPasta() async => null;
+
+  @override
+  Future<void> verificarAcesso(String uriArvore) async {}
 }
 
 class _RepositorioFake
@@ -824,10 +925,7 @@ class _RepositorioFake
   @override
   Future<List<VersaoMusica>> listarPorMusica(IdMusica id) async {
     final principal = await obterPrincipalPorMusica(id);
-    return [
-      ?principal,
-      ...alternativas.where((v) => v.idMusica == id),
-    ];
+    return [?principal, ...alternativas.where((v) => v.idMusica == id)];
   }
 
   @override
