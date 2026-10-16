@@ -1,20 +1,38 @@
 # Roadmap de Desenvolvimento — AppCifras
 
 Este é o documento de referência para funcionalidades futuras, prioridades e
-dependências. Decisões aprovadas pertencem a decisoes-mvp.md; visão funcional
-consolidada, a especificacao-funcional.md. As prioridades indicam ordem de
-trabalho, sem representar cronograma.
+dependências. Decisões aprovadas pertencem a `decisoes-mvp.md`; a visão
+funcional consolidada, a `especificacao-funcional.md`. As prioridades indicam
+ordem de trabalho, sem representar cronograma.
+
+## Critério atual de prioridade
+
+O objetivo imediato é alcançar a menor versão confiável para produção pessoal
+em ensaios, cultos e manutenção cotidiana. O cenário de sucesso é:
+
+1. sincronizar uma pasta curada de arquivos `.cho`;
+2. encontrar a música na Biblioteca;
+3. abrir a VersaoMusica correta e transpor quando necessário;
+4. preparar e navegar uma Lista de Culto;
+5. usar o repertório em ensaio ou culto;
+6. continuar consultando os dados já locais sem acesso à origem.
+
+Depois dessa jornada funcionar de ponta a ponta, o uso real orientará o rework
+do editor, as conveniências de Lista e as otimizações seguintes. Antes disso,
+somente defeitos de correção, perda de dados, travamentos ou lentidão perceptível
+no caminho principal interrompem a sequência.
 
 ## Base já entregue
 
 - Biblioteca offline, cadastro por colagem/importação, edição, exclusão
-  confirmada e pesquisa textual por título, artista e letra.
+  confirmada e pesquisa por título, artista e letra.
+- Entrada manual contextual R1/R2, com conversão conservadora, revisão por
+  ocorrência e ChordPro interno.
 - ChordPro canônico, parser conservador e preservação de conteúdo desconhecido.
 - Reconhecimento estrutural e editor por blocos derivados do ChordPro, com
   transformações básicas e modo textual avançado.
-- Visualização responsiva, transposição temporária, último tom por versão,
-  zoom com reflow, swipe entre itens da Lista de Culto e tela mantida ativa
-  durante a leitura.
+- Visualização responsiva, transposição temporária, último tom por versão, zoom
+  com reflow, swipe entre itens da Lista e tela mantida ativa durante a leitura.
 - Listas de Culto: criar, renomear, excluir, adicionar, remover, reordenar,
   escolher a versão concreta do item e navegar entre itens.
 - Versões/arranjos até a Fatia C2: fundação, criação, seleção, ciclo de vida e
@@ -22,100 +40,113 @@ trabalho, sem representar cronograma.
 - Energia, tags, pesquisa combinada e arquivos ChordPro com SQLite local para
   índices, relações e preferências.
 
-## Prioridade 0 — Rework de entrada e edição
+## Prioridade 0 — Estabilizar a jornada já entregue
 
-1. **Entrada manual com revisão contextual:** esta é a primeira fatia e cobre
-   somente o fluxo colar texto comum → analisar → converter com segurança →
-   manter ChordPro interno → revisar problemas em sequência → reanalisar →
-   salvar. A tela mostra uma ocorrência concreta por vez, com `Problema X de
-   N`, contexto, motivo e ações permitidas. As ações iniciais são `É acorde`,
-   `É texto` e `Corrigir acorde`, com correção curta validada por ParserAcorde.
-   A ação valida faixa, texto e revisão do rascunho, aplica-se só à ocorrência
-   exibida e provoca reanálise integral. Título, artista e tom original seguem
-   como campos próprios. Inserção semântica, editor visual completo de acordes,
-   seletor avançado, sincronização e importação em lote ficam fora desta fatia.
-2. **Diagnóstico contextual da transposição:** depois da primeira fatia,
-   reutilizar o modelo de ocorrência e revisão para mostrar e localizar, em
-   linguagem simples, cada trecho que impede transposição. Acordes desconhecidos
-   continuam preservados e não são corrigidos silenciosamente.
-3. **Rework do editor comum:** adaptar reconhecimento estrutural, editor por
-   blocos e transformações puras já entregues para operações explícitas sobre
-   acordes, texto, linhas e seções. O fluxo comum não dependerá de seleção
-   automática, `RenderEditable`, busca com `indexOf` nem menu contextual nativo.
-   ChordPro textual permanece secundário, como modo avançado e fallback.
+Concluir somente correções concretas encontradas na validação atual da entrada
+e da visualização. Não ampliar o editor nem iniciar refinamentos gerais antes da
+sincronização. Regressões de integridade, leitura, navegação ou desempenho no
+caminho principal continuam bloqueadoras.
 
-O trabalho de Versões/Arranjos fica pausado depois da C2 enquanto estes três
-itens são executados. Esta pausa não remove nem altera o comportamento já
-entregue.
+## Prioridade 1 — Sincronização inicial com pasta curada
 
-## Prioridade 1 — Estrutura, classificação e Listas
+### 1. Fechar o contrato mínimo
 
-4. **Reconhecimento estrutural:** continuar refinando Intro, Verso,
-   Pré-Refrão, Refrão, Ponte, Instrumental, Final e outros rótulos, sempre
-   preservando o original e priorizando poucos falsos positivos.
-5. **Editor por blocos:** manter a fundação entregue com visualização
-   estrutural derivada, criação canônica, duplicação literal, exclusão,
-   reordenação e edição interna sem expor delimitadores. Permanecem futuras a
-   edição avançada de acordes dentro do bloco e a ocultação de blocos para
-   reorganização rápida. Qualquer ampliação deve usar a revisão contextual e
-   as mesmas transformações seguras do rework.
-6. **Tags, classificação e metadados:** energia e tags livres estão entregues.
-   Tema, momento, BPM, compasso, duração, dificuldade, ministério, compositor,
-   álbum, idioma e instrumentação permanecem futuros.
-7. **Pesquisa ampliada e filtros:** busca offline por título, artista e letra,
-   combinável com energia e tags, está entregue. Resultados encontrados na
-   letra exibem trecho correspondente.
-8. **Versões e arranjos:** manter o comportamento entregue até C2. Permanece
-   futura a escolha de versão durante a inclusão inicial em Lista; outras
-   ampliações serão retomadas depois do rework do editor.
-9. **Listas com contexto de ministração:** adicionar data e ministrante
-   opcional à Lista e tom snapshot da ocasião ao ItemListaCulto. A Lista é
-   memória operacional do repertório, sem estado planejada/executada nem
-   entidade autônoma de histórico.
-10. **Consulta de Listas anteriores:** pesquisar músicas, data, ministrante,
-    versão e tom nas Listas já criadas. Esta visão substitui histórico separado.
+Resolver as decisões abertas registradas em `anotacoes.md` que bloqueiam a
+implementação: acesso à pasta no Android, identidade do conteúdo remoto,
+correspondência com Musica e VersaoMusica, atualização, remoção e conflito com
+edição local. As regras devem preservar IDs e referências de Listas. Não criar
+um modelo genérico de fontes, múltiplas bibliotecas ou conflitos remotos.
 
-## Prioridade 2 — Apoio ao ministrante e evoluções locais
+### 2. Configurar e ler a origem
 
-11. **Importação em lote:** primeiro múltiplos arquivos `.cho`; depois `.txt`
-    com conversão conservadora, revisão de ambiguidades e resultado por
-    arquivo, sem deixar uma falha bloquear o lote inteiro. Duplicidade e o
-    destino como Música nova ou VersaoMusica continuam abertos. Este fluxo é
-    separado da sincronização com pasta curada.
-12. **Descoberta e uso recente:** repertório por classificação, BPM,
-    tonalidade, ministrante, Listas anteriores e tempo desde a última aparição;
-    recorrência e prevenção de repetição.
-13. **BPM e compasso:** BPM por música, indicador luminoso discreto e compasso.
-    Sem tap tempo ou metrônomo sonoro.
-14. **Biblioteca:** favoritos, recentes, ordenações e coleções personalizadas
-    em baixa prioridade.
-15. **Seleção direta de tom** e **graus na interface**: cifras, graus ou ambos;
-    romano ou numérico.
-16. **Estatísticas derivadas das Listas:** frequência de músicas, última
-    aparição, tons e repertórios por ministrante. Não persistir estatísticas
-    independentes nesta etapa.
+Permitir escolher, autorizar e substituir uma única pasta curada conforme o
+contrato aprovado. Descobrir apenas arquivos `.cho` e não misturar esse fluxo
+com importação manual, `.txt` ou revisão contextual.
 
-## Prioridade 3 — Pasta sincronizada, backup e evoluções remotas
+### 3. Validar e reconciliar por arquivo
 
-17. **Sincronização inicial com pasta curada:** consumir arquivos `.cho`
-    previamente revisados em uma pasta mantida pelo AppCifras, aplicar validação
-    técnica leve e refletir o conteúdo na Biblioteca local. Não converter `.txt`
-    genérico, não abrir revisão interativa e não confundir este fluxo com
-    importação.
-18. **Backup e sincronização entre aparelhos:** definir exportação, conflitos e
-    continuidade entre dispositivos depois de validar a sincronização local.
-19. **Múltiplas bibliotecas públicas ou assináveis:** distribuição, equipe,
-    atualização remota e conflitos entre origens são possibilidade distante e
-    não orientam a arquitetura atual.
+Aplicar validação técnica leve a cada `.cho`. Um arquivo inválido gera resultado
+próprio e não impede os demais. Identificar arquivos novos, alterados e removidos
+e aplicar as políticas aprovadas sem trocar identidades nem referências por
+coincidência de título, caminho ou ordem de leitura.
 
-## Prioridade 4 — Interface e plataforma
+### 4. Persistir com segurança e manter uso offline
 
-20. Indicador percentual discreto de zoom e possível suavização visual da
-    escala, sem prejudicar reflow, rolagem ou desempenho.
-21. Transição horizontal coerente com a direção do swipe entre músicas da
-    Lista, preservando resposta imediata.
-22. Tema escuro, AMOLED, preferências de visualização e configurações gerais.
-23. iOS como evolução posterior; Android continua principal.
+Reutilizar casos de uso, repositórios e gravação segura `.tmp`/`.bak`. Ao fim da
+operação, o conteúdo aceito deve estar disponível pela Biblioteca, pesquisa,
+visualização, transposição, versões e Listas sem nova leitura da pasta. Repetir
+uma sincronização sem mudanças não deve criar duplicatas nem alterar os dados
+locais.
+
+### 5. Validar a jornada completa
+
+No Samsung Galaxy A72, validar primeira sincronização, atualização, remoção
+conforme a política escolhida, arquivo inválido isolado, origem indisponível e
+uso offline posterior. Em seguida, executar a jornada completa de Biblioteca,
+pesquisa, música, transposição, Lista, versão, ensaio e culto.
+
+## Prioridade 2 — Iniciar uso real e fechar bloqueios observados
+
+Com a sincronização validada, iniciar uso pessoal real. Corrigir primeiro apenas
+problemas que impeçam ou tornem insegura a jornada principal. O tom snapshot por
+ItemListaCulto é o candidato funcional mais próximo, mas só passa à frente se o
+uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, o
+último tom por versão mantém o fluxo utilizável.
+
+## Depois do uso real
+
+1. **Rework do editor comum:** reavaliar quais operações realmente causam
+   atrito. Adaptar reconhecimento estrutural, blocos e transformações puras para
+   ações explícitas sobre acordes, texto, linhas e seções. ChordPro textual
+   continua modo avançado e fallback.
+2. **Diagnóstico contextual da transposição:** reutilizar o modelo de ocorrência
+   da entrada para localizar, em linguagem simples, cada trecho que bloqueia a
+   transposição, quando essa limitação se mostrar frequente.
+3. **Listas e versões:** ordenar pela evidência de uso a escolha de versão na
+   inclusão inicial (C3), o tom da ocasião por item, data e ministrante opcional
+   e consultas de Listas anteriores. A Lista continua sendo a memória
+   operacional, sem entidade autônoma de histórico.
+4. **Desempenho:** corrigir gargalos medidos ou regressões perceptíveis. Não abrir
+   uma rodada de micro-otimizações sem evidência no A72 ou em bibliotecas reais.
+
+## Classificação das lacunas conhecidas
+
+| Tema | Estado para a produção pessoal | Próximo critério |
+| --- | --- | --- |
+| Sincronização da pasta curada | Bloqueador imediato | Fechar contrato mínimo e implementar |
+| Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
+| Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
+| C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
+| Tom por ItemListaCulto | Primeiro candidato pós-sincronização | Perda recorrente do tom da ocasião |
+| Data e ministrante da Lista | Adiável | Necessidade de consulta por contexto |
+| Histórico e estatísticas | Adiáveis | Derivar das Listas quando houver volume real |
+| Otimizações gerais | Adiáveis | Perfil ou regressão perceptível no A72 |
+| Importação em lote | Adiável e separada da sincronização | Necessidade de fontes não curadas |
+| Múltiplas bibliotecas | Distante | Não orienta a arquitetura atual |
+
+## Evoluções locais adiadas
+
+- Refinamentos adicionais de reconhecimento estrutural e edição avançada de
+  acordes dentro dos blocos.
+- Tema, momento, BPM, compasso, duração, dificuldade, ministério, compositor,
+  álbum, idioma e instrumentação.
+- Descoberta por classificação, tonalidade, Listas anteriores e tempo desde a
+  última aparição; favoritos, recentes, ordenações e coleções.
+- Seleção direta de tom e apresentação por graus na interface.
+- Estatísticas derivadas das Listas.
+- Indicador percentual de zoom, animação do swipe, temas, preferências visuais
+  e iOS.
+
+## Importação, backup e distribuição futura
+
+- **Importação em lote:** primeiro múltiplos `.cho`; depois `.txt` com conversão
+  conservadora, revisão de ambiguidades e resultado isolado por arquivo. É um
+  fluxo diferente da sincronização curada.
+- **Backup e sincronização entre aparelhos:** definir exportação, conflitos e
+  continuidade entre dispositivos depois de validar a Biblioteca curada local.
+- **Múltiplas bibliotecas públicas ou assináveis:** distribuição, equipe,
+  atualização remota e conflitos entre origens são possibilidades distantes e
+  não orientam o desenho da primeira sincronização.
 
 ## Última etapa — IA
 
@@ -126,10 +157,10 @@ transições.
 
 ## Dependências principais
 
-    Entrada manual contextual → diagnóstico da transposição → rework do editor comum
-    Reconhecimento estrutural + blocos + transformações puras → rework do editor comum
-    Tags/metadados → pesquisa/filtros → descoberta de repertório
-    Versões/arranjos entregues → versão e tom por ItemListaCulto → consulta de Listas
-    Contexto da Lista → ministrante/data → descoberta e estatísticas derivadas
-    Importação em lote → revisão/duplicidade → fontes externas futuras
-    Biblioteca principal → pasta sincronizada curada → backup/sincronização remota
+    Decisões mínimas de identidade e remoção → sincronização da pasta curada
+    Pasta acessível + validação isolada → reconciliação → persistência offline
+    Sincronização validada → jornada real no A72 → prioridades por evidência
+    Uso real do editor → recorte do rework e diagnóstico da transposição
+    Versões/arranjos entregues → C3 e tom por item, se o uso justificar
+    Contexto da Lista → consultas e estatísticas derivadas
+    Sincronização curada validada → backup e fontes remotas futuras

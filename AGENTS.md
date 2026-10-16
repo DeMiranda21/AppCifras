@@ -4,7 +4,9 @@
 
 App Flutter para músicos, centrado em uma Biblioteca Musical local para
 consulta e organização de cifras. O aplicativo deve continuar útil sem
-internet; a sincronização é apenas uma evolução futura.
+internet. A sincronização inicial com uma pasta curada é a próxima entrega para
+abastecer essa Biblioteca; depois da sincronização, o uso essencial continua
+offline.
 
 ## Hierarquia da documentação
 
@@ -47,15 +49,18 @@ Inclui:
 - visualização por cifras, graus ou ambas;
 - Listas de Culto com criação, inclusão, reordenação, navegação e versão
   concreta por item; tom por item permanece evolução aprovada;
+- sincronização com uma pasta curada de arquivos `.cho`, com falhas isoladas
+  por arquivo e uso local posterior;
 - funcionamento offline.
 
-Ficam fora do MVP atual: sincronização em nuvem, importação de PDF,
-compartilhamento, múltiplas bibliotecas públicas ou assináveis, coleções,
-histórico de execução autônomo, modo palco, rolagem automática, estatísticas,
-Bluetooth, MIDI, IA e colaboração. Contexto de ministração em Listas e
-importação em lote são evoluções aprovadas. Versões/arranjos têm fundação,
-seleção, criação, edição da versão concreta e ciclo de vida entregues até a
-Fatia C2; novas expansões ficam pausadas durante o rework de entrada e edição.
+Ficam fora do MVP atual: sincronização genérica em nuvem ou entre aparelhos,
+importação de PDF, compartilhamento, múltiplas bibliotecas públicas ou
+assináveis, coleções, histórico de execução autônomo, modo palco, rolagem
+automática, estatísticas, Bluetooth, MIDI, IA e colaboração. Contexto de
+ministração em Listas e importação em lote são evoluções aprovadas.
+Versões/arranjos têm fundação, seleção, criação, edição da versão concreta e
+ciclo de vida entregues até a Fatia C2. Novas expansões e o rework amplo do
+editor serão reavaliados depois de uso real em ensaios e cultos.
 
 ## Regras de domínio do MVP
 

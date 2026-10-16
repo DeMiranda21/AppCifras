@@ -2,6 +2,40 @@
 
 Este arquivo guarda apenas dúvidas ou hipóteses ainda não consolidadas.
 
+## Sincronização com pasta curada
+
+Antes da implementação, resolver somente as decisões necessárias ao primeiro
+fluxo:
+
+- que tipo de pasta estará disponível no Android e como o usuário a seleciona,
+  autoriza e troca;
+- se cada arquivo curado representa uma Música, a versão principal ou uma
+  VersaoMusica concreta;
+- como IdMusica e IdVersaoMusica são reconhecidos na primeira sincronização e
+  nas seguintes, considerando que `{appcifras_id}` identifica a Música e não
+  existe diretiva de ID de versão;
+- como tratar arquivo movido ou renomeado, IDs duplicados e duas origens que
+  aleguem a mesma identidade;
+- quando uma alteração externa atualiza a versão existente e quando cria nova
+  versão, inclusive diante de edição local;
+- o significado de remover um arquivo da pasta: manter local, desvincular,
+  arquivar ou excluir, especialmente quando a versão é principal ou está
+  referenciada por Lista;
+- qual informação mínima de origem precisa ser persistida para repetir a
+  sincronização com segurança, sem criar antecipadamente um subsistema genérico
+  de fontes.
+
+Essas perguntas não autorizam inventar políticas durante a implementação. O
+primeiro recorte deve continuar restrito a uma pasta curada de `.cho`, com
+resultado isolado por arquivo e uso offline após a sincronização.
+
+## Reavaliação do editor após uso real
+
+Observar em ensaios, cultos e manutenção cotidiana quais operações ainda tornam
+o editor atual lento ou inseguro. Reavaliar então o recorte do editor comum e
+do diagnóstico contextual da transposição, em vez de assumir antecipadamente
+que o rework completo é o próximo bloqueio.
+
 ## Acesso ao ChordPro avançado
 
 Definir, depois de validar o fluxo comum, onde e como oferecer o editor textual

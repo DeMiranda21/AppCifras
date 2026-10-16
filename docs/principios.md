@@ -14,7 +14,9 @@ implementação.
   ações musicais, sem exigir que o usuário compreenda ou edite a sintaxe.
   ChordPro textual permanece disponível como modo avançado e fallback.
 - **Poucos toques e uso real.** Em ensaios e cultos, rapidez, legibilidade,
-  estabilidade e baixa distração superam efeitos visuais.
+  estabilidade e baixa distração superam efeitos visuais. A menor jornada
+  completa e confiável de uso pessoal vem antes de refinamentos amplos; o uso
+  real orienta quais melhorias recebem prioridade depois dela.
 - **Domínio independente.** Regras musicais não dependem de Flutter, banco,
   arquivos ou APIs.
 - **Simplicidade responsável.** Complexidade, abstrações e entidades só entram

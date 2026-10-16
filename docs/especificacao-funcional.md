@@ -6,6 +6,14 @@ App Android para músicos de igreja manterem uma Biblioteca Musical local,
 consultarem cifras com rapidez e organizarem repertórios para ensaios e cultos.
 O uso cotidiano não depende de internet nem exige conhecimento de ChordPro.
 
+## Meta imediata de produção pessoal
+
+A próxima versão utilizável deve permitir a jornada completa: sincronizar uma
+pasta curada, localizar uma música na Biblioteca, abrir e transpor a versão
+correta, organizá-la em Lista de Culto, usá-la em ensaio ou culto e continuar
+consultando todo o conteúdo já local sem acesso à origem. Melhorias amplas de
+edição e conveniência serão priorizadas depois de observar esse uso real.
+
 ## Capacidades atuais
 
 ### Biblioteca Musical
@@ -73,20 +81,36 @@ O editor textual ChordPro permanece como opção secundária para usuários
 avançados e como fallback. O ponto de acesso e sua apresentação ainda serão
 definidos.
 
+O rework do editor comum e o diagnóstico contextual dos trechos que bloqueiam
+transposição continuam desejáveis, mas não são requisito para iniciar uso
+pessoal em produção. O uso real determinará o próximo recorte dessas melhorias.
+
+### Sincronização da pasta curada
+
+A próxima entrega funcional permite configurar uma pasta curada de arquivos
+`.cho`, descobrir os arquivos disponíveis e aplicar validação técnica leve por
+arquivo. Arquivos válidos novos, alterados ou removidos serão reconciliados com
+a Biblioteca local conforme regras explícitas de identidade e remoção ainda a
+decidir. Uma falha deve aparecer no resultado daquele arquivo sem impedir os
+demais.
+
+O fluxo não converte `.txt`, não abre a revisão da entrada manual e não substitui
+importação. A sincronização reutiliza a persistência local segura e deve
+preservar IdMusica, IdVersaoMusica e referências existentes de Listas conforme
+o contrato que for aprovado antes da implementação. O conteúdo aceito permanece
+disponível offline depois da operação.
+
 ### Demais evoluções
 
-Versões e arranjos estão entregues até a edição da versão concreta e ficam
-pausados enquanto entrada e edição são retrabalhadas. Contexto de ministração
-nas Listas, consulta de repertórios anteriores, importação múltipla, BPM,
-backup e estatísticas evoluirão em etapas. Listas futuras registrarão data,
-ministrante opcional e tom da ocasião por item. Consultas históricas e
-estatísticas serão derivadas das próprias Listas, sem subsistema independente
-de execução nesta fase.
+Versões e arranjos estão entregues até a edição da versão concreta. A escolha
+de versão na inclusão inicial em Lista, o tom da ocasião por item, data,
+ministrante, consulta de repertórios anteriores, importação múltipla, BPM,
+backup e estatísticas permanecem evoluções. Elas serão ordenadas por problemas
+observados no uso real; consultas históricas e estatísticas continuarão
+derivadas das próprias Listas, sem subsistema independente de execução nesta
+fase.
 
-Sincronização e importação são fluxos distintos. A primeira sincronização
-futura trabalhará com uma pasta curada de arquivos `.cho` já revisados, fará
-validação técnica leve e atualizará a Biblioteca local sem conversão genérica
-de `.txt` nem revisão interativa. Importação genérica e em lote permanece uma
-evolução própria. Colaboração e múltiplas bibliotecas não fazem parte da
-experiência atual. Ordem, dependências e prioridades estão em
+Sincronização e importação são fluxos distintos. Importação genérica e em lote
+permanece uma evolução própria. Colaboração e múltiplas bibliotecas não fazem
+parte da experiência atual. Ordem, dependências e prioridades estão em
 roadmap-desenvolvimento.md.

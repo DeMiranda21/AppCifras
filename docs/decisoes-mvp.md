@@ -8,7 +8,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Android é a plataforma inicial, com mínimo API 23; Samsung Galaxy A72 é a
   referência de validação.
 - O produto é local e offline, com uma única Biblioteca principal e oficial,
-  alimentada pelo AppCifras. Nuvem, backup entre aparelhos,
+  alimentada pelo AppCifras e pela sincronização inicial com uma pasta curada.
+  Nuvem genérica, backup entre aparelhos,
   compartilhamento, colaboração, múltiplas bibliotecas públicas ou assináveis
   e IA não fazem parte da versão atual.
 - Cada versão gerenciada usa arquivo UTF-8 .cho nomeado por IdVersaoMusica.
@@ -18,13 +19,24 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Energia (Calma, Moderada ou Animada) é opcional e Tags são livres, opcionais
   e múltiplas. Ambas são classificações locais no SQLite, não diretivas do
   ChordPro; Tema e Momento não fazem parte desta etapa.
-- Importação introduz conteúdo novo na Biblioteca; sincronização futura mantém
+- Importação introduz conteúdo novo na Biblioteca; sincronização mantém
   conteúdo já conhecido alinhado a uma origem externa. São conceitos distintos.
-- A primeira sincronização futura usará uma pasta curada pelo AppCifras, com
+- A primeira sincronização é a próxima entrega funcional e usará uma pasta
+  curada pelo AppCifras, com
   arquivos `.cho` previamente revisados. Ela fará apenas validação técnica leve
   antes de atualizar a Biblioteca local; não converterá `.txt` genérico nem
   abrirá revisão interativa. Importação genérica e importação em lote continuam
   fluxos futuros separados.
+- A sincronização descobre somente `.cho`, processa cada arquivo de forma
+  isolada, informa falhas por arquivo e não deixa um arquivo inválido impedir os
+  demais. Depois de gravados localmente, os dados sincronizados participam da
+  Biblioteca, pesquisa, leitura, transposição, versões e Listas sem depender da
+  origem estar disponível.
+- A forma de selecionar e autorizar a pasta, a correspondência entre arquivo,
+  IdMusica e IdVersaoMusica, a política de atualização e a semântica de remoção
+  da origem precisam ser decididas antes da implementação. Essas decisões devem
+  preservar identidades e referências de Listas e não serão inferidas pelo
+  mecanismo de sincronização.
 
 ## Música, ChordPro e edição
 
@@ -76,6 +88,10 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   por blocos, transformações puras existentes e o editor ChordPro avançado.
   Esses componentes podem ser adaptados, mas não são substituídos sem uma
   necessidade concreta descoberta na implementação.
+- A entrada manual contextual já permite a jornada mínima de cadastro. O
+  rework amplo do editor e o diagnóstico contextual da transposição continuam
+  aprovados, mas não bloqueiam a primeira versão utilizável em produção pessoal;
+  seu recorte será reavaliado após uso real em ensaios e cultos.
 - Quando a futura edição semântica escrever uma seção, usará ambiente ChordPro
   de nome longo, par explícito `start_of_*`/`end_of_*` e `label="..."`.
   O ambiente define o tipo (`verse`, `chorus`, `bridge`, `intro`,
