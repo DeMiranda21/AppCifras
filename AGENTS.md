@@ -70,10 +70,11 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
   no MVP.
 - Lista de Culto tem identidade própria e seus itens referenciam músicas e a
   versão escolhida por ID. O tom da ocasião permanece evolução futura.
-- Registro de Tom, Tag e Fonte de Sincronização não são entidades completas no
-  MVP; use valores ou estruturas simples somente quando forem necessários.
-  Não criar subsistema separado de histórico de execução enquanto Listas de
-  Culto forem a memória operacional das ministrações.
+- Registro de Tom e Tag não são entidades completas no MVP. Origem sincronizada
+  é um vínculo leve de uma VersaoMusica com a única pasta curada; não criar uma
+  abstração genérica de fontes ou bibliotecas. Não criar subsistema separado de
+  histórico de execução enquanto Listas de Culto forem a memória operacional
+  das ministrações.
 - A transposição nunca altera o conteúdo original nem o tom original da
   música.
 - Na exibição por graus, converta somente acordes diatônicos para o tom atual.
@@ -118,3 +119,5 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
 - O subconjunto de acordes aceito pelo parser está definido em
   `docs/decisoes-mvp.md`; a notação atual usa fundamentais A–G.
 - Metadados associados ao ChordPro continuam sujeitos a esquema versionado.
+- Arquivos da pasta curada usam o schema 2, com identidades explícitas de
+  Musica e VersaoMusica; arquivos locais antigos não exigem migração imediata.

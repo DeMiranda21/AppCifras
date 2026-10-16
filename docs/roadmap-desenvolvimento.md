@@ -49,41 +49,55 @@ caminho principal continuam bloqueadoras.
 
 ## Prioridade 1 — Sincronização inicial com pasta curada
 
-### 1. Fechar o contrato mínimo
+O contrato do MVP está fechado em `decisoes-mvp.md`. A implementação segue
+fatias verticais pequenas, sem framework para outras fontes.
 
-Resolver as decisões abertas registradas em `anotacoes.md` que bloqueiam a
-implementação: acesso à pasta no Android, identidade do conteúdo remoto,
-correspondência com Musica e VersaoMusica, atualização, remoção e conflito com
-edição local. As regras devem preservar IDs e referências de Listas. Não criar
-um modelo genérico de fontes, múltiplas bibliotecas ou conflitos remotos.
+### S1 — Schema 2 e validação pura
 
-### 2. Configurar e ler a origem
+- reconhecer e preservar as diretivas `appcifras_version_id`,
+  `appcifras_version_name` e `appcifras_primary`;
+- validar schema 2, metadados obrigatórios e relação um arquivo/uma versão;
+- montar inventário em memória, detectar duplicidades e inconsistências por
+  grupo de Música;
+- calcular SHA-256 dos bytes externos;
+- cobrir regras em testes Dart sem Android, banco ou interface.
 
-Permitir escolher, autorizar e substituir uma única pasta curada conforme o
-contrato aprovado. Descobrir apenas arquivos `.cho` e não misturar esse fluxo
-com importação manual, `.txt` ou revisão contextual.
+### S2 — Origem sincronizada e persistência segura
 
-### 3. Validar e reconciliar por arquivo
+- persistir a configuração única da pasta e o vínculo mínimo por versão;
+- distinguir versão sincronizada presente, sincronizada ausente e local;
+- incorporar Música e versões preservando IDs, principal inicial e referências;
+- suportar atualização permitida, reaparecimento e marcação de ausência;
+- reutilizar transações e `.tmp`/`.bak`, incluindo recuperação após interrupção;
+- bloquear edição direta de origem presente e criar versão local pelo fluxo já
+  existente.
 
-Aplicar validação técnica leve a cada `.cho`. Um arquivo inválido gera resultado
-próprio e não impede os demais. Identificar arquivos novos, alterados e removidos
-e aplicar as políticas aprovadas sem trocar identidades nem referências por
-coincidência de título, caminho ou ordem de leitura.
+### S3 — Acesso à pasta pelo Android SAF
 
-### 4. Persistir com segurança e manter uso offline
+- selecionar uma document tree pelo seletor do sistema;
+- persistir autorização e URI `content://`;
+- enumerar somente arquivos `.cho` filhos diretos e ler seus bytes;
+- tratar autorização revogada, pasta removida e provedor indisponível como
+  falha de acesso, nunca como remoção de conteúdo.
 
-Reutilizar casos de uso, repositórios e gravação segura `.tmp`/`.bak`. Ao fim da
-operação, o conteúdo aceito deve estar disponível pela Biblioteca, pesquisa,
-visualização, transposição, versões e Listas sem nova leitura da pasta. Repetir
-uma sincronização sem mudanças não deve criar duplicatas nem alterar os dados
-locais.
+### S4 — Orquestração idempotente
 
-### 5. Validar a jornada completa
+- executar enumeração, leitura, validação, inventário e agrupamento antes da
+  aplicação;
+- aplicar somente grupos válidos e continuar após erro isolado;
+- respeitar a política de alternativas usadas em Lista;
+- marcar ausências somente depois de enumeração completa;
+- garantir que repetição sem mudanças não altere a Biblioteca.
 
-No Samsung Galaxy A72, validar primeira sincronização, atualização, remoção
-conforme a política escolhida, arquivo inválido isolado, origem indisponível e
-uso offline posterior. Em seguida, executar a jornada completa de Biblioteca,
-pesquisa, música, transposição, Lista, versão, ensaio e culto.
+### S5 — Relatório mínimo e validação no A72
+
+- apresentar totais de adicionadas, atualizadas, inalteradas, origens ausentes
+  e ignoradas com erro;
+- mostrar arquivo e motivo breve, sem dashboard;
+- validar primeira carga, atualização, renomeação, ausência, reaparecimento,
+  duplicidades, interrupção, origem indisponível e uso offline;
+- executar a jornada completa de Biblioteca, pesquisa, música, transposição,
+  Lista, versão, ensaio e culto no Samsung Galaxy A72.
 
 ## Prioridade 2 — Iniciar uso real e fechar bloqueios observados
 
@@ -113,7 +127,7 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 
 | Tema | Estado para a produção pessoal | Próximo critério |
 | --- | --- | --- |
-| Sincronização da pasta curada | Bloqueador imediato | Fechar contrato mínimo e implementar |
+| Sincronização da pasta curada | Bloqueador imediato | Implementar S1–S5 |
 | Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
 | Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
 | C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
@@ -147,6 +161,9 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 - **Múltiplas bibliotecas públicas ou assináveis:** distribuição, equipe,
   atualização remota e conflitos entre origens são possibilidades distantes e
   não orientam o desenho da primeira sincronização.
+- **Recursividade da pasta curada:** avaliar subpastas apenas se a organização
+  real do acervo demonstrar necessidade; o primeiro MVP lê somente filhos
+  diretos.
 
 ## Última etapa — IA
 
@@ -157,8 +174,8 @@ transições.
 
 ## Dependências principais
 
-    Decisões mínimas de identidade e remoção → sincronização da pasta curada
-    Pasta acessível + validação isolada → reconciliação → persistência offline
+    Schema 2 + validação pura → origem sincronizada e persistência
+    Persistência + Android SAF → orquestração idempotente → relatório e A72
     Sincronização validada → jornada real no A72 → prioridades por evidência
     Uso real do editor → recorte do rework e diagnóstico da transposição
     Versões/arranjos entregues → C3 e tom por item, se o uso justificar

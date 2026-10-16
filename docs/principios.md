@@ -6,7 +6,8 @@ implementação.
 - **Offline primeiro.** Depois de disponíveis localmente, músicas e fluxos
   essenciais funcionam sem internet.
 - **Biblioteca antes de arquivos isolados.** O usuário trabalha com repertório;
-  arquivos externos são fontes de importação.
+  arquivos externos entram por importação ou pela pasta curada sincronizada,
+  sem substituir a Biblioteca local como centro da experiência.
 - **ChordPro canônico, invisível no uso comum.** O conteúdo musical tem fonte
   preservada; leitura, transposição e graus são representações derivadas. O
   usuário edita uma música; o AppCifras mantém o ChordPro por trás. Colagem,

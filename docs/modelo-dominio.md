@@ -121,8 +121,35 @@ operacional preserva repertório, versão escolhida e, futuramente, tom da ocasi
 As diretivas `{title}` e `{artist}` presentes em cada ChordPro espelham os
 metadados atuais do catálogo e podem ser atualizadas sem alterar o conteúdo
 musical de uma versão. `{key}` pertence exclusivamente à versão. A diretiva
-`{appcifras_id}` continua identificando IdMusica; não há diretiva de ID de
-versão nesta etapa.
+`{appcifras_id}` continua identificando IdMusica. Em arquivos sincronizáveis do
+schema 2, `{appcifras_version_id}` identifica a VersaoMusica concreta;
+documentos locais anteriores continuam podendo obter essa identidade somente da
+persistência.
+
+## Modelo atual — origem sincronizada
+
+OrigemSincronizada é o vínculo leve entre uma VersaoMusica e o arquivo que a
+representa na única pasta curada. Sua presença distingue uma versão gerenciada
+pela pasta de uma versão exclusivamente local. Não é uma abstração de múltiplas
+fontes nem transforma a pasta em outra Biblioteca.
+
+Cada arquivo da fonte corresponde a uma VersaoMusica. Vários arquivos podem
+declarar o mesmo IdMusica, desde que tenham IdVersaoMusica distintos. Título,
+nome da versão, nome do arquivo e caminho podem mudar sem trocar identidade. O
+vínculo registra o IdVersaoMusica, o localizador atual na árvore, o hash SHA-256
+dos bytes externos e se a origem está presente ou ausente; IdMusica deriva da
+própria versão.
+
+Uma versão com origem presente é somente leitura no fluxo comum. Alteração do
+usuário cria outra VersaoMusica local com novo ID e sem origem sincronizada. A
+versão local pode ser editada e definida como principal, mas não é enviada à
+pasta. A marca de principal vinda da fonte inicializa uma Música nova; depois da
+incorporação, qual versão é principal permanece estado local.
+
+Ausência do arquivo não encerra a identidade nem apaga conteúdo. A versão, a
+preferência de último tom e as referências de ItemListaCulto permanecem; apenas
+o vínculo passa a ausente. O reaparecimento dos mesmos IdMusica e
+IdVersaoMusica reativa o vínculo existente.
 
 ## Conceitos musicais
 
@@ -181,7 +208,8 @@ da inclusão, o tom snapshot do item será independente.
 ## Limites atuais
 
 Biblioteca Musical é escopo organizacional, não Aggregate Root formal no MVP.
-Não existem ainda entidades implementadas de Coleção, Fonte de Sincronização,
-Usuário, Equipe ou Ministrante. A Biblioteca atual é única,
-principal e oficial; múltiplas bibliotecas públicas, assináveis ou comunitárias
-são possibilidade distante e não orientam a arquitetura atual.
+Não existem ainda entidades implementadas de Coleção, Usuário, Equipe ou
+Ministrante. OrigemSincronizada é somente o vínculo mínimo descrito acima, sem
+hierarquia genérica de fontes. A Biblioteca atual é única, principal e oficial;
+múltiplas bibliotecas públicas, assináveis ou comunitárias são possibilidade
+distante e não orientam a arquitetura atual.

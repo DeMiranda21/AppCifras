@@ -20,23 +20,79 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   e múltiplas. Ambas são classificações locais no SQLite, não diretivas do
   ChordPro; Tema e Momento não fazem parte desta etapa.
 - Importação introduz conteúdo novo na Biblioteca; sincronização mantém
-  conteúdo já conhecido alinhado a uma origem externa. São conceitos distintos.
-- A primeira sincronização é a próxima entrega funcional e usará uma pasta
-  curada pelo AppCifras, com
-  arquivos `.cho` previamente revisados. Ela fará apenas validação técnica leve
-  antes de atualizar a Biblioteca local; não converterá `.txt` genérico nem
-  abrirá revisão interativa. Importação genérica e importação em lote continuam
-  fluxos futuros separados.
-- A sincronização descobre somente `.cho`, processa cada arquivo de forma
-  isolada, informa falhas por arquivo e não deixa um arquivo inválido impedir os
-  demais. Depois de gravados localmente, os dados sincronizados participam da
-  Biblioteca, pesquisa, leitura, transposição, versões e Listas sem depender da
-  origem estar disponível.
-- A forma de selecionar e autorizar a pasta, a correspondência entre arquivo,
-  IdMusica e IdVersaoMusica, a política de atualização e a semântica de remoção
-  da origem precisam ser decididas antes da implementação. Essas decisões devem
-  preservar identidades e referências de Listas e não serão inferidas pelo
-  mecanismo de sincronização.
+  conteúdo conhecido alinhado à única pasta curada. São fluxos distintos.
+  Importação genérica e em lote continuam evoluções futuras.
+
+## Sincronização com pasta curada
+
+- A pasta é uma única fonte editorial controlada de arquivos `.cho` revisados.
+  O MVP não cria abstração para múltiplas fontes, múltiplas bibliotecas, nuvem,
+  colaboração ou envio de alterações locais à pasta.
+- Cada arquivo representa exatamente uma VersaoMusica concreta. Arquivos com o
+  mesmo IdMusica podem representar versões diferentes.
+- Todo arquivo sincronizável usa `{appcifras_schema:2}` e declara exatamente um
+  `{appcifras_id:<IdMusica>}`, um
+  `{appcifras_version_id:<IdVersaoMusica>}` e um
+  `{appcifras_version_name:<nome>}`. Somente a versão que deve iniciar como
+  principal de uma Música ainda inexistente declara
+  `{appcifras_primary:true}`.
+- `appcifras_id` identifica a Musica e `appcifras_version_id` identifica a
+  VersaoMusica. Título, nome da versão, nome de arquivo e caminho não são
+  identidade. Arquivos locais anteriores ao schema 2 não precisam ser migrados
+  imediatamente apenas por causa da sincronização.
+- Para uma Música nova, o grupo válido da fonte contém exatamente uma versão
+  marcada como principal. Essa marca define a principal somente na primeira
+  incorporação. Depois disso, a principal efetiva pertence ao estado local;
+  mudanças posteriores da marca externa não a alteram silenciosamente e podem
+  aparecer no relatório.
+- VersaoMusica com origem sincronizada presente é somente leitura no fluxo
+  comum. Para alterar seu conteúdo, o usuário cria uma versão local com novo
+  IdVersaoMusica. A versão sincronizada permanece intacta; não há merge,
+  desvinculação automática nem sobrescrita local.
+- Versão criada no aplicativo permanece local, segue as regras normais de
+  edição e principal e não é enviada à pasta. Colisão entre seu IdVersaoMusica
+  e um arquivo externo é erro, sem adoção automática pela sincronização.
+- Mesmo IdMusica e IdVersaoMusica representam a mesma versão apesar de mudança
+  de nome ou caminho do arquivo. Uma principal sincronizada pode atualizar o
+  mesmo ID. Uma alternativa sincronizada pode fazê-lo enquanto nunca tiver sido
+  usada em Lista. Se já estiver referenciada, a atualização musical é rejeitada
+  e o relatório orienta publicar novo arquivo com novo IdVersaoMusica.
+- Se um arquivo desaparecer após uma enumeração completa, a versão, o último
+  tom e as referências de Lista são preservados e sua origem é marcada como
+  ausente. Não há exclusão nem arquivamento automático, inclusive da principal.
+  Se reaparecer com os mesmos IDs, volta a ser presente e continua sendo a
+  mesma versão.
+- O primeiro MVP considera somente arquivos `.cho` filhos diretos da pasta. A
+  busca recursiva em subpastas fica para evolução orientada por uso real.
+- Mesmo IdVersaoMusica em dois arquivos faz ambos serem rejeitados. Se o mesmo
+  IdVersaoMusica estiver ligado a IdMusica diferentes, todo o conjunto é
+  rejeitado. Mesmo IdMusica com IdVersaoMusica diferentes é permitido. Arquivo
+  sem ID de versão é rejeitado. Título ou artista divergentes no grupo da mesma
+  Música rejeitam o grupo. Erro de arquivo ou grupo não impede Músicas
+  independentes.
+- A configuração única da pasta guarda URI da árvore, autorização persistente,
+  nome legível opcional e data da última sincronização concluída para exibição.
+  A origem por versão guarda IdVersaoMusica, localizador atual na árvore, hash
+  SHA-256 dos bytes externos e estado presente ou ausente. IdMusica é derivado
+  da VersaoMusica. Não se guardam histórico de hashes, merge base, timestamps
+  por arquivo, várias fontes ou prioridade entre fontes.
+- SHA-256 dos bytes externos é a verdade para detectar alteração. Timestamp e
+  tamanho não decidem atualização. Uma sincronização sem mudanças é idempotente.
+- O processamento enumera os filhos diretos, lê e valida os `.cho`, monta o
+  inventário completo, detecta inconsistências, agrupa por Música e aplica
+  somente grupos válidos. Falha isolada não interrompe outros grupos. Se a
+  enumeração falhar ou estiver incompleta, arquivos não vistos não são tratados
+  como removidos.
+- A persistência é segura por Música e reutiliza transações e gravação
+  `.tmp`/`.bak`. A Biblioteca deve permanecer utilizável depois de falha ou
+  interrupção, sem estado parcial observável.
+- No Android, a pasta é escolhida pelo Storage Access Framework como document
+  tree. O aplicativo persiste a autorização da URI `content://`, lê somente a
+  árvore autorizada e não pede permissão ampla ao armazenamento. Autorização
+  revogada ou provedor indisponível é falha de acesso, não remoção.
+- O resultado informa quantidades adicionadas, atualizadas, inalteradas, com
+  origem ausente e ignoradas com erro. Cada erro mostra arquivo e motivo breve;
+  não há dashboard de sincronização no MVP.
 
 ## Música, ChordPro e edição
 
@@ -140,9 +196,10 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Versão usada por Lista não pode ser excluída fisicamente; ela poderá ser
   arquivada, preservando conteúdo e referências antigas e ficando fora das
   novas seleções usuais. Versão nunca usada poderá ser excluída.
-- `{appcifras_id}` continua identificando IdMusica. Não existe diretiva de ID
-  de versão nesta etapa; IdVersaoMusica é mantido pela persistência e pelo
-  arquivo físico correspondente.
+- `{appcifras_id}` continua identificando IdMusica. Arquivos locais legados
+  mantêm IdVersaoMusica pela persistência e pelo arquivo físico; arquivos
+  sincronizáveis em schema 2 também o declaram por
+  `{appcifras_version_id:...}`.
 - A Biblioteca mantém uma única entrada por Música e abre a versão principal.
   Fora de uma Lista, a leitura permite selecionar somente versões ativas, sem
   trocar a principal. A visualização aberta por Lista usa a versão concreta do

@@ -87,18 +87,31 @@ pessoal em produção. O uso real determinará o próximo recorte dessas melhori
 
 ### Sincronização da pasta curada
 
-A próxima entrega funcional permite configurar uma pasta curada de arquivos
-`.cho`, descobrir os arquivos disponíveis e aplicar validação técnica leve por
-arquivo. Arquivos válidos novos, alterados ou removidos serão reconciliados com
-a Biblioteca local conforme regras explícitas de identidade e remoção ainda a
-decidir. Uma falha deve aparecer no resultado daquele arquivo sem impedir os
-demais.
+A próxima entrega funcional permite selecionar pelo sistema Android uma única
+pasta curada, manter a autorização entre execuções e sincronizar seus arquivos
+`.cho` filhos diretos. Subpastas não são percorridas no primeiro MVP. O fluxo
+não converte `.txt`, não abre revisão interativa e não substitui importação.
 
-O fluxo não converte `.txt`, não abre a revisão da entrada manual e não substitui
-importação. A sincronização reutiliza a persistência local segura e deve
-preservar IdMusica, IdVersaoMusica e referências existentes de Listas conforme
-o contrato que for aprovado antes da implementação. O conteúdo aceito permanece
-disponível offline depois da operação.
+Cada arquivo usa schema 2 e identifica explicitamente a Musica, a VersaoMusica,
+o nome da versão e, para a primeira incorporação, a principal inicial. Nome,
+caminho, título e rótulo da versão não são identidade. Arquivos inválidos,
+duplicidades e grupos inconsistentes são informados sem impedir Músicas
+independentes.
+
+Versões sincronizadas presentes são somente leitura. O usuário que desejar
+alterá-las cria uma nova versão local, que pode ser editada e definida como
+principal, mas não retorna à pasta. Atualizações externas preservam os IDs e as
+referências das Listas; uma alternativa já usada em Lista exige que o curador
+publique novo IdVersaoMusica em vez de sobrescrevê-la.
+
+Quando um arquivo desaparece após uma enumeração completa, seu conteúdo local,
+último tom e referências são preservados e a origem passa a ausente. Reaparecer
+com os mesmos IDs recupera o mesmo vínculo. Falha de acesso à pasta não é
+remoção. O conteúdo incorporado continua disponível offline.
+
+Ao fim, um relatório simples informa adicionadas, atualizadas, inalteradas,
+origens ausentes e ignoradas com erro, com arquivo e motivo breve para cada
+falha.
 
 ### Demais evoluções
 
