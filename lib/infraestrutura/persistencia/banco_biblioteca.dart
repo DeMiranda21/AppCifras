@@ -37,6 +37,38 @@ class VersoesMusicas extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('OrigemSincronizadaVersaoRegistro')
+class OrigensSincronizadasVersoes extends Table {
+  TextColumn get idVersaoMusica =>
+      text().references(VersoesMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get localizadorExterno => text()();
+
+  TextColumn get hashSha256 => text()();
+
+  BoolColumn get presente => boolean()();
+
+  @override
+  Set<Column> get primaryKey => {idVersaoMusica};
+}
+
+@DataClassName('ConfiguracaoPastaSincronizadaRegistro')
+class ConfiguracoesPastaSincronizada extends Table {
+  IntColumn get id =>
+      integer().customConstraint('NOT NULL CHECK (id = 1)')();
+
+  TextColumn get uriArvore => text()();
+
+  BoolColumn get autorizacaoPersistente => boolean()();
+
+  TextColumn get nomeLegivel => text().nullable()();
+
+  DateTimeColumn get ultimaSincronizacaoConcluida => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class PreferenciasTomExecucao extends Table {
   TextColumn get idVersaoMusica =>
       text().references(VersoesMusicas, #id, onDelete: KeyAction.cascade)();
@@ -101,6 +133,8 @@ class ItensListaCulto extends Table {
   tables: [
     IndiceMusicas,
     VersoesMusicas,
+    OrigensSincronizadasVersoes,
+    ConfiguracoesPastaSincronizada,
     PreferenciasTomExecucao,
     EnergiasMusicas,
     TagsMusicas,
@@ -114,7 +148,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -170,6 +204,10 @@ class BancoBiblioteca extends _$BancoBiblioteca {
         await customStatement('DROP TABLE itens_lista_culto_legado');
         await _criarIndiceItensListaCulto();
         await _criarIndicesVersoesMusicas();
+      }
+      if (from < 6) {
+        await migrator.createTable(origensSincronizadasVersoes);
+        await migrator.createTable(configuracoesPastaSincronizada);
       }
     },
   );
@@ -296,12 +334,89 @@ class BancoBiblioteca extends _$BancoBiblioteca {
 
   Future<void> excluirVersaoMusica(String id) => transaction(() async {
     await (delete(
+      origensSincronizadasVersoes,
+    )..where((tabela) => tabela.idVersaoMusica.equals(id))).go();
+    await (delete(
       preferenciasTomExecucao,
     )..where((tabela) => tabela.idVersaoMusica.equals(id))).go();
     await (delete(
       versoesMusicas,
     )..where((tabela) => tabela.id.equals(id))).go();
   });
+
+  Future<OrigemSincronizadaVersaoRegistro?> obterOrigemSincronizadaVersao(
+    String idVersaoMusica,
+  ) =>
+      (select(origensSincronizadasVersoes)
+            ..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica)))
+          .getSingleOrNull();
+
+  Future<void> salvarOrigemSincronizadaVersao({
+    required String idVersaoMusica,
+    required String localizadorExterno,
+    required String hashSha256,
+    required bool presente,
+  }) => into(origensSincronizadasVersoes).insertOnConflictUpdate(
+    OrigensSincronizadasVersoesCompanion.insert(
+      idVersaoMusica: idVersaoMusica,
+      localizadorExterno: localizadorExterno,
+      hashSha256: hashSha256,
+      presente: presente,
+    ),
+  );
+
+  Future<int> marcarOrigemSincronizadaAusente(String idVersaoMusica) =>
+      (update(
+        origensSincronizadasVersoes,
+      )..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica))).write(
+        const OrigensSincronizadasVersoesCompanion(presente: Value(false)),
+      );
+
+  Future<int> marcarOrigemSincronizadaPresente({
+    required String idVersaoMusica,
+    required String localizadorExterno,
+    required String hashSha256,
+  }) =>
+      (update(
+        origensSincronizadasVersoes,
+      )..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica))).write(
+        OrigensSincronizadasVersoesCompanion(
+          localizadorExterno: Value(localizadorExterno),
+          hashSha256: Value(hashSha256),
+          presente: const Value(true),
+        ),
+      );
+
+  Future<void> removerOrigemSincronizadaVersao(String idVersaoMusica) async {
+    await (delete(
+      origensSincronizadasVersoes,
+    )..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica))).go();
+  }
+
+  Future<ConfiguracaoPastaSincronizadaRegistro?> obterConfiguracaoPasta() =>
+      (select(
+        configuracoesPastaSincronizada,
+      )..where((tabela) => tabela.id.equals(1))).getSingleOrNull();
+
+  Future<void> salvarConfiguracaoPasta({
+    required String uriArvore,
+    required bool autorizacaoPersistente,
+    required String? nomeLegivel,
+    required DateTime? ultimaSincronizacaoConcluida,
+  }) => into(configuracoesPastaSincronizada).insertOnConflictUpdate(
+    ConfiguracoesPastaSincronizadaCompanion.insert(
+      id: const Value(1),
+      uriArvore: uriArvore,
+      autorizacaoPersistente: autorizacaoPersistente,
+      nomeLegivel: Value(nomeLegivel),
+      ultimaSincronizacaoConcluida: Value(ultimaSincronizacaoConcluida),
+    ),
+  );
+
+  Future<void> limparConfiguracaoPasta() async {
+    await delete(configuracoesPastaSincronizada).go();
+  }
+
   Future<bool> possuiItemListaParaMusica(String idMusica) async {
     final resultado = await customSelect(
       'SELECT 1 FROM itens_lista_culto '

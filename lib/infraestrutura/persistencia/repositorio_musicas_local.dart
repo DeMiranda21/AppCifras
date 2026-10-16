@@ -1,3 +1,4 @@
+import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/chordpro/validador_schema_appcifras.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/entidades/versao_musica.dart';
@@ -101,10 +102,14 @@ class RepositorioMusicasLocal
       _validarNomeArquivo(idVersao, registroVersao.arquivo, musica.id);
       final conteudoAnterior = await _armazenamentoArquivos.obter(idVersao);
       conteudosAnteriores[idVersao] = conteudoAnterior;
-      conteudosAtualizados[idVersao] = idVersao == versao.id
+      final sincronizada =
+          await _banco.obterOrigemSincronizadaVersao(idVersao.valor) != null;
+      conteudosAtualizados[idVersao] = idVersao == versao.id && !sincronizada
           ? _codificador.codificar(musica)
           : _revisarMetadadosCatalogo(
-              conteudoAnterior,
+              idVersao == versao.id
+                  ? versao.documento.conteudoOriginal
+                  : conteudoAnterior,
               titulo: musica.titulo,
               artista: musica.artista,
             );
@@ -211,7 +216,7 @@ class RepositorioMusicasLocal
     if (!atual.principal && await estaUsadaEmLista(atual.id)) {
       throw StateError('Esta versão exige salvar como nova versão.');
     }
-    _validadorSchema.validarParaIncorporacao(versao.documento);
+    await _validarSchemaVersao(versao.id, versao.documento);
     final musica = await obterPorId(atual.idMusica);
     final rascunho = RascunhoDocumentoChordPro.criar(
       conteudoChordPro: versao.documento.conteudoOriginal,
@@ -350,7 +355,7 @@ class RepositorioMusicasLocal
     try {
       final conteudo = await _armazenamentoArquivos.obter(id);
       final documento = _parserDocumento.interpretar(conteudo);
-      _validadorSchema.validarParaIncorporacao(documento);
+      await _validarSchemaVersao(id, documento);
       return VersaoMusica(
         id: id,
         idMusica: IdMusica(indice.idMusica),
@@ -361,6 +366,21 @@ class RepositorioMusicasLocal
       );
     } catch (_) {
       throw EstadoPersistenciaMusicaInconsistente(IdMusica(indice.idMusica));
+    }
+  }
+
+  Future<void> _validarSchemaVersao(
+    IdVersaoMusica id,
+    DocumentoChordPro documento,
+  ) async {
+    final schemas = documento.elementos.whereType<DiretivaSchemaAppCifras>();
+    final schema2 = schemas.length == 1 && schemas.single.versao == 2;
+    if (schema2) {
+      final origem = await _banco.obterOrigemSincronizadaVersao(id.valor);
+      if (origem == null) throw const SchemaAppCifrasNaoSuportado();
+      _validadorSchema.validarParaVersaoSincronizada(documento);
+    } else {
+      _validadorSchema.validarParaIncorporacao(documento);
     }
   }
 

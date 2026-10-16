@@ -1,20 +1,26 @@
 import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
+import '../portas/repositorio_sincronizacao.dart';
 import '../versoes/politica_edicao_versao.dart';
 
 class AvaliarPoliticaEdicaoVersao {
   const AvaliarPoliticaEdicaoVersao(
-    this._repositorio, [
-    this._politica = const PoliticaEdicaoVersao(),
-  ]);
+    this._repositorio, {
+    this.repositorioOrigens,
+    this.politica = const PoliticaEdicaoVersao(),
+  });
   final RepositorioVersoesMusicas _repositorio;
-  final PoliticaEdicaoVersao _politica;
-  Future<DecisaoEdicaoVersao> executar(VersaoMusica versao) async =>
-      _politica.decidir(
-        versao: versao,
-        usadaEmLista: await _repositorio.estaUsadaEmLista(versao.id),
-      );
+  final RepositorioOrigensSincronizadas? repositorioOrigens;
+  final PoliticaEdicaoVersao politica;
+  Future<DecisaoEdicaoVersao> executar(VersaoMusica versao) async {
+    final origem = await repositorioOrigens?.obterPorVersao(versao.id);
+    return politica.decidir(
+      versao: versao,
+      usadaEmLista: await _repositorio.estaUsadaEmLista(versao.id),
+      sincronizada: origem != null,
+    );
+  }
 }
 
 class RenomearVersaoMusica {

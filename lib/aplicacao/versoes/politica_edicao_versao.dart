@@ -8,7 +8,13 @@ class PoliticaEdicaoVersao {
   DecisaoEdicaoVersao decidir({
     required VersaoMusica versao,
     required bool usadaEmLista,
+    bool sincronizada = false,
   }) {
+    if (sincronizada) {
+      return const DecisaoEdicaoVersao({
+        AcaoEdicaoConteudoVersao.criarNovaVersao,
+      });
+    }
     if (versao.principal) {
       return const DecisaoEdicaoVersao({
         AcaoEdicaoConteudoVersao.sobrescrever,

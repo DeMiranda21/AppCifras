@@ -13,9 +13,12 @@ import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
 import '../aplicacao/portas/gerador_id_versao_musica.dart';
 import '../aplicacao/portas/repositorio_classificacao_musica.dart';
+import '../aplicacao/portas/repositorio_sincronizacao.dart';
 import '../aplicacao/portas/repositorio_tom_execucao.dart';
+import '../aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
 import '../dominio/entidades/versao_musica.dart';
+import '../dominio/entidades/origem_sincronizada_versao.dart';
 import '../dominio/objetos_de_valor/energia_musica.dart';
 import '../dominio/objetos_de_valor/id_musica.dart';
 import '../dominio/objetos_de_valor/id_versao_musica.dart';
@@ -35,6 +38,7 @@ import '../infraestrutura/persistencia/consulta_detalhe_lista_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
 import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
+import '../infraestrutura/persistencia/repositorio_sincronizacao_local.dart';
 import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
 
 class ComposicaoAppCifras {
@@ -46,6 +50,9 @@ class ComposicaoAppCifras {
     required ConsultaDetalheListaCulto consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     required RepositorioClassificacaoMusica repositorioClassificacao,
+    required RepositorioOrigensSincronizadas repositorioOrigens,
+    required RepositorioConfiguracaoPastaSincronizada
+    repositorioConfiguracaoPasta,
     required GeradorIdMusica geradorId,
     required GeradorIdVersaoMusica geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -54,6 +61,8 @@ class ComposicaoAppCifras {
   }) : _repositorioMusicasEdicao = repositorio,
        _repositorioVersoesEdicao = repositorioVersoes,
        _repositorioTomEdicao = repositorioTomExecucao,
+       repositorioOrigensSincronizadas = repositorioOrigens,
+       repositorioConfiguracaoPastaSincronizada = repositorioConfiguracaoPasta,
        salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
        listarMusicas = ListarMusicas(repositorio),
@@ -68,6 +77,7 @@ class ComposicaoAppCifras {
        ),
        avaliarPoliticaEdicaoVersao = AvaliarPoliticaEdicaoVersao(
          repositorioVersoes,
+         repositorioOrigens: repositorioOrigens,
        ),
        renomearVersaoMusica = RenomearVersaoMusica(repositorioVersoes),
        definirVersaoPrincipal = DefinirVersaoPrincipal(repositorioVersoes),
@@ -155,6 +165,9 @@ class ComposicaoAppCifras {
   final ListarVersoesMusica listarVersoesMusica;
   final CriarVersaoMusica criarVersaoMusica;
   final AvaliarPoliticaEdicaoVersao avaliarPoliticaEdicaoVersao;
+  final RepositorioOrigensSincronizadas repositorioOrigensSincronizadas;
+  final RepositorioConfiguracaoPastaSincronizada
+  repositorioConfiguracaoPastaSincronizada;
   final RenomearVersaoMusica renomearVersaoMusica;
   final DefinirVersaoPrincipal definirVersaoPrincipal;
   final ArquivarVersaoMusica arquivarVersaoMusica;
@@ -166,6 +179,7 @@ class ComposicaoAppCifras {
     criarVersao: criarVersaoMusica,
     avaliarPolitica: avaliarPoliticaEdicaoVersao,
     repositorioTom: _repositorioTomEdicao,
+    repositorioOrigens: repositorioOrigensSincronizadas,
   );
   final RepositorioMusicas _repositorioMusicasEdicao;
   final RepositorioVersoesMusicas _repositorioVersoesEdicao;
@@ -202,6 +216,8 @@ class ComposicaoAppCifras {
     ConsultaDetalheListaCulto? consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     RepositorioClassificacaoMusica? repositorioClassificacao,
+    RepositorioOrigensSincronizadas? repositorioOrigens,
+    RepositorioConfiguracaoPastaSincronizada? repositorioConfiguracaoPasta,
     required GeradorIdMusica geradorId,
     GeradorIdVersaoMusica? geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -218,6 +234,10 @@ class ComposicaoAppCifras {
     repositorioTomExecucao: repositorioTomExecucao,
     repositorioClassificacao:
         repositorioClassificacao ?? _RepositorioClassificacaoVazio(),
+    repositorioOrigens:
+        repositorioOrigens ?? const _RepositorioSincronizacaoVazio(),
+    repositorioConfiguracaoPasta:
+        repositorioConfiguracaoPasta ?? const _RepositorioSincronizacaoVazio(),
     geradorId: geradorId,
     geradorIdVersao: geradorIdVersao ?? _GeradorIdVersaoLegado(),
     geradorIdListaCulto: geradorIdListaCulto,
@@ -247,6 +267,7 @@ class ComposicaoAppCifras {
         banco,
       );
       final repositorioListasCulto = RepositorioListasCultoLocal(banco);
+      final repositorioSincronizacao = RepositorioSincronizacaoLocal(banco);
       final consultaDetalheListaCulto = ConsultaDetalheListaCultoLocal(
         repositorioListas: repositorioListasCulto,
         banco: banco,
@@ -263,6 +284,8 @@ class ComposicaoAppCifras {
         consultaDetalheListaCulto: consultaDetalheListaCulto,
         repositorioTomExecucao: repositorioTomExecucao,
         repositorioClassificacao: repositorioClassificacao,
+        repositorioOrigens: repositorioSincronizacao,
+        repositorioConfiguracaoPasta: repositorioSincronizacao,
         geradorId: GeradorIdMusicaUuid(),
         geradorIdVersao: GeradorIdVersaoMusicaUuid(),
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
@@ -362,4 +385,42 @@ class _RepositorioClassificacaoVazio implements RepositorioClassificacaoMusica {
 
   @override
   Future<void> removerPorMusica(IdMusica idMusica) async {}
+}
+
+class _RepositorioSincronizacaoVazio
+    implements
+        RepositorioOrigensSincronizadas,
+        RepositorioConfiguracaoPastaSincronizada {
+  const _RepositorioSincronizacaoVazio();
+
+  @override
+  Future<OrigemSincronizadaVersao?> obterPorVersao(IdVersaoMusica id) async =>
+      null;
+
+  @override
+  Future<void> salvarOrigem(OrigemSincronizadaVersao origem) async {}
+
+  @override
+  Future<void> marcarAusente(IdVersaoMusica id) async {}
+
+  @override
+  Future<void> marcarPresente(
+    IdVersaoMusica id, {
+    required String localizadorExterno,
+    required String hashSha256,
+  }) async {}
+
+  @override
+  Future<void> remover(IdVersaoMusica id) async {}
+
+  @override
+  Future<ConfiguracaoPastaSincronizada?> obter() async => null;
+
+  @override
+  Future<void> salvarConfiguracao(
+    ConfiguracaoPastaSincronizada configuracao,
+  ) async {}
+
+  @override
+  Future<void> limpar() async {}
 }

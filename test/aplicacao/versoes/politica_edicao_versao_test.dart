@@ -57,5 +57,19 @@ void main() {
       expect(decisao.deveCriarNovaVersao, isTrue);
       expect(decisao.podeRenomear, isTrue);
     });
+
+    for (final principal in [true, false]) {
+      test('versão sincronizada ${principal ? 'principal' : 'alternativa'} '
+          'sempre exige nova versão local', () {
+        final decisao = politica.decidir(
+          versao: versao(principal: principal),
+          usadaEmLista: false,
+          sincronizada: true,
+        );
+        expect(decisao.podeSobrescreverConteudo, isFalse);
+        expect(decisao.deveCriarNovaVersao, isTrue);
+        expect(decisao.podeRenomear, isTrue);
+      });
+    }
   });
 }

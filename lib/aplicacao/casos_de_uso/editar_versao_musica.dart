@@ -1,4 +1,5 @@
 import '../../dominio/chordpro/validador_schema_appcifras.dart';
+import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/entidades/versao_musica.dart';
 import '../../dominio/erros/versao_musica_nao_encontrada.dart';
@@ -8,6 +9,7 @@ import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../entrada/conteudo_chordpro_editavel.dart';
 import '../entrada/rascunho_documento_chordpro.dart';
 import '../portas/repositorio_tom_execucao.dart';
+import '../portas/repositorio_sincronizacao.dart';
 import '../versoes/politica_edicao_versao.dart';
 import 'ciclo_vida_versoes_musicas.dart';
 import 'versoes_musicas.dart';
@@ -25,12 +27,14 @@ class EditarVersaoMusica {
     required this.criarVersao,
     required this.avaliarPolitica,
     this.repositorioTom,
+    this.repositorioOrigens,
   });
   final RepositorioVersoesMusicas repositorio;
   final RepositorioMusicas repositorioMusicas;
   final CriarVersaoMusica criarVersao;
   final AvaliarPoliticaEdicaoVersao avaliarPolitica;
   final RepositorioTomExecucao? repositorioTom;
+  final RepositorioOrigensSincronizadas? repositorioOrigens;
 
   VersaoMusica preparar(
     VersaoMusica origem,
@@ -76,7 +80,14 @@ class EditarVersaoMusica {
     if (editada.id != origem.id || editada.idMusica != origem.idMusica) {
       throw ArgumentError('A edição deve preservar a identidade da origem.');
     }
-    const ValidadorSchemaAppCifras().validarParaIncorporacao(editada.documento);
+    const validadorSchema = ValidadorSchemaAppCifras();
+    final schemas = editada.documento.elementos
+        .whereType<DiretivaSchemaAppCifras>();
+    if (schemas.length == 1 && schemas.single.versao == 2) {
+      validadorSchema.validarParaVersaoSincronizada(editada.documento);
+    } else {
+      validadorSchema.validarParaIncorporacao(editada.documento);
+    }
     final musica = await repositorioMusicas.obterPorId(origem.idMusica);
     if (musica == null) throw StateError('Música não encontrada.');
     final parser = ParserDocumentoChordPro();
@@ -103,6 +114,7 @@ class EditarVersaoMusica {
         await AtualizarConteudoVersaoMusica(
           repositorio,
           repositorioTom: repositorioTom,
+          repositorioOrigens: repositorioOrigens,
         ).executar(revisada);
       }
       resultado =
@@ -133,6 +145,7 @@ class EditarVersaoMusica {
         await AtualizarConteudoVersaoMusica(
           repositorio,
           repositorioTom: repositorioTom,
+          repositorioOrigens: repositorioOrigens,
         ).executar(editada);
         resultado = editada;
       }

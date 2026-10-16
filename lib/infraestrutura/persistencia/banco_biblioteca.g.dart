@@ -728,6 +728,766 @@ class VersoesMusicasCompanion extends UpdateCompanion<VersoesMusica> {
   }
 }
 
+class $OrigensSincronizadasVersoesTable extends OrigensSincronizadasVersoes
+    with
+        TableInfo<
+          $OrigensSincronizadasVersoesTable,
+          OrigemSincronizadaVersaoRegistro
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OrigensSincronizadasVersoesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idVersaoMusicaMeta = const VerificationMeta(
+    'idVersaoMusica',
+  );
+  @override
+  late final GeneratedColumn<String> idVersaoMusica = GeneratedColumn<String>(
+    'id_versao_musica',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES versoes_musicas (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _localizadorExternoMeta =
+      const VerificationMeta('localizadorExterno');
+  @override
+  late final GeneratedColumn<String> localizadorExterno =
+      GeneratedColumn<String>(
+        'localizador_externo',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _hashSha256Meta = const VerificationMeta(
+    'hashSha256',
+  );
+  @override
+  late final GeneratedColumn<String> hashSha256 = GeneratedColumn<String>(
+    'hash_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _presenteMeta = const VerificationMeta(
+    'presente',
+  );
+  @override
+  late final GeneratedColumn<bool> presente = GeneratedColumn<bool>(
+    'presente',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("presente" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    idVersaoMusica,
+    localizadorExterno,
+    hashSha256,
+    presente,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'origens_sincronizadas_versoes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OrigemSincronizadaVersaoRegistro> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id_versao_musica')) {
+      context.handle(
+        _idVersaoMusicaMeta,
+        idVersaoMusica.isAcceptableOrUnknown(
+          data['id_versao_musica']!,
+          _idVersaoMusicaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_idVersaoMusicaMeta);
+    }
+    if (data.containsKey('localizador_externo')) {
+      context.handle(
+        _localizadorExternoMeta,
+        localizadorExterno.isAcceptableOrUnknown(
+          data['localizador_externo']!,
+          _localizadorExternoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_localizadorExternoMeta);
+    }
+    if (data.containsKey('hash_sha256')) {
+      context.handle(
+        _hashSha256Meta,
+        hashSha256.isAcceptableOrUnknown(data['hash_sha256']!, _hashSha256Meta),
+      );
+    } else if (isInserting) {
+      context.missing(_hashSha256Meta);
+    }
+    if (data.containsKey('presente')) {
+      context.handle(
+        _presenteMeta,
+        presente.isAcceptableOrUnknown(data['presente']!, _presenteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_presenteMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {idVersaoMusica};
+  @override
+  OrigemSincronizadaVersaoRegistro map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OrigemSincronizadaVersaoRegistro(
+      idVersaoMusica: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id_versao_musica'],
+      )!,
+      localizadorExterno: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}localizador_externo'],
+      )!,
+      hashSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hash_sha256'],
+      )!,
+      presente: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}presente'],
+      )!,
+    );
+  }
+
+  @override
+  $OrigensSincronizadasVersoesTable createAlias(String alias) {
+    return $OrigensSincronizadasVersoesTable(attachedDatabase, alias);
+  }
+}
+
+class OrigemSincronizadaVersaoRegistro extends DataClass
+    implements Insertable<OrigemSincronizadaVersaoRegistro> {
+  final String idVersaoMusica;
+  final String localizadorExterno;
+  final String hashSha256;
+  final bool presente;
+  const OrigemSincronizadaVersaoRegistro({
+    required this.idVersaoMusica,
+    required this.localizadorExterno,
+    required this.hashSha256,
+    required this.presente,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id_versao_musica'] = Variable<String>(idVersaoMusica);
+    map['localizador_externo'] = Variable<String>(localizadorExterno);
+    map['hash_sha256'] = Variable<String>(hashSha256);
+    map['presente'] = Variable<bool>(presente);
+    return map;
+  }
+
+  OrigensSincronizadasVersoesCompanion toCompanion(bool nullToAbsent) {
+    return OrigensSincronizadasVersoesCompanion(
+      idVersaoMusica: Value(idVersaoMusica),
+      localizadorExterno: Value(localizadorExterno),
+      hashSha256: Value(hashSha256),
+      presente: Value(presente),
+    );
+  }
+
+  factory OrigemSincronizadaVersaoRegistro.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OrigemSincronizadaVersaoRegistro(
+      idVersaoMusica: serializer.fromJson<String>(json['idVersaoMusica']),
+      localizadorExterno: serializer.fromJson<String>(
+        json['localizadorExterno'],
+      ),
+      hashSha256: serializer.fromJson<String>(json['hashSha256']),
+      presente: serializer.fromJson<bool>(json['presente']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'idVersaoMusica': serializer.toJson<String>(idVersaoMusica),
+      'localizadorExterno': serializer.toJson<String>(localizadorExterno),
+      'hashSha256': serializer.toJson<String>(hashSha256),
+      'presente': serializer.toJson<bool>(presente),
+    };
+  }
+
+  OrigemSincronizadaVersaoRegistro copyWith({
+    String? idVersaoMusica,
+    String? localizadorExterno,
+    String? hashSha256,
+    bool? presente,
+  }) => OrigemSincronizadaVersaoRegistro(
+    idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
+    localizadorExterno: localizadorExterno ?? this.localizadorExterno,
+    hashSha256: hashSha256 ?? this.hashSha256,
+    presente: presente ?? this.presente,
+  );
+  OrigemSincronizadaVersaoRegistro copyWithCompanion(
+    OrigensSincronizadasVersoesCompanion data,
+  ) {
+    return OrigemSincronizadaVersaoRegistro(
+      idVersaoMusica: data.idVersaoMusica.present
+          ? data.idVersaoMusica.value
+          : this.idVersaoMusica,
+      localizadorExterno: data.localizadorExterno.present
+          ? data.localizadorExterno.value
+          : this.localizadorExterno,
+      hashSha256: data.hashSha256.present
+          ? data.hashSha256.value
+          : this.hashSha256,
+      presente: data.presente.present ? data.presente.value : this.presente,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OrigemSincronizadaVersaoRegistro(')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
+          ..write('localizadorExterno: $localizadorExterno, ')
+          ..write('hashSha256: $hashSha256, ')
+          ..write('presente: $presente')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(idVersaoMusica, localizadorExterno, hashSha256, presente);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OrigemSincronizadaVersaoRegistro &&
+          other.idVersaoMusica == this.idVersaoMusica &&
+          other.localizadorExterno == this.localizadorExterno &&
+          other.hashSha256 == this.hashSha256 &&
+          other.presente == this.presente);
+}
+
+class OrigensSincronizadasVersoesCompanion
+    extends UpdateCompanion<OrigemSincronizadaVersaoRegistro> {
+  final Value<String> idVersaoMusica;
+  final Value<String> localizadorExterno;
+  final Value<String> hashSha256;
+  final Value<bool> presente;
+  final Value<int> rowid;
+  const OrigensSincronizadasVersoesCompanion({
+    this.idVersaoMusica = const Value.absent(),
+    this.localizadorExterno = const Value.absent(),
+    this.hashSha256 = const Value.absent(),
+    this.presente = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OrigensSincronizadasVersoesCompanion.insert({
+    required String idVersaoMusica,
+    required String localizadorExterno,
+    required String hashSha256,
+    required bool presente,
+    this.rowid = const Value.absent(),
+  }) : idVersaoMusica = Value(idVersaoMusica),
+       localizadorExterno = Value(localizadorExterno),
+       hashSha256 = Value(hashSha256),
+       presente = Value(presente);
+  static Insertable<OrigemSincronizadaVersaoRegistro> custom({
+    Expression<String>? idVersaoMusica,
+    Expression<String>? localizadorExterno,
+    Expression<String>? hashSha256,
+    Expression<bool>? presente,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (idVersaoMusica != null) 'id_versao_musica': idVersaoMusica,
+      if (localizadorExterno != null) 'localizador_externo': localizadorExterno,
+      if (hashSha256 != null) 'hash_sha256': hashSha256,
+      if (presente != null) 'presente': presente,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OrigensSincronizadasVersoesCompanion copyWith({
+    Value<String>? idVersaoMusica,
+    Value<String>? localizadorExterno,
+    Value<String>? hashSha256,
+    Value<bool>? presente,
+    Value<int>? rowid,
+  }) {
+    return OrigensSincronizadasVersoesCompanion(
+      idVersaoMusica: idVersaoMusica ?? this.idVersaoMusica,
+      localizadorExterno: localizadorExterno ?? this.localizadorExterno,
+      hashSha256: hashSha256 ?? this.hashSha256,
+      presente: presente ?? this.presente,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (idVersaoMusica.present) {
+      map['id_versao_musica'] = Variable<String>(idVersaoMusica.value);
+    }
+    if (localizadorExterno.present) {
+      map['localizador_externo'] = Variable<String>(localizadorExterno.value);
+    }
+    if (hashSha256.present) {
+      map['hash_sha256'] = Variable<String>(hashSha256.value);
+    }
+    if (presente.present) {
+      map['presente'] = Variable<bool>(presente.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OrigensSincronizadasVersoesCompanion(')
+          ..write('idVersaoMusica: $idVersaoMusica, ')
+          ..write('localizadorExterno: $localizadorExterno, ')
+          ..write('hashSha256: $hashSha256, ')
+          ..write('presente: $presente, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConfiguracoesPastaSincronizadaTable
+    extends ConfiguracoesPastaSincronizada
+    with
+        TableInfo<
+          $ConfiguracoesPastaSincronizadaTable,
+          ConfiguracaoPastaSincronizadaRegistro
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConfiguracoesPastaSincronizadaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL CHECK (id = 1)',
+  );
+  static const VerificationMeta _uriArvoreMeta = const VerificationMeta(
+    'uriArvore',
+  );
+  @override
+  late final GeneratedColumn<String> uriArvore = GeneratedColumn<String>(
+    'uri_arvore',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _autorizacaoPersistenteMeta =
+      const VerificationMeta('autorizacaoPersistente');
+  @override
+  late final GeneratedColumn<bool> autorizacaoPersistente =
+      GeneratedColumn<bool>(
+        'autorizacao_persistente',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("autorizacao_persistente" IN (0, 1))',
+        ),
+      );
+  static const VerificationMeta _nomeLegivelMeta = const VerificationMeta(
+    'nomeLegivel',
+  );
+  @override
+  late final GeneratedColumn<String> nomeLegivel = GeneratedColumn<String>(
+    'nome_legivel',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ultimaSincronizacaoConcluidaMeta =
+      const VerificationMeta('ultimaSincronizacaoConcluida');
+  @override
+  late final GeneratedColumn<DateTime> ultimaSincronizacaoConcluida =
+      GeneratedColumn<DateTime>(
+        'ultima_sincronizacao_concluida',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uriArvore,
+    autorizacaoPersistente,
+    nomeLegivel,
+    ultimaSincronizacaoConcluida,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'configuracoes_pasta_sincronizada';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConfiguracaoPastaSincronizadaRegistro> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uri_arvore')) {
+      context.handle(
+        _uriArvoreMeta,
+        uriArvore.isAcceptableOrUnknown(data['uri_arvore']!, _uriArvoreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uriArvoreMeta);
+    }
+    if (data.containsKey('autorizacao_persistente')) {
+      context.handle(
+        _autorizacaoPersistenteMeta,
+        autorizacaoPersistente.isAcceptableOrUnknown(
+          data['autorizacao_persistente']!,
+          _autorizacaoPersistenteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_autorizacaoPersistenteMeta);
+    }
+    if (data.containsKey('nome_legivel')) {
+      context.handle(
+        _nomeLegivelMeta,
+        nomeLegivel.isAcceptableOrUnknown(
+          data['nome_legivel']!,
+          _nomeLegivelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ultima_sincronizacao_concluida')) {
+      context.handle(
+        _ultimaSincronizacaoConcluidaMeta,
+        ultimaSincronizacaoConcluida.isAcceptableOrUnknown(
+          data['ultima_sincronizacao_concluida']!,
+          _ultimaSincronizacaoConcluidaMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConfiguracaoPastaSincronizadaRegistro map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConfiguracaoPastaSincronizadaRegistro(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uriArvore: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uri_arvore'],
+      )!,
+      autorizacaoPersistente: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}autorizacao_persistente'],
+      )!,
+      nomeLegivel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome_legivel'],
+      ),
+      ultimaSincronizacaoConcluida: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ultima_sincronizacao_concluida'],
+      ),
+    );
+  }
+
+  @override
+  $ConfiguracoesPastaSincronizadaTable createAlias(String alias) {
+    return $ConfiguracoesPastaSincronizadaTable(attachedDatabase, alias);
+  }
+}
+
+class ConfiguracaoPastaSincronizadaRegistro extends DataClass
+    implements Insertable<ConfiguracaoPastaSincronizadaRegistro> {
+  final int id;
+  final String uriArvore;
+  final bool autorizacaoPersistente;
+  final String? nomeLegivel;
+  final DateTime? ultimaSincronizacaoConcluida;
+  const ConfiguracaoPastaSincronizadaRegistro({
+    required this.id,
+    required this.uriArvore,
+    required this.autorizacaoPersistente,
+    this.nomeLegivel,
+    this.ultimaSincronizacaoConcluida,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uri_arvore'] = Variable<String>(uriArvore);
+    map['autorizacao_persistente'] = Variable<bool>(autorizacaoPersistente);
+    if (!nullToAbsent || nomeLegivel != null) {
+      map['nome_legivel'] = Variable<String>(nomeLegivel);
+    }
+    if (!nullToAbsent || ultimaSincronizacaoConcluida != null) {
+      map['ultima_sincronizacao_concluida'] = Variable<DateTime>(
+        ultimaSincronizacaoConcluida,
+      );
+    }
+    return map;
+  }
+
+  ConfiguracoesPastaSincronizadaCompanion toCompanion(bool nullToAbsent) {
+    return ConfiguracoesPastaSincronizadaCompanion(
+      id: Value(id),
+      uriArvore: Value(uriArvore),
+      autorizacaoPersistente: Value(autorizacaoPersistente),
+      nomeLegivel: nomeLegivel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nomeLegivel),
+      ultimaSincronizacaoConcluida:
+          ultimaSincronizacaoConcluida == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ultimaSincronizacaoConcluida),
+    );
+  }
+
+  factory ConfiguracaoPastaSincronizadaRegistro.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConfiguracaoPastaSincronizadaRegistro(
+      id: serializer.fromJson<int>(json['id']),
+      uriArvore: serializer.fromJson<String>(json['uriArvore']),
+      autorizacaoPersistente: serializer.fromJson<bool>(
+        json['autorizacaoPersistente'],
+      ),
+      nomeLegivel: serializer.fromJson<String?>(json['nomeLegivel']),
+      ultimaSincronizacaoConcluida: serializer.fromJson<DateTime?>(
+        json['ultimaSincronizacaoConcluida'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uriArvore': serializer.toJson<String>(uriArvore),
+      'autorizacaoPersistente': serializer.toJson<bool>(autorizacaoPersistente),
+      'nomeLegivel': serializer.toJson<String?>(nomeLegivel),
+      'ultimaSincronizacaoConcluida': serializer.toJson<DateTime?>(
+        ultimaSincronizacaoConcluida,
+      ),
+    };
+  }
+
+  ConfiguracaoPastaSincronizadaRegistro copyWith({
+    int? id,
+    String? uriArvore,
+    bool? autorizacaoPersistente,
+    Value<String?> nomeLegivel = const Value.absent(),
+    Value<DateTime?> ultimaSincronizacaoConcluida = const Value.absent(),
+  }) => ConfiguracaoPastaSincronizadaRegistro(
+    id: id ?? this.id,
+    uriArvore: uriArvore ?? this.uriArvore,
+    autorizacaoPersistente:
+        autorizacaoPersistente ?? this.autorizacaoPersistente,
+    nomeLegivel: nomeLegivel.present ? nomeLegivel.value : this.nomeLegivel,
+    ultimaSincronizacaoConcluida: ultimaSincronizacaoConcluida.present
+        ? ultimaSincronizacaoConcluida.value
+        : this.ultimaSincronizacaoConcluida,
+  );
+  ConfiguracaoPastaSincronizadaRegistro copyWithCompanion(
+    ConfiguracoesPastaSincronizadaCompanion data,
+  ) {
+    return ConfiguracaoPastaSincronizadaRegistro(
+      id: data.id.present ? data.id.value : this.id,
+      uriArvore: data.uriArvore.present ? data.uriArvore.value : this.uriArvore,
+      autorizacaoPersistente: data.autorizacaoPersistente.present
+          ? data.autorizacaoPersistente.value
+          : this.autorizacaoPersistente,
+      nomeLegivel: data.nomeLegivel.present
+          ? data.nomeLegivel.value
+          : this.nomeLegivel,
+      ultimaSincronizacaoConcluida: data.ultimaSincronizacaoConcluida.present
+          ? data.ultimaSincronizacaoConcluida.value
+          : this.ultimaSincronizacaoConcluida,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConfiguracaoPastaSincronizadaRegistro(')
+          ..write('id: $id, ')
+          ..write('uriArvore: $uriArvore, ')
+          ..write('autorizacaoPersistente: $autorizacaoPersistente, ')
+          ..write('nomeLegivel: $nomeLegivel, ')
+          ..write('ultimaSincronizacaoConcluida: $ultimaSincronizacaoConcluida')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    uriArvore,
+    autorizacaoPersistente,
+    nomeLegivel,
+    ultimaSincronizacaoConcluida,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConfiguracaoPastaSincronizadaRegistro &&
+          other.id == this.id &&
+          other.uriArvore == this.uriArvore &&
+          other.autorizacaoPersistente == this.autorizacaoPersistente &&
+          other.nomeLegivel == this.nomeLegivel &&
+          other.ultimaSincronizacaoConcluida ==
+              this.ultimaSincronizacaoConcluida);
+}
+
+class ConfiguracoesPastaSincronizadaCompanion
+    extends UpdateCompanion<ConfiguracaoPastaSincronizadaRegistro> {
+  final Value<int> id;
+  final Value<String> uriArvore;
+  final Value<bool> autorizacaoPersistente;
+  final Value<String?> nomeLegivel;
+  final Value<DateTime?> ultimaSincronizacaoConcluida;
+  const ConfiguracoesPastaSincronizadaCompanion({
+    this.id = const Value.absent(),
+    this.uriArvore = const Value.absent(),
+    this.autorizacaoPersistente = const Value.absent(),
+    this.nomeLegivel = const Value.absent(),
+    this.ultimaSincronizacaoConcluida = const Value.absent(),
+  });
+  ConfiguracoesPastaSincronizadaCompanion.insert({
+    this.id = const Value.absent(),
+    required String uriArvore,
+    required bool autorizacaoPersistente,
+    this.nomeLegivel = const Value.absent(),
+    this.ultimaSincronizacaoConcluida = const Value.absent(),
+  }) : uriArvore = Value(uriArvore),
+       autorizacaoPersistente = Value(autorizacaoPersistente);
+  static Insertable<ConfiguracaoPastaSincronizadaRegistro> custom({
+    Expression<int>? id,
+    Expression<String>? uriArvore,
+    Expression<bool>? autorizacaoPersistente,
+    Expression<String>? nomeLegivel,
+    Expression<DateTime>? ultimaSincronizacaoConcluida,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uriArvore != null) 'uri_arvore': uriArvore,
+      if (autorizacaoPersistente != null)
+        'autorizacao_persistente': autorizacaoPersistente,
+      if (nomeLegivel != null) 'nome_legivel': nomeLegivel,
+      if (ultimaSincronizacaoConcluida != null)
+        'ultima_sincronizacao_concluida': ultimaSincronizacaoConcluida,
+    });
+  }
+
+  ConfiguracoesPastaSincronizadaCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uriArvore,
+    Value<bool>? autorizacaoPersistente,
+    Value<String?>? nomeLegivel,
+    Value<DateTime?>? ultimaSincronizacaoConcluida,
+  }) {
+    return ConfiguracoesPastaSincronizadaCompanion(
+      id: id ?? this.id,
+      uriArvore: uriArvore ?? this.uriArvore,
+      autorizacaoPersistente:
+          autorizacaoPersistente ?? this.autorizacaoPersistente,
+      nomeLegivel: nomeLegivel ?? this.nomeLegivel,
+      ultimaSincronizacaoConcluida:
+          ultimaSincronizacaoConcluida ?? this.ultimaSincronizacaoConcluida,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uriArvore.present) {
+      map['uri_arvore'] = Variable<String>(uriArvore.value);
+    }
+    if (autorizacaoPersistente.present) {
+      map['autorizacao_persistente'] = Variable<bool>(
+        autorizacaoPersistente.value,
+      );
+    }
+    if (nomeLegivel.present) {
+      map['nome_legivel'] = Variable<String>(nomeLegivel.value);
+    }
+    if (ultimaSincronizacaoConcluida.present) {
+      map['ultima_sincronizacao_concluida'] = Variable<DateTime>(
+        ultimaSincronizacaoConcluida.value,
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConfiguracoesPastaSincronizadaCompanion(')
+          ..write('id: $id, ')
+          ..write('uriArvore: $uriArvore, ')
+          ..write('autorizacaoPersistente: $autorizacaoPersistente, ')
+          ..write('nomeLegivel: $nomeLegivel, ')
+          ..write('ultimaSincronizacaoConcluida: $ultimaSincronizacaoConcluida')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
     with TableInfo<$PreferenciasTomExecucaoTable, PreferenciasTomExecucaoData> {
   @override
@@ -2135,6 +2895,10 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
   $BancoBibliotecaManager get managers => $BancoBibliotecaManager(this);
   late final $IndiceMusicasTable indiceMusicas = $IndiceMusicasTable(this);
   late final $VersoesMusicasTable versoesMusicas = $VersoesMusicasTable(this);
+  late final $OrigensSincronizadasVersoesTable origensSincronizadasVersoes =
+      $OrigensSincronizadasVersoesTable(this);
+  late final $ConfiguracoesPastaSincronizadaTable
+  configuracoesPastaSincronizada = $ConfiguracoesPastaSincronizadaTable(this);
   late final $PreferenciasTomExecucaoTable preferenciasTomExecucao =
       $PreferenciasTomExecucaoTable(this);
   late final $EnergiasMusicasTable energiasMusicas = $EnergiasMusicasTable(
@@ -2152,6 +2916,8 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     indiceMusicas,
     versoesMusicas,
+    origensSincronizadasVersoes,
+    configuracoesPastaSincronizada,
     preferenciasTomExecucao,
     energiasMusicas,
     tagsMusicas,
@@ -2166,6 +2932,15 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('versoes_musicas', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'versoes_musicas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('origens_sincronizadas_versoes', kind: UpdateKind.delete),
+      ],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -2828,6 +3603,33 @@ final class $$VersoesMusicasTableReferences
   }
 
   static MultiTypedResultKey<
+    $OrigensSincronizadasVersoesTable,
+    List<OrigemSincronizadaVersaoRegistro>
+  >
+  _origensSincronizadasVersoesRefsTable(
+    _$BancoBiblioteca db,
+  ) => MultiTypedResultKey.fromTable(
+    db.origensSincronizadasVersoes,
+    aliasName:
+        'versoes_musicas__id__origens_sincronizadas_versoes__id_versao_musica',
+  );
+
+  $$OrigensSincronizadasVersoesTableProcessedTableManager
+  get origensSincronizadasVersoesRefs {
+    final manager = $$OrigensSincronizadasVersoesTableTableManager(
+      $_db,
+      $_db.origensSincronizadasVersoes,
+    ).filter((f) => f.idVersaoMusica.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _origensSincronizadasVersoesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
     $PreferenciasTomExecucaoTable,
     List<PreferenciasTomExecucaoData>
   >
@@ -2930,6 +3732,35 @@ class $$VersoesMusicasTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> origensSincronizadasVersoesRefs(
+    Expression<bool> Function(
+      $$OrigensSincronizadasVersoesTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$OrigensSincronizadasVersoesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.origensSincronizadasVersoes,
+          getReferencedColumn: (t) => t.idVersaoMusica,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$OrigensSincronizadasVersoesTableFilterComposer(
+                $db: $db,
+                $table: $db.origensSincronizadasVersoes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 
   Expression<bool> preferenciasTomExecucaoRefs(
@@ -3089,6 +3920,35 @@ class $$VersoesMusicasTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> origensSincronizadasVersoesRefs<T extends Object>(
+    Expression<T> Function(
+      $$OrigensSincronizadasVersoesTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$OrigensSincronizadasVersoesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.origensSincronizadasVersoes,
+          getReferencedColumn: (t) => t.idVersaoMusica,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$OrigensSincronizadasVersoesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.origensSincronizadasVersoes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> preferenciasTomExecucaoRefs<T extends Object>(
     Expression<T> Function($$PreferenciasTomExecucaoTableAnnotationComposer a)
     f,
@@ -3157,6 +4017,7 @@ class $$VersoesMusicasTableTableManager
           VersoesMusica,
           PrefetchHooks Function({
             bool idMusica,
+            bool origensSincronizadasVersoesRefs,
             bool preferenciasTomExecucaoRefs,
             bool itensListaCultoRefs,
           })
@@ -3221,12 +4082,15 @@ class $$VersoesMusicasTableTableManager
           prefetchHooksCallback:
               ({
                 idMusica = false,
+                origensSincronizadasVersoesRefs = false,
                 preferenciasTomExecucaoRefs = false,
                 itensListaCultoRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (origensSincronizadasVersoesRefs)
+                      db.origensSincronizadasVersoes,
                     if (preferenciasTomExecucaoRefs) db.preferenciasTomExecucao,
                     if (itensListaCultoRefs) db.itensListaCulto,
                   ],
@@ -3262,6 +4126,27 @@ class $$VersoesMusicasTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (origensSincronizadasVersoesRefs)
+                        await $_getPrefetchedData<
+                          VersoesMusica,
+                          $VersoesMusicasTable,
+                          OrigemSincronizadaVersaoRegistro
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VersoesMusicasTableReferences
+                              ._origensSincronizadasVersoesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VersoesMusicasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).origensSincronizadasVersoesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.idVersaoMusica == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (preferenciasTomExecucaoRefs)
                         await $_getPrefetchedData<
                           VersoesMusica,
@@ -3326,9 +4211,579 @@ typedef $$VersoesMusicasTableProcessedTableManager =
       VersoesMusica,
       PrefetchHooks Function({
         bool idMusica,
+        bool origensSincronizadasVersoesRefs,
         bool preferenciasTomExecucaoRefs,
         bool itensListaCultoRefs,
       })
+    >;
+typedef $$OrigensSincronizadasVersoesTableCreateCompanionBuilder =
+    OrigensSincronizadasVersoesCompanion Function({
+      required String idVersaoMusica,
+      required String localizadorExterno,
+      required String hashSha256,
+      required bool presente,
+      Value<int> rowid,
+    });
+typedef $$OrigensSincronizadasVersoesTableUpdateCompanionBuilder =
+    OrigensSincronizadasVersoesCompanion Function({
+      Value<String> idVersaoMusica,
+      Value<String> localizadorExterno,
+      Value<String> hashSha256,
+      Value<bool> presente,
+      Value<int> rowid,
+    });
+
+final class $$OrigensSincronizadasVersoesTableReferences
+    extends
+        BaseReferences<
+          _$BancoBiblioteca,
+          $OrigensSincronizadasVersoesTable,
+          OrigemSincronizadaVersaoRegistro
+        > {
+  $$OrigensSincronizadasVersoesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VersoesMusicasTable _idVersaoMusicaTable(_$BancoBiblioteca db) =>
+      db.versoesMusicas.createAlias(
+        'origens_sincronizadas_versoes__id_versao_musica__versoes_musicas__id',
+      );
+
+  $$VersoesMusicasTableProcessedTableManager get idVersaoMusica {
+    final $_column = $_itemColumn<String>('id_versao_musica')!;
+
+    final manager = $$VersoesMusicasTableTableManager(
+      $_db,
+      $_db.versoesMusicas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_idVersaoMusicaTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$OrigensSincronizadasVersoesTableFilterComposer
+    extends Composer<_$BancoBiblioteca, $OrigensSincronizadasVersoesTable> {
+  $$OrigensSincronizadasVersoesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get localizadorExterno => $composableBuilder(
+    column: $table.localizadorExterno,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hashSha256 => $composableBuilder(
+    column: $table.hashSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get presente => $composableBuilder(
+    column: $table.presente,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VersoesMusicasTableFilterComposer get idVersaoMusica {
+    final $$VersoesMusicasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableFilterComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OrigensSincronizadasVersoesTableOrderingComposer
+    extends Composer<_$BancoBiblioteca, $OrigensSincronizadasVersoesTable> {
+  $$OrigensSincronizadasVersoesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get localizadorExterno => $composableBuilder(
+    column: $table.localizadorExterno,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hashSha256 => $composableBuilder(
+    column: $table.hashSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get presente => $composableBuilder(
+    column: $table.presente,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VersoesMusicasTableOrderingComposer get idVersaoMusica {
+    final $$VersoesMusicasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableOrderingComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OrigensSincronizadasVersoesTableAnnotationComposer
+    extends Composer<_$BancoBiblioteca, $OrigensSincronizadasVersoesTable> {
+  $$OrigensSincronizadasVersoesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get localizadorExterno => $composableBuilder(
+    column: $table.localizadorExterno,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hashSha256 => $composableBuilder(
+    column: $table.hashSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get presente =>
+      $composableBuilder(column: $table.presente, builder: (column) => column);
+
+  $$VersoesMusicasTableAnnotationComposer get idVersaoMusica {
+    final $$VersoesMusicasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.idVersaoMusica,
+      referencedTable: $db.versoesMusicas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersoesMusicasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versoesMusicas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OrigensSincronizadasVersoesTableTableManager
+    extends
+        RootTableManager<
+          _$BancoBiblioteca,
+          $OrigensSincronizadasVersoesTable,
+          OrigemSincronizadaVersaoRegistro,
+          $$OrigensSincronizadasVersoesTableFilterComposer,
+          $$OrigensSincronizadasVersoesTableOrderingComposer,
+          $$OrigensSincronizadasVersoesTableAnnotationComposer,
+          $$OrigensSincronizadasVersoesTableCreateCompanionBuilder,
+          $$OrigensSincronizadasVersoesTableUpdateCompanionBuilder,
+          (
+            OrigemSincronizadaVersaoRegistro,
+            $$OrigensSincronizadasVersoesTableReferences,
+          ),
+          OrigemSincronizadaVersaoRegistro,
+          PrefetchHooks Function({bool idVersaoMusica})
+        > {
+  $$OrigensSincronizadasVersoesTableTableManager(
+    _$BancoBiblioteca db,
+    $OrigensSincronizadasVersoesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OrigensSincronizadasVersoesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$OrigensSincronizadasVersoesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OrigensSincronizadasVersoesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> idVersaoMusica = const Value.absent(),
+                Value<String> localizadorExterno = const Value.absent(),
+                Value<String> hashSha256 = const Value.absent(),
+                Value<bool> presente = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OrigensSincronizadasVersoesCompanion(
+                idVersaoMusica: idVersaoMusica,
+                localizadorExterno: localizadorExterno,
+                hashSha256: hashSha256,
+                presente: presente,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String idVersaoMusica,
+                required String localizadorExterno,
+                required String hashSha256,
+                required bool presente,
+                Value<int> rowid = const Value.absent(),
+              }) => OrigensSincronizadasVersoesCompanion.insert(
+                idVersaoMusica: idVersaoMusica,
+                localizadorExterno: localizadorExterno,
+                hashSha256: hashSha256,
+                presente: presente,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $OrigensSincronizadasVersoesTable,
+                    OrigemSincronizadaVersaoRegistro
+                  >(table),
+                  $$OrigensSincronizadasVersoesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({idVersaoMusica = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (idVersaoMusica) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.idVersaoMusica,
+                        referencedTable:
+                            $$OrigensSincronizadasVersoesTableReferences
+                                ._idVersaoMusicaTable(db),
+                        referencedColumn:
+                            $$OrigensSincronizadasVersoesTableReferences
+                                ._idVersaoMusicaTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$OrigensSincronizadasVersoesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BancoBiblioteca,
+      $OrigensSincronizadasVersoesTable,
+      OrigemSincronizadaVersaoRegistro,
+      $$OrigensSincronizadasVersoesTableFilterComposer,
+      $$OrigensSincronizadasVersoesTableOrderingComposer,
+      $$OrigensSincronizadasVersoesTableAnnotationComposer,
+      $$OrigensSincronizadasVersoesTableCreateCompanionBuilder,
+      $$OrigensSincronizadasVersoesTableUpdateCompanionBuilder,
+      (
+        OrigemSincronizadaVersaoRegistro,
+        $$OrigensSincronizadasVersoesTableReferences,
+      ),
+      OrigemSincronizadaVersaoRegistro,
+      PrefetchHooks Function({bool idVersaoMusica})
+    >;
+typedef $$ConfiguracoesPastaSincronizadaTableCreateCompanionBuilder =
+    ConfiguracoesPastaSincronizadaCompanion Function({
+      Value<int> id,
+      required String uriArvore,
+      required bool autorizacaoPersistente,
+      Value<String?> nomeLegivel,
+      Value<DateTime?> ultimaSincronizacaoConcluida,
+    });
+typedef $$ConfiguracoesPastaSincronizadaTableUpdateCompanionBuilder =
+    ConfiguracoesPastaSincronizadaCompanion Function({
+      Value<int> id,
+      Value<String> uriArvore,
+      Value<bool> autorizacaoPersistente,
+      Value<String?> nomeLegivel,
+      Value<DateTime?> ultimaSincronizacaoConcluida,
+    });
+
+class $$ConfiguracoesPastaSincronizadaTableFilterComposer
+    extends Composer<_$BancoBiblioteca, $ConfiguracoesPastaSincronizadaTable> {
+  $$ConfiguracoesPastaSincronizadaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uriArvore => $composableBuilder(
+    column: $table.uriArvore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autorizacaoPersistente => $composableBuilder(
+    column: $table.autorizacaoPersistente,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nomeLegivel => $composableBuilder(
+    column: $table.nomeLegivel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get ultimaSincronizacaoConcluida =>
+      $composableBuilder(
+        column: $table.ultimaSincronizacaoConcluida,
+        builder: (column) => ColumnFilters(column),
+      );
+}
+
+class $$ConfiguracoesPastaSincronizadaTableOrderingComposer
+    extends Composer<_$BancoBiblioteca, $ConfiguracoesPastaSincronizadaTable> {
+  $$ConfiguracoesPastaSincronizadaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uriArvore => $composableBuilder(
+    column: $table.uriArvore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autorizacaoPersistente => $composableBuilder(
+    column: $table.autorizacaoPersistente,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nomeLegivel => $composableBuilder(
+    column: $table.nomeLegivel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get ultimaSincronizacaoConcluida =>
+      $composableBuilder(
+        column: $table.ultimaSincronizacaoConcluida,
+        builder: (column) => ColumnOrderings(column),
+      );
+}
+
+class $$ConfiguracoesPastaSincronizadaTableAnnotationComposer
+    extends Composer<_$BancoBiblioteca, $ConfiguracoesPastaSincronizadaTable> {
+  $$ConfiguracoesPastaSincronizadaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uriArvore =>
+      $composableBuilder(column: $table.uriArvore, builder: (column) => column);
+
+  GeneratedColumn<bool> get autorizacaoPersistente => $composableBuilder(
+    column: $table.autorizacaoPersistente,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nomeLegivel => $composableBuilder(
+    column: $table.nomeLegivel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get ultimaSincronizacaoConcluida =>
+      $composableBuilder(
+        column: $table.ultimaSincronizacaoConcluida,
+        builder: (column) => column,
+      );
+}
+
+class $$ConfiguracoesPastaSincronizadaTableTableManager
+    extends
+        RootTableManager<
+          _$BancoBiblioteca,
+          $ConfiguracoesPastaSincronizadaTable,
+          ConfiguracaoPastaSincronizadaRegistro,
+          $$ConfiguracoesPastaSincronizadaTableFilterComposer,
+          $$ConfiguracoesPastaSincronizadaTableOrderingComposer,
+          $$ConfiguracoesPastaSincronizadaTableAnnotationComposer,
+          $$ConfiguracoesPastaSincronizadaTableCreateCompanionBuilder,
+          $$ConfiguracoesPastaSincronizadaTableUpdateCompanionBuilder,
+          (
+            ConfiguracaoPastaSincronizadaRegistro,
+            BaseReferences<
+              _$BancoBiblioteca,
+              $ConfiguracoesPastaSincronizadaTable,
+              ConfiguracaoPastaSincronizadaRegistro
+            >,
+          ),
+          ConfiguracaoPastaSincronizadaRegistro,
+          PrefetchHooks Function()
+        > {
+  $$ConfiguracoesPastaSincronizadaTableTableManager(
+    _$BancoBiblioteca db,
+    $ConfiguracoesPastaSincronizadaTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConfiguracoesPastaSincronizadaTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ConfiguracoesPastaSincronizadaTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ConfiguracoesPastaSincronizadaTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uriArvore = const Value.absent(),
+                Value<bool> autorizacaoPersistente = const Value.absent(),
+                Value<String?> nomeLegivel = const Value.absent(),
+                Value<DateTime?> ultimaSincronizacaoConcluida =
+                    const Value.absent(),
+              }) => ConfiguracoesPastaSincronizadaCompanion(
+                id: id,
+                uriArvore: uriArvore,
+                autorizacaoPersistente: autorizacaoPersistente,
+                nomeLegivel: nomeLegivel,
+                ultimaSincronizacaoConcluida: ultimaSincronizacaoConcluida,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uriArvore,
+                required bool autorizacaoPersistente,
+                Value<String?> nomeLegivel = const Value.absent(),
+                Value<DateTime?> ultimaSincronizacaoConcluida =
+                    const Value.absent(),
+              }) => ConfiguracoesPastaSincronizadaCompanion.insert(
+                id: id,
+                uriArvore: uriArvore,
+                autorizacaoPersistente: autorizacaoPersistente,
+                nomeLegivel: nomeLegivel,
+                ultimaSincronizacaoConcluida: ultimaSincronizacaoConcluida,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ConfiguracoesPastaSincronizadaTable,
+                    ConfiguracaoPastaSincronizadaRegistro
+                  >(table),
+                  BaseReferences<
+                    _$BancoBiblioteca,
+                    $ConfiguracoesPastaSincronizadaTable,
+                    ConfiguracaoPastaSincronizadaRegistro
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ConfiguracoesPastaSincronizadaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BancoBiblioteca,
+      $ConfiguracoesPastaSincronizadaTable,
+      ConfiguracaoPastaSincronizadaRegistro,
+      $$ConfiguracoesPastaSincronizadaTableFilterComposer,
+      $$ConfiguracoesPastaSincronizadaTableOrderingComposer,
+      $$ConfiguracoesPastaSincronizadaTableAnnotationComposer,
+      $$ConfiguracoesPastaSincronizadaTableCreateCompanionBuilder,
+      $$ConfiguracoesPastaSincronizadaTableUpdateCompanionBuilder,
+      (
+        ConfiguracaoPastaSincronizadaRegistro,
+        BaseReferences<
+          _$BancoBiblioteca,
+          $ConfiguracoesPastaSincronizadaTable,
+          ConfiguracaoPastaSincronizadaRegistro
+        >,
+      ),
+      ConfiguracaoPastaSincronizadaRegistro,
+      PrefetchHooks Function()
     >;
 typedef $$PreferenciasTomExecucaoTableCreateCompanionBuilder =
     PreferenciasTomExecucaoCompanion Function({
@@ -4955,6 +6410,18 @@ class $BancoBibliotecaManager {
       $$IndiceMusicasTableTableManager(_db, _db.indiceMusicas);
   $$VersoesMusicasTableTableManager get versoesMusicas =>
       $$VersoesMusicasTableTableManager(_db, _db.versoesMusicas);
+  $$OrigensSincronizadasVersoesTableTableManager
+  get origensSincronizadasVersoes =>
+      $$OrigensSincronizadasVersoesTableTableManager(
+        _db,
+        _db.origensSincronizadasVersoes,
+      );
+  $$ConfiguracoesPastaSincronizadaTableTableManager
+  get configuracoesPastaSincronizada =>
+      $$ConfiguracoesPastaSincronizadaTableTableManager(
+        _db,
+        _db.configuracoesPastaSincronizada,
+      );
   $$PreferenciasTomExecucaoTableTableManager get preferenciasTomExecucao =>
       $$PreferenciasTomExecucaoTableTableManager(
         _db,
