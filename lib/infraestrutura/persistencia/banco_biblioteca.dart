@@ -351,6 +351,13 @@ class BancoBiblioteca extends _$BancoBiblioteca {
             ..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica)))
           .getSingleOrNull();
 
+  Future<List<OrigemSincronizadaVersaoRegistro>>
+  listarOrigensSincronizadasVersoes() =>
+      select(origensSincronizadasVersoes).get();
+
+  Future<T> executarEmTransacao<T>(Future<T> Function() acao) =>
+      transaction(acao);
+
   Future<void> salvarOrigemSincronizadaVersao({
     required String idVersaoMusica,
     required String localizadorExterno,

@@ -28,6 +28,23 @@ class RepositorioSincronizacaoLocal
   }
 
   @override
+  Future<List<OrigemSincronizadaVersao>> listar() async {
+    final registros = await _banco.listarOrigensSincronizadasVersoes();
+    return registros
+        .map(
+          (registro) => OrigemSincronizadaVersao(
+            idVersaoMusica: IdVersaoMusica(registro.idVersaoMusica),
+            localizadorExterno: registro.localizadorExterno,
+            hashSha256: registro.hashSha256,
+            estado: registro.presente
+                ? EstadoOrigemSincronizada.presente
+                : EstadoOrigemSincronizada.ausente,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> salvarOrigem(OrigemSincronizadaVersao origem) async {
     if (await _banco.obterVersaoPorId(origem.idVersaoMusica.valor) == null) {
       throw VersaoMusicaNaoEncontrada(origem.idVersaoMusica);

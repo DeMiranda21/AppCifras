@@ -10,6 +10,7 @@ import '../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
+import '../aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
@@ -20,6 +21,7 @@ import '../aplicacao/portas/repositorio_sincronizacao.dart';
 import '../aplicacao/portas/repositorio_tom_execucao.dart';
 import '../aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
 import '../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
+import '../aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
 import '../dominio/entidades/versao_musica.dart';
 import '../dominio/entidades/origem_sincronizada_versao.dart';
@@ -59,6 +61,7 @@ class ComposicaoAppCifras {
     required RepositorioConfiguracaoPastaSincronizada
     repositorioConfiguracaoPasta,
     required PastaCuradaExterna pastaCuradaExterna,
+    required AplicadorSincronizacaoPastaCurada aplicadorSincronizacao,
     required GeradorIdMusica geradorId,
     required GeradorIdVersaoMusica geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -72,6 +75,15 @@ class ComposicaoAppCifras {
        gerenciarPastaCurada = GerenciarPastaCurada(
          pastaCuradaExterna,
          repositorioConfiguracaoPasta,
+       ),
+       sincronizarPastaCurada = SincronizarPastaCurada(
+         pastaExterna: pastaCuradaExterna,
+         repositorioConfiguracao: repositorioConfiguracaoPasta,
+         repositorioOrigens: repositorioOrigens,
+         repositorioMusicas: repositorio,
+         repositorioVersoes: repositorioVersoes,
+         aplicador: aplicadorSincronizacao,
+         parserDocumento: parserDocumento,
        ),
        salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
@@ -179,6 +191,7 @@ class ComposicaoAppCifras {
   final RepositorioConfiguracaoPastaSincronizada
   repositorioConfiguracaoPastaSincronizada;
   final GerenciarPastaCurada gerenciarPastaCurada;
+  final SincronizarPastaCurada sincronizarPastaCurada;
   final RenomearVersaoMusica renomearVersaoMusica;
   final DefinirVersaoPrincipal definirVersaoPrincipal;
   final ArquivarVersaoMusica arquivarVersaoMusica;
@@ -230,6 +243,7 @@ class ComposicaoAppCifras {
     RepositorioOrigensSincronizadas? repositorioOrigens,
     RepositorioConfiguracaoPastaSincronizada? repositorioConfiguracaoPasta,
     PastaCuradaExterna? pastaCuradaExterna,
+    AplicadorSincronizacaoPastaCurada? aplicadorSincronizacao,
     required GeradorIdMusica geradorId,
     GeradorIdVersaoMusica? geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -252,6 +266,8 @@ class ComposicaoAppCifras {
         repositorioConfiguracaoPasta ?? const _RepositorioSincronizacaoVazio(),
     pastaCuradaExterna:
         pastaCuradaExterna ?? const _PastaCuradaExternaIndisponivel(),
+    aplicadorSincronizacao:
+        aplicadorSincronizacao ?? const _AplicadorSincronizacaoIndisponivel(),
     geradorId: geradorId,
     geradorIdVersao: geradorIdVersao ?? _GeradorIdVersaoLegado(),
     geradorIdListaCulto: geradorIdListaCulto,
@@ -301,6 +317,7 @@ class ComposicaoAppCifras {
         repositorioOrigens: repositorioSincronizacao,
         repositorioConfiguracaoPasta: repositorioSincronizacao,
         pastaCuradaExterna: const PastaCuradaSafAndroid(),
+        aplicadorSincronizacao: repositorio,
         geradorId: GeradorIdMusicaUuid(),
         geradorIdVersao: GeradorIdVersaoMusicaUuid(),
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
@@ -413,6 +430,9 @@ class _RepositorioSincronizacaoVazio
       null;
 
   @override
+  Future<List<OrigemSincronizadaVersao>> listar() async => const [];
+
+  @override
   Future<void> salvarOrigem(OrigemSincronizadaVersao origem) async {}
 
   @override
@@ -461,4 +481,13 @@ class _PastaCuradaExternaIndisponivel implements PastaCuradaExterna {
   @override
   Future<Uint8List> lerBytes(DocumentoPastaCurada documento) async =>
       _indisponivel();
+}
+
+class _AplicadorSincronizacaoIndisponivel
+    implements AplicadorSincronizacaoPastaCurada {
+  const _AplicadorSincronizacaoIndisponivel();
+
+  @override
+  Future<void> aplicar(PlanoAplicacaoGrupoSincronizacao plano) =>
+      throw UnsupportedError('Sincronização não disponível nesta composição.');
 }

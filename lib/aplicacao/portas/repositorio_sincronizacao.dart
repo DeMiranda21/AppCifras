@@ -5,6 +5,8 @@ import '../sincronizacao/configuracao_pasta_sincronizada.dart';
 abstract interface class RepositorioOrigensSincronizadas {
   Future<OrigemSincronizadaVersao?> obterPorVersao(IdVersaoMusica id);
 
+  Future<List<OrigemSincronizadaVersao>> listar();
+
   Future<void> salvarOrigem(OrigemSincronizadaVersao origem);
 
   Future<void> marcarAusente(IdVersaoMusica id);

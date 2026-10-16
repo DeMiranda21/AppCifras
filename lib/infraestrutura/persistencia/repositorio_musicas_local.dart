@@ -13,6 +13,7 @@ import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
+import '../../aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
 import '../arquivos/armazenamento_arquivos_chordpro.dart';
 import '../arquivos/codificador_chordpro_gerenciado.dart';
 import 'banco_biblioteca.dart';
@@ -24,7 +25,10 @@ class EstadoPersistenciaMusicaInconsistente implements Exception {
 }
 
 class RepositorioMusicasLocal
-    implements RepositorioMusicas, RepositorioVersoesMusicas {
+    implements
+        RepositorioMusicas,
+        RepositorioVersoesMusicas,
+        AplicadorSincronizacaoPastaCurada {
   RepositorioMusicasLocal({
     required this._banco,
     required this._armazenamentoArquivos,
@@ -38,6 +42,133 @@ class RepositorioMusicasLocal
   final ParserDocumentoChordPro _parserDocumento;
   final CodificadorChordProGerenciado _codificador;
   final ValidadorSchemaAppCifras _validadorSchema;
+
+  @override
+  Future<void> aplicar(PlanoAplicacaoGrupoSincronizacao plano) async {
+    final indice = await _banco.obterPorId(plano.idMusica.valor);
+    if ((indice == null) != plano.criarMusica) {
+      throw StateError('O estado local mudou durante a sincronização.');
+    }
+
+    final registrosExistentes = plano.criarMusica
+        ? const <VersoesMusica>[]
+        : await _banco.listarVersoesMusica(plano.idMusica.valor);
+    final porIdExistente = {
+      for (final registro in registrosExistentes) registro.id: registro,
+    };
+    for (final versao in plano.versoesNovas) {
+      if (await _banco.obterVersaoPorId(versao.id.valor) != null ||
+          await _armazenamentoArquivos.existe(versao.id)) {
+        throw StateError('A versão ${versao.id.valor} já existe.');
+      }
+    }
+    for (final versao in plano.versoesExistentes) {
+      final registro = porIdExistente[versao.id.valor];
+      if (registro == null) {
+        throw StateError('A versão ${versao.id.valor} deixou de existir.');
+      }
+      _validarNomeArquivo(versao.id, registro.arquivo, plano.idMusica);
+    }
+
+    final catalogoMudou =
+        indice != null &&
+        (indice.titulo != plano.titulo || indice.artista != plano.artista);
+    final atualizacoesSolicitadas = {
+      for (final versao in plano.versoesExistentes)
+        versao.id: versao.conteudoChordProAtualizado,
+    };
+    final anteriores = <IdVersaoMusica, String>{};
+    final desejados = <IdVersaoMusica, String>{};
+    for (final registro in registrosExistentes) {
+      final id = IdVersaoMusica(registro.id);
+      final atualizacao = atualizacoesSolicitadas[id];
+      if (!catalogoMudou && atualizacao == null) continue;
+      final anterior = await _armazenamentoArquivos.obter(id);
+      anteriores[id] = anterior;
+      desejados[id] =
+          atualizacao ??
+          _revisarMetadadosCatalogo(
+            anterior,
+            titulo: plano.titulo,
+            artista: plano.artista,
+          );
+    }
+
+    final criadas = <IdVersaoMusica>[];
+    final substituidas = <IdVersaoMusica>[];
+    try {
+      for (final versao in plano.versoesNovas) {
+        await _armazenamentoArquivos.salvar(versao.id, versao.conteudoChordPro);
+        criadas.add(versao.id);
+      }
+      for (final entrada in desejados.entries) {
+        if (entrada.value == anteriores[entrada.key]) continue;
+        await _armazenamentoArquivos.substituir(entrada.key, entrada.value);
+        substituidas.add(entrada.key);
+      }
+
+      await _banco.executarEmTransacao(() async {
+        if (plano.criarMusica) {
+          final principal = plano.versoesNovas.singleWhere(
+            (versao) => versao.principal,
+          );
+          await _banco.inserir(
+            id: plano.idMusica.valor,
+            titulo: plano.titulo,
+            artista: plano.artista,
+            arquivo: _armazenamentoArquivos.nomeArquivo(principal.id),
+          );
+        } else if (catalogoMudou) {
+          final alteradas = await _banco.atualizar(
+            id: plano.idMusica.valor,
+            titulo: plano.titulo,
+            artista: plano.artista,
+          );
+          if (alteradas != 1) throw MusicaNaoEncontrada(plano.idMusica);
+        }
+
+        for (final versao in plano.versoesNovas) {
+          await _banco.inserirVersaoMusica(
+            id: versao.id.valor,
+            idMusica: plano.idMusica.valor,
+            nome: versao.nome,
+            arquivo: _armazenamentoArquivos.nomeArquivo(versao.id),
+            principal: versao.principal,
+            arquivada: false,
+          );
+          await _banco.salvarOrigemSincronizadaVersao(
+            idVersaoMusica: versao.id.valor,
+            localizadorExterno: versao.localizadorExterno,
+            hashSha256: versao.hashSha256,
+            presente: true,
+          );
+        }
+        for (final versao in plano.versoesExistentes) {
+          await _banco.renomearVersaoMusica(versao.id.valor, versao.nome);
+          await _banco.salvarOrigemSincronizadaVersao(
+            idVersaoMusica: versao.id.valor,
+            localizadorExterno: versao.localizadorExterno,
+            hashSha256: versao.hashSha256,
+            presente: true,
+          );
+        }
+      });
+    } catch (erro, pilha) {
+      try {
+        for (final id in substituidas.reversed) {
+          await _armazenamentoArquivos.substituir(id, anteriores[id]!);
+        }
+        for (final id in criadas.reversed) {
+          if (await _armazenamentoArquivos.existe(id)) {
+            await _armazenamentoArquivos.excluir(id);
+          }
+        }
+      } catch (_) {
+        throw EstadoPersistenciaMusicaInconsistente(plano.idMusica);
+      }
+      Error.throwWithStackTrace(erro, pilha);
+    }
+  }
 
   @override
   Future<void> salvar(Musica musica) async {
