@@ -137,6 +137,33 @@ void main() {
       },
     );
 
+    test('reconhece metadados de sincronização do schema 2', () {
+      const fonte =
+          '{appcifras_schema:2}\n'
+          '{appcifras_id: musica-1}\n'
+          '{appcifras_version_id: versao-1}\n'
+          '{appcifras_version_name: Acústica}\n'
+          '{appcifras_primary:true}';
+
+      final documento = parser.interpretar(fonte);
+
+      expect((documento.elementos[0] as DiretivaSchemaAppCifras).versao, 2);
+      expect((documento.elementos[1] as DiretivaIdAppCifras).id, 'musica-1');
+      expect(
+        (documento.elementos[2] as DiretivaIdVersaoAppCifras).id,
+        'versao-1',
+      );
+      expect(
+        (documento.elementos[3] as DiretivaNomeVersaoAppCifras).nome,
+        'Acústica',
+      );
+      expect(
+        (documento.elementos[4] as DiretivaPrincipalAppCifras).principal,
+        isTrue,
+      );
+      expect(documento.conteudoOriginal, fonte);
+    });
+
     test('aceita a ausência de diretivas próprias em ChordPro externo', () {
       final documento = parser.interpretar('{title: Música}\n{key: C}');
 

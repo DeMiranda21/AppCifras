@@ -76,6 +76,31 @@ class DiretivaIdAppCifras extends DiretivaChordPro {
   }
 }
 
+class DiretivaIdVersaoAppCifras extends DiretivaChordPro {
+  const DiretivaIdVersaoAppCifras(super.original, super.valor);
+
+  String? get id {
+    final valor = valorOriginal.trim();
+    return valor.isEmpty ? null : valor;
+  }
+}
+
+class DiretivaNomeVersaoAppCifras extends DiretivaChordPro {
+  const DiretivaNomeVersaoAppCifras(super.original, super.valor);
+
+  String get nome => valorOriginal.trim();
+}
+
+class DiretivaPrincipalAppCifras extends DiretivaChordPro {
+  const DiretivaPrincipalAppCifras(super.original, super.valor);
+
+  bool? get principal => switch (valorOriginal.trim()) {
+    'true' => true,
+    'false' => false,
+    _ => null,
+  };
+}
+
 /// Fronteira técnica persistida entre blocos livres derivados pelo AppCifras.
 ///
 /// Não representa uma seção musical e não deve ser exibida como conteúdo.
