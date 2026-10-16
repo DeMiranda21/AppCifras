@@ -10,6 +10,7 @@ import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
+import '../../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -17,6 +18,7 @@ import '../../dominio/objetos_de_valor/tag_musica.dart';
 import '../entrada/tela_entrada_musica.dart';
 import '../listas_culto/tela_listas_culto.dart';
 import '../musica/tela_visualizacao_musica.dart';
+import '../sincronizacao/tela_pasta_curada.dart';
 
 class TelaBiblioteca extends StatefulWidget {
   const TelaBiblioteca({
@@ -46,6 +48,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.removerItemListaCulto,
     this.trocarVersaoItemListaCulto,
     this.reordenarItensListaCulto,
+    this.gerenciarPastaCurada,
   });
 
   final ListarMusicas listarMusicas;
@@ -73,6 +76,7 @@ class TelaBiblioteca extends StatefulWidget {
   final RemoverItemListaCulto? removerItemListaCulto;
   final TrocarVersaoItemListaCulto? trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto? reordenarItensListaCulto;
+  final GerenciarPastaCurada? gerenciarPastaCurada;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -206,11 +210,29 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     }
   }
 
+  Future<void> _abrirPastaCurada() async {
+    final gerenciarPastaCurada = widget.gerenciarPastaCurada;
+    if (gerenciarPastaCurada == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) =>
+            TelaPastaCurada(gerenciarPastaCurada: gerenciarPastaCurada),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Biblioteca'),
       actions: [
+        if (widget.gerenciarPastaCurada != null)
+          IconButton(
+            key: const ValueKey('abrir-pasta-curada'),
+            tooltip: 'Pasta da biblioteca',
+            onPressed: _abrirPastaCurada,
+            icon: const Icon(Icons.folder_outlined),
+          ),
         if (widget.listarListasCulto != null)
           TextButton.icon(
             onPressed: _abrirListasCulto,
