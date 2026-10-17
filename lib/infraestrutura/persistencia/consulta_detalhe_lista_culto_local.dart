@@ -46,11 +46,28 @@ class ConsultaDetalheListaCultoLocal implements ConsultaDetalheListaCulto {
     final idsVersoes = {for (final item in itens) item.idVersaoMusica.valor};
     final consultaMusicas = _banco.listarMusicasPorIds(idsMusicas);
     final consultaVersoes = _banco.listarVersoesPorIds(idsVersoes);
+    final consultaOrigens = _banco.listarOrigensSincronizadasVersoesPorIds(
+      idsVersoes,
+    );
     final musicas = await consultaMusicas;
     final indicesVersoes = await consultaVersoes;
+    final origens = await consultaOrigens;
     final musicasPorId = {for (final musica in musicas) musica.id: musica};
-    final versoes = await Future.wait(indicesVersoes.map(_reconstruirVersao));
-    final versoesPorId = {for (final versao in versoes) versao.id: versao};
+    final idsVersoesSincronizadas = {
+      for (final origem in origens) origem.idVersaoMusica,
+    };
+    final versoes = await Future.wait<VersaoMusica?>(
+      indicesVersoes.map(
+        (indice) => _tentarReconstruirVersao(
+          indice,
+          sincronizada: idsVersoesSincronizadas.contains(indice.id),
+        ),
+      ),
+    );
+    final versoesPorId = {
+      for (final versao in versoes.whereType<VersaoMusica>())
+        versao.id: versao,
+    };
 
     return [
       for (final item in itens)
@@ -64,7 +81,27 @@ class ConsultaDetalheListaCultoLocal implements ConsultaDetalheListaCulto {
     ];
   }
 
-  Future<VersaoMusica> _reconstruirVersao(VersoesMusica indice) async {
+  Future<VersaoMusica?> _tentarReconstruirVersao(
+    VersoesMusica indice, {
+    required bool sincronizada,
+  }) async {
+    try {
+      return await _reconstruirVersao(indice, sincronizada: sincronizada);
+    } on ArquivoChordProInexistente {
+      return null;
+    } on SchemaAppCifrasNaoSuportado {
+      return null;
+    } on FormatException {
+      return null;
+    } on StateError {
+      return null;
+    }
+  }
+
+  Future<VersaoMusica> _reconstruirVersao(
+    VersoesMusica indice, {
+    required bool sincronizada,
+  }) async {
     final id = IdVersaoMusica(indice.id);
     final idMusica = IdMusica(indice.idMusica);
     if (indice.arquivo != _armazenamentoArquivos.nomeArquivo(id)) {
@@ -72,7 +109,11 @@ class ConsultaDetalheListaCultoLocal implements ConsultaDetalheListaCulto {
     }
     final conteudo = await _armazenamentoArquivos.obter(id);
     final documento = _parserDocumento.interpretar(conteudo);
-    _validadorSchema.validarParaIncorporacao(documento);
+    if (sincronizada) {
+      _validadorSchema.validarParaVersaoSincronizada(documento);
+    } else {
+      _validadorSchema.validarParaIncorporacao(documento);
+    }
     return VersaoMusica(
       id: id,
       idMusica: idMusica,

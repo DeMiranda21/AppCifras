@@ -355,6 +355,14 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   listarOrigensSincronizadasVersoes() =>
       select(origensSincronizadasVersoes).get();
 
+  Future<List<OrigemSincronizadaVersaoRegistro>>
+  listarOrigensSincronizadasVersoesPorIds(Set<String> ids) {
+    if (ids.isEmpty) return Future.value(const []);
+    return (select(
+      origensSincronizadasVersoes,
+    )..where((tabela) => tabela.idVersaoMusica.isIn(ids))).get();
+  }
+
   Future<T> executarEmTransacao<T>(Future<T> Function() acao) =>
       transaction(acao);
 
