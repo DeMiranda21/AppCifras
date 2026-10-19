@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'curadoria_biblioteca.dart';
+import 'detector_tonal.dart';
 import 'inventario_biblioteca.dart';
 
 Future<void> main(List<String> argumentos) async {
@@ -50,6 +52,42 @@ Future<void> main(List<String> argumentos) async {
       ..writeln('Inalterados: ${resumo.inalterados}')
       ..writeln('Conflitos: ${resumo.conflitos}')
       ..writeln(
+        'Calibração tonal: ${resumo.calibracaoTonal.totalComTomExplicito} arquivos com tom explícito',
+      );
+    for (final nivel in ConfiancaDeteccaoTom.values) {
+      final estatistica = resumo.calibracaoTonal.porConfianca[nivel]!;
+      stdout.writeln(
+        '  ${nivel.name}: ${estatistica.corretos}/${estatistica.total} corretos '
+        '(${(estatistica.precisao * 100).toStringAsFixed(2)}%); '
+        'cobertura ${(resumo.calibracaoTonal.totalComTomExplicito == 0 ? 0 : estatistica.total * 100 / resumo.calibracaoTonal.totalComTomExplicito).toStringAsFixed(2)}%',
+      );
+    }
+    stdout.writeln(
+      'Inferência automática de confiança alta: '
+      '${resumo.calibracaoTonal.permiteAplicacaoAutomaticaAlta ? 'habilitada' : 'desabilitada'}',
+    );
+    final tonsInferidos = <String, int>{};
+    for (final entrada in resumo.entradas) {
+      if (entrada['origemTom'] == 'inferido' && entrada['tom'] is String) {
+        final tom = entrada['tom'] as String;
+        tonsInferidos[tom] = (tonsInferidos[tom] ?? 0) + 1;
+      }
+    }
+    final distribuicao = tonsInferidos.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    stdout
+      ..writeln(
+        'Tons inferidos: ${distribuicao.map((e) => '${e.key}=${e.value}').join(', ')}',
+      )
+      ..writeln(
+        'Casos tonais ambíguos/insuficientes: '
+        '${resumo.entradas.where((e) => e['confiancaTom'] == 'baixa').length}',
+      )
+      ..writeln(
+        'Casos com possível modulação: '
+        '${resumo.entradas.where((e) => e['possivelModulacao'] == true).length}',
+      )
+      ..writeln(
         'Arquivos com pares preservados em linhas separadas: '
         '${resumo.entradas.where((e) => ((e['paresPreservadosEmLinhaSeparada'] as int?) ?? 0) > 0).length}',
       )
@@ -58,8 +96,30 @@ Future<void> main(List<String> argumentos) async {
         '${resumo.entradas.fold<int>(0, (soma, e) => soma + ((e['paresPreservadosEmLinhaSeparada'] as int?) ?? 0))}',
       );
     if (argumentos.contains('--detalhes')) {
+      for (final caso in resumo.calibracaoTonal.casos) {
+        stdout.writeln('CASO_TONAL ${jsonEncode(caso)}');
+      }
+      for (final divergencia in resumo.calibracaoTonal.divergencias) {
+        stdout.writeln(
+          'CALIBRACAO ${divergencia['arquivo']} — '
+          'declarado ${divergencia['declarado']}, '
+          'detectado ${divergencia['detectado']}, '
+          '${divergencia['confianca']}, '
+          '${divergencia['quantidadeAcordes']} acordes, '
+          'segundo ${divergencia['segundoCandidato']}, '
+          'diferença ${divergencia['diferencaPontuacao']}',
+        );
+      }
       for (final entrada in resumo.entradas) {
         stdout.writeln('${entrada['nomeOrigem']} — ${entrada['status']}');
+        if (entrada['tomDetectado'] != null) {
+          stdout.writeln(
+            '  tom: ${entrada['tomDetectado']} '
+            '(${entrada['confiancaTom']}; segundo: '
+            '${(entrada['segundoCandidatoTom'] as Map?)?['tom']}; '
+            'diferença: ${entrada['diferencaPontuacaoTom']})',
+          );
+        }
         final motivos = (entrada['motivosRevisao'] as List? ?? const []);
         for (final motivo in motivos) {
           stdout.writeln('  - $motivo');

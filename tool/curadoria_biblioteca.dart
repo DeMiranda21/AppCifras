@@ -9,6 +9,7 @@ import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 
 import 'conversor_curadoria.dart';
+import 'detector_tonal.dart';
 import 'overrides_curadoria.dart';
 
 enum StatusCuradoria { pronto, revisar, bloqueado }
@@ -40,6 +41,7 @@ class ResumoCuradoria {
     required this.inalterados,
     required this.conflitos,
     required this.entradas,
+    required this.calibracaoTonal,
   });
 
   final int total;
@@ -49,6 +51,7 @@ class ResumoCuradoria {
   final int inalterados;
   final int conflitos;
   final List<Map<String, Object?>> entradas;
+  final ResultadoCalibracaoTonal calibracaoTonal;
 }
 
 class CuradoriaBiblioteca {
@@ -61,6 +64,7 @@ class CuradoriaBiblioteca {
       ClassificadorLinhaCifraTextual();
   final ParserAcorde _parserAcorde = ParserAcorde();
   final ValidarArquivoPastaCurada _validador = ValidarArquivoPastaCurada();
+  final DetectorTonal _detectorTonal = DetectorTonal();
 
   static final RegExp _tom = RegExp(
     r'^\s*(?:tom|key)\s*:\s*\[?([A-G](?:[#b])?m?)\]?\s*$',
@@ -106,6 +110,7 @@ class CuradoriaBiblioteca {
   }
 
   Future<ResumoCuradoria> _executarInterno(OpcoesCuradoria opcoes) async {
+    final calibracaoTonal = await _calibrarDetectorTonal(opcoes.biblioteca);
     final lote = Directory(_juntar(opcoes.biblioteca.path, opcoes.lote));
     if (!await lote.exists()) {
       throw ArgumentError('Lote não encontrado: ${lote.path}');
@@ -213,6 +218,7 @@ class CuradoriaBiblioteca {
             entradas: entradas,
             override: overrides.paraOrigem(relativo),
             identidadePendente: identidadePendente,
+            calibracaoTonal: calibracaoTonal,
           );
         }
       } catch (erro, pilha) {
@@ -288,6 +294,7 @@ class CuradoriaBiblioteca {
           )
           .length,
       entradas: List.unmodifiable(doLote),
+      calibracaoTonal: calibracaoTonal,
     );
     if (!opcoes.simular) {
       manifesto['atualizadoEm'] = DateTime.now().toUtc().toIso8601String();
@@ -317,6 +324,124 @@ class CuradoriaBiblioteca {
     return resumo;
   }
 
+  Future<ResultadoCalibracaoTonal> _calibrarDetectorTonal(
+    Directory biblioteca,
+  ) async {
+    final totais = <ConfiancaDeteccaoTom, int>{
+      for (final nivel in ConfiancaDeteccaoTom.values) nivel: 0,
+    };
+    final corretos = <ConfiancaDeteccaoTom, int>{
+      for (final nivel in ConfiancaDeteccaoTom.values) nivel: 0,
+    };
+    final divergencias = <Map<String, Object?>>[];
+    final casos = <Map<String, Object?>>[];
+    var totalExplicito = 0;
+    if (!await biblioteca.exists()) {
+      return ResultadoCalibracaoTonal(
+        totalComTomExplicito: 0,
+        porConfianca: {
+          for (final nivel in ConfiancaDeteccaoTom.values)
+            nivel: const EstatisticaCalibracaoTonal(total: 0, corretos: 0),
+        },
+        divergencias: const [],
+        casos: const [],
+      );
+    }
+    final lotes = await biblioteca
+        .list(followLinks: false)
+        .where((item) => item is Directory)
+        .cast<Directory>()
+        .where((pasta) => RegExp(r'^Lote \d+$').hasMatch(_nome(pasta.path)))
+        .toList();
+    for (final lote in lotes) {
+      await for (final item in lote.list(recursive: true, followLinks: false)) {
+        if (item is! File || !item.path.toLowerCase().endsWith('.txt')) {
+          continue;
+        }
+        try {
+          final texto = detectarCodificacao(await item.readAsBytes()).texto;
+          final declarados = <String>[];
+          for (final linha in texto.split(RegExp(r'\r\n|\n|\r'))) {
+            final match = _tom.firstMatch(linha);
+            if (match != null) declarados.add(_normalizarTom(match.group(1)!));
+          }
+          if (declarados.length != 1) continue;
+          totalExplicito++;
+          final esperado = declarados.single;
+          final resultado = _detectorTonal.detectar(texto);
+          final nivel = resultado.confianca;
+          totais[nivel] = totais[nivel]! + 1;
+          final correto =
+              resultado.tomDetectado != null &&
+              _tonsEquivalentes(esperado, resultado.tomDetectado!);
+          final caso = <String, Object?>{
+            'arquivo': item.path.substring(biblioteca.path.length + 1),
+            'declarado': esperado,
+            'detectado': resultado.tomDetectado,
+            'correto': correto,
+            'confianca': nivel.name,
+            'quantidadeAcordes': resultado.quantidadeAcordes,
+            'primeiroAcorde': resultado.primeiroAcorde,
+            'ultimoAcorde': resultado.ultimoAcorde,
+            'pontuacaoPrimeiro': resultado.primeiroCandidato?.pontuacao,
+            'segundoCandidato': resultado.segundoCandidato?.tom,
+            'pontuacaoSegundo': resultado.segundoCandidato?.pontuacao,
+            'diferencaPontuacao': double.parse(
+              resultado.diferencaPontuacao.toStringAsFixed(2),
+            ),
+            'evidenciasPrimeiro': resultado.evidencias,
+            'evidenciasSegundo': resultado.evidenciasSegundoCandidato,
+            'possivelModulacao': resultado.possivelModulacao,
+          };
+          casos.add(caso);
+          if (correto) {
+            corretos[nivel] = corretos[nivel]! + 1;
+          } else {
+            divergencias.add(caso);
+          }
+        } on FormatException {
+          // Arquivo sem decodificação inequívoca não serve como calibração.
+        }
+      }
+    }
+    return ResultadoCalibracaoTonal(
+      totalComTomExplicito: totalExplicito,
+      porConfianca: {
+        for (final nivel in ConfiancaDeteccaoTom.values)
+          nivel: EstatisticaCalibracaoTonal(
+            total: totais[nivel]!,
+            corretos: corretos[nivel]!,
+          ),
+      },
+      divergencias: List.unmodifiable(divergencias),
+      casos: List.unmodifiable(casos),
+    );
+  }
+
+  bool _tonsEquivalentes(String a, String b) {
+    final menorA = a.endsWith('m');
+    final menorB = b.endsWith('m');
+    if (menorA != menorB) return false;
+    final raizA = menorA ? a.substring(0, a.length - 1) : a;
+    final raizB = menorB ? b.substring(0, b.length - 1) : b;
+    int classe(String nota) {
+      const naturais = {
+        'C': 0,
+        'D': 2,
+        'E': 4,
+        'F': 5,
+        'G': 7,
+        'A': 9,
+        'B': 11,
+      };
+      var valor = naturais[nota[0].toUpperCase()]!;
+      if (nota.length > 1) valor += nota[1] == '#' ? 1 : -1;
+      return valor % 12;
+    }
+
+    return classe(raizA) == classe(raizB);
+  }
+
   Map<String, Object?> _processar({
     required OpcoesCuradoria opcoes,
     required File origem,
@@ -327,10 +452,30 @@ class CuradoriaBiblioteca {
     required List<Map<String, Object?>> entradas,
     required OverrideCuradoriaArquivo? override,
     required Map<String, Object?>? identidadePendente,
+    required ResultadoCalibracaoTonal calibracaoTonal,
   }) {
     final decodificado = detectarCodificacao(bytes);
     final extraida = _extrairMetadados(decodificado.texto, _base(origem.path));
     final analise = _aplicarOverride(extraida, override);
+    var tomEfetivo = analise.tom;
+    var origemTom = extraida.tom != null
+        ? 'declarado'
+        : (override?.tom != null ? 'override' : 'ausente');
+    ResultadoDeteccaoTom? deteccaoTom;
+    var confiancaTom = ConfiancaDeteccaoTom.baixa;
+    if (tomEfetivo == null) {
+      deteccaoTom = _detectorTonal.detectar(analise.corpo);
+      confiancaTom = deteccaoTom.confianca;
+      if (confiancaTom == ConfiancaDeteccaoTom.alta &&
+          !calibracaoTonal.permiteAplicacaoAutomaticaAlta) {
+        confiancaTom = ConfiancaDeteccaoTom.media;
+      }
+      if (deteccaoTom.tomDetectado != null &&
+          confiancaTom != ConfiancaDeteccaoTom.baixa) {
+        tomEfetivo = deteccaoTom.tomDetectado;
+        origemTom = 'inferido';
+      }
+    }
     final observacoes = <String>[
       ...decodificado.observacoes,
       ...analise.observacoes,
@@ -346,9 +491,17 @@ class CuradoriaBiblioteca {
     );
     var status = StatusCuradoria.pronto;
 
+    if (origemTom == 'inferido' && confiancaTom == ConfiancaDeteccaoTom.media) {
+      final motivo =
+          'Tom sugerido por inferência com confiança média; exige revisão humana.';
+      observacoes.add(motivo);
+      motivosRevisao.add(motivo);
+      status = StatusCuradoria.revisar;
+    }
+
     if (analise.titulo == null ||
         analise.artista == null ||
-        analise.tom == null) {
+        tomEfetivo == null) {
       status = StatusCuradoria.bloqueado;
       if (analise.titulo == null) {
         const motivo = 'Título não identificado.';
@@ -360,8 +513,10 @@ class CuradoriaBiblioteca {
         observacoes.add(motivo);
         motivosRevisao.add(motivo);
       }
-      if (analise.tom == null) {
-        const motivo = 'Tom não identificado ou inválido.';
+      if (tomEfetivo == null) {
+        final motivo = deteccaoTom?.possivelModulacao == true
+            ? 'Tom não atribuído: possível modulação ou centros tonais concorrentes.'
+            : 'Tom não identificado com confiança suficiente.';
         observacoes.add(motivo);
         motivosRevisao.add(motivo);
       }
@@ -379,7 +534,7 @@ class CuradoriaBiblioteca {
         idVersao: idVersao,
         titulo: analise.titulo!,
         artista: analise.artista!,
-        tom: analise.tom!,
+        tom: tomEfetivo!,
         nomeVersao:
             override?.nomeVersao ??
             (anterior?['nomeVersao'] as String? ?? 'Original'),
@@ -458,7 +613,18 @@ class CuradoriaBiblioteca {
       'idVersaoMusica': idVersao,
       'titulo': analise.titulo,
       'artista': analise.artista,
-      'tom': analise.tom,
+      'tom': tomEfetivo,
+      'tomDetectado': deteccaoTom?.tomDetectado,
+      'origemTom': origemTom,
+      'confiancaTom': origemTom == 'inferido' || deteccaoTom != null
+          ? confiancaTom.name
+          : null,
+      'evidenciasTom': deteccaoTom?.evidencias ?? const <String>[],
+      'segundoCandidatoTom': deteccaoTom?.segundoCandidato?.toJson(),
+      'diferencaPontuacaoTom': deteccaoTom == null
+          ? null
+          : double.parse(deteccaoTom.diferencaPontuacao.toStringAsFixed(2)),
+      'possivelModulacao': deteccaoTom?.possivelModulacao ?? false,
       'nomeVersao':
           override?.nomeVersao ??
           (anterior?['nomeVersao'] as String? ?? 'Original'),
@@ -645,7 +811,7 @@ class CuradoriaBiblioteca {
     return AnaliseMetadados(
       titulo: override.titulo ?? analise.titulo,
       artista: override.artista ?? analise.artista,
-      tom: override.tom ?? analise.tom,
+      tom: analise.tom ?? override.tom,
       corpo: analise.corpo,
       ambiguo: false,
       observacoes: [
@@ -1276,6 +1442,22 @@ class CuradoriaBiblioteca {
       buffer.writeln();
       for (final item in itens) {
         buffer.writeln('#### ${item['nomeOrigem']} — ${item['status']}');
+        if (item['origemTom'] != null) {
+          buffer.writeln(
+            '- Tom: ${item['tom'] ?? item['tomDetectado'] ?? 'não atribuído'} '
+            '(origem: ${item['origemTom']}, confiança: ${item['confiancaTom'] ?? 'não aplicável'}).',
+          );
+        }
+        if (item['segundoCandidatoTom'] is Map) {
+          final segundo = item['segundoCandidatoTom'] as Map;
+          buffer.writeln(
+            '- Segundo candidato tonal: ${segundo['tom']} '
+            '(diferença: ${item['diferencaPontuacaoTom']}).',
+          );
+        }
+        for (final evidencia in (item['evidenciasTom'] as List? ?? const [])) {
+          buffer.writeln('- Evidência tonal: $evidencia');
+        }
         final motivos = (item['motivosRevisao'] as List? ?? const [])
             .cast<Object?>();
         if (motivos.isEmpty) {
