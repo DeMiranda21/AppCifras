@@ -449,6 +449,94 @@ void main() {
     expect(parecido['overrideAplicado'], isFalse);
   });
 
+  test(
+    'combina override adicional sem substituir os campos anteriores',
+    () async {
+      final lote = Directory(
+        '${temporaria.path}${Platform.pathSeparator}Lote 02',
+      );
+      await lote.create();
+      await File('${lote.path}${Platform.pathSeparator}Alvo.txt')
+          .writeAsString('Alvo\nC G C\nLetra');
+      await File(
+        '${temporaria.path}${Platform.pathSeparator}curadoria_overrides.json',
+      ).writeAsString(
+        jsonEncode({
+          'schema': 1,
+          'overrides': {
+            'Lote 02/Alvo.txt': {'artista': 'Artista preservado'},
+          },
+        }),
+      );
+      final adicional = File(
+        '${temporaria.path}${Platform.pathSeparator}adicional.json',
+      );
+      await adicional.writeAsString(
+        jsonEncode({
+          'schema': 1,
+          'overrides': {
+            'Lote 02/Alvo.txt': {'tom': 'C'},
+          },
+        }),
+      );
+
+      final resultado = await CuradoriaBiblioteca().executar(
+        OpcoesCuradoria(
+          biblioteca: temporaria,
+          lote: 'Lote 02',
+          simular: true,
+          arquivosOverridesAdicionais: [adicional],
+        ),
+      );
+      final alvo = resultado.entradas.single;
+      expect(alvo['artista'], 'Artista preservado');
+      expect(alvo['tom'], 'C');
+      expect(alvo['origemTom'], 'override');
+    },
+  );
+
+  test('recusa conflito entre override anterior e adicional', () async {
+    final lote = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 02',
+    );
+    await lote.create();
+    await File('${lote.path}${Platform.pathSeparator}Alvo.txt')
+        .writeAsString('Alvo - Artista\nC G C\nLetra');
+    await File(
+      '${temporaria.path}${Platform.pathSeparator}curadoria_overrides.json',
+    ).writeAsString(
+      jsonEncode({
+        'schema': 1,
+        'overrides': {
+          'Lote 02/Alvo.txt': {'tom': 'C'},
+        },
+      }),
+    );
+    final adicional = File(
+      '${temporaria.path}${Platform.pathSeparator}adicional.json',
+    );
+    await adicional.writeAsString(
+      jsonEncode({
+        'schema': 1,
+        'overrides': {
+          'Lote 02/Alvo.txt': {'tom': 'D'},
+        },
+      }),
+    );
+
+    await expectLater(
+      CuradoriaBiblioteca().executar(
+        OpcoesCuradoria(
+          biblioteca: temporaria,
+          lote: 'Lote 02',
+          simular: true,
+          arquivosOverridesAdicionais: [adicional],
+        ),
+      ),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
   test('simulação não altera nenhum arquivo', () async {
     final lote = Directory(
       '${temporaria.path}${Platform.pathSeparator}Lote 02',

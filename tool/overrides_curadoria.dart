@@ -45,11 +45,49 @@ class OverridesCuradoria {
 
   OverrideCuradoriaArquivo? paraOrigem(String origem) => _porOrigem[origem];
 
-  static Future<OverridesCuradoria> carregar(Directory biblioteca) async {
-    final arquivo = File(
+  static Future<OverridesCuradoria> carregar(
+    Directory biblioteca, {
+    Iterable<File> adicionais = const [],
+  }) async {
+    final arquivoBase = File(
       '${biblioteca.path}${Platform.pathSeparator}curadoria_overrides.json',
     );
-    if (!await arquivo.exists()) return vazio;
+    final arquivos = <File>[
+      if (await arquivoBase.exists()) arquivoBase,
+      ...adicionais,
+    ];
+    if (arquivos.isEmpty) return vazio;
+    final resultado = <String, OverrideCuradoriaArquivo>{};
+    final fontes = <String, String>{};
+    for (final arquivo in arquivos) {
+      if (!await arquivo.exists()) {
+        throw ArgumentError(
+          'Arquivo de overrides não encontrado: ${arquivo.path}',
+        );
+      }
+      final lidos = await _carregarArquivo(arquivo);
+      for (final entrada in lidos.entries) {
+        final anterior = resultado[entrada.key];
+        if (anterior == null) {
+          resultado[entrada.key] = entrada.value;
+          fontes[entrada.key] = arquivo.path;
+          continue;
+        }
+        resultado[entrada.key] = _combinar(
+          entrada.key,
+          anterior,
+          entrada.value,
+          fontes[entrada.key]!,
+          arquivo.path,
+        );
+      }
+    }
+    return OverridesCuradoria._(Map.unmodifiable(resultado));
+  }
+
+  static Future<Map<String, OverrideCuradoriaArquivo>> _carregarArquivo(
+    File arquivo,
+  ) async {
     late final Object? decodificado;
     try {
       decodificado = jsonDecode(await arquivo.readAsString());
@@ -141,6 +179,44 @@ class OverridesCuradoria {
       );
       if (!override.vazio) resultado[origem] = override;
     }
-    return OverridesCuradoria._(Map.unmodifiable(resultado));
+    return resultado;
+  }
+
+  static OverrideCuradoriaArquivo _combinar(
+    String origem,
+    OverrideCuradoriaArquivo base,
+    OverrideCuradoriaArquivo adicional,
+    String fonteBase,
+    String fonteAdicional,
+  ) {
+    T? campo<T>(String nome, T? a, T? b) {
+      if (a != null && b != null && a != b) {
+        throw FormatException(
+          'Conflito no campo $nome do override $origem entre '
+          '$fonteBase e $fonteAdicional.',
+        );
+      }
+      return b ?? a;
+    }
+
+    return OverrideCuradoriaArquivo(
+      titulo: campo('titulo', base.titulo, adicional.titulo),
+      artista: campo('artista', base.artista, adicional.artista),
+      tom: campo('tom', base.tom, adicional.tom),
+      nomeVersao: campo('nomeVersao', base.nomeVersao, adicional.nomeVersao),
+      decisaoDuplicidade: campo(
+        'decisaoDuplicidade',
+        base.decisaoDuplicidade,
+        adicional.decisaoDuplicidade,
+      ),
+      idMusicaCompartilhado: campo(
+        'idMusicaCompartilhado',
+        base.idMusicaCompartilhado,
+        adicional.idMusicaCompartilhado,
+      ),
+      principal: campo('principal', base.principal, adicional.principal),
+      aprovado: campo('aprovado', base.aprovado, adicional.aprovado),
+      observacao: campo('observacao', base.observacao, adicional.observacao),
+    );
   }
 }

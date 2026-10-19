@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 04/a-comunhao-da-tua-gloria.txt": {
+      "tom": "A"
+    },
+    "Lote 04/a-mensagem-da-cruz.txt": {
+      "tom": "Bb"
+    },
+    "Lote 04/a-oferta-da-viuvinha.txt": {
+      "tom": "D"
+    },
+    "Lote 04/abra-um-sorriso.txt": {
+      "tom": "D"
+    },
+    "Lote 04/aclame-ao-senhor.txt": {
+      "tom": "A"
+    },
+    "Lote 04/agnus-dei.txt": {
+      "tom": "A"
+    },
+    "Lote 04/aguas-do-trono.txt": {
+      "tom": "D"
+    },
+    "Lote 04/amado-da-minha-alma.txt": {
+      "tom": "C"
+    },
+    "Lote 04/amigo-de-deus.txt": {
+      "tom": "A"
+    },
+    "Lote 04/ao-deus-da-minha-salvacao.txt": {
+      "tom": "F"
+    },
+    "Lote 04/balanca-casinha.txt": {
+      "tom": "D"
+    },
+    "Lote 04/banco-de-tras.txt": {
+      "tom": "A"
+    },
+    "Lote 04/brilha-jesus(simplificada).txt": {
+      "tom": "E"
+    },
+    "Lote 04/brilha-jesus.txt": {
+      "tom": "G"
+    },
+    "Lote 04/brincando-de-adoleta.txt": {
+      "tom": "B"
+    },
+    "Lote 04/caminho-da-fe.txt": {
+      "tom": "F#"
+    },
+    "Lote 04/chua-chua.txt": {
+      "tom": "E"
+    },
+    "Lote 04/clame-o-nome-de-jesus.txt": {
+      "tom": "Em"
+    },
+    "Lote 04/consagracao(simplificada).txt": {
+      "tom": "A"
+    },
+    "Lote 04/contar-meus-segredos.txt": {
+      "tom": "G"
+    },
+    "Lote 04/corra-para-os-bracos-do-pai.txt": {
+      "tom": "E"
+    },
+    "Lote 04/crianca-de-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 04/dada-gugu.txt": {
+      "tom": "E"
+    },
+    "Lote 04/danca-do-nickinho.txt": {
+      "tom": "Fm"
+    },
+    "Lote 04/danca-do-quaquito.txt": {
+      "tom": "C"
+    },
+    "Lote 04/davizinho.txt": {
+      "tom": "D"
+    },
+    "Lote 04/deus-confirmou.txt": {
+      "tom": "D"
+    },
+    "Lote 04/deus-poderoso.txt": {
+      "tom": "A"
+    },
+    "Lote 04/digno-e-o-senhor-worthy-is-the-lamb.txt": {
+      "tom": "G"
+    },
+    "Lote 04/e-campeao.txt": {
+      "tom": "Dm"
+    },
+    "Lote 04/em-nome-de-jesus.txt": {
+      "tom": "D"
+    },
+    "Lote 04/grande-e-simples.txt": {
+      "tom": "B"
+    },
+    "Lote 04/jesus-cristo-mudou-meu-viver(simplificada).txt": {
+      "tom": "G"
+    },
+    "Lote 04/jesus-cristo-mudou-meu-viver.txt": {
+      "tom": "G"
+    },
+    "Lote 04/louvar-e-bom-demais.txt": {
+      "tom": "E"
+    },
+    "Lote 04/melo-do-sapo.txt": {
+      "tom": "C"
+    },
+    "Lote 04/mulher-samaritana.txt": {
+      "tom": "Fm"
+    },
+    "Lote 04/nasceu-jesus.txt": {
+      "tom": "G"
+    },
+    "Lote 04/nicolas.txt": {
+      "tom": "D"
+    },
+    "Lote 04/para-sempre-te-adorarei.txt": {
+      "tom": "D"
+    },
+    "Lote 04/parabens-pra-voce.txt": {
+      "tom": "D"
+    },
+    "Lote 04/pedro-tiago-e-joao-no-barquinho.txt": {
+      "tom": "G"
+    },
+    "Lote 04/pisa-na-muralha.txt": {
+      "tom": "C"
+    },
+    "Lote 04/ploc-ploc-part-maria-catherine.txt": {
+      "tom": "E"
+    },
+    "Lote 04/porque-ele-vive.txt": {
+      "tom": "E"
+    },
+    "Lote 04/pra-sempre-te-amar.txt": {
+      "tom": "F"
+    },
+    "Lote 04/quero-te-louvar.txt": {
+      "tom": "F#"
+    },
+    "Lote 04/retrato.txt": {
+      "tom": "A"
+    },
+    "Lote 04/samuel(simplificada).txt": {
+      "tom": "A"
+    },
+    "Lote 04/santidade.txt": {
+      "tom": "A"
+    },
+    "Lote 04/santo(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 04/sim-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 04/sono-felice.txt": {
+      "tom": "G"
+    },
+    "Lote 04/tem-um-anjo-aqui.txt": {
+      "tom": "C"
+    },
+    "Lote 04/teus-pra-sempre.txt": {
+      "tom": "D"
+    },
+    "Lote 04/tu-amor-por-mi.txt": {
+      "tom": "G#"
+    },
+    "Lote 04/tua-presenca-e-o-ceu-pra-mim.txt": {
+      "tom": "E"
+    },
+    "Lote 04/tudo-foi-criado-por-deus.txt": {
+      "tom": "E"
+    },
+    "Lote 04/vem-chegando-o-natal-santa-claus-is-comin-to-town.txt": {
+      "tom": "G"
+    },
+    "Lote 04/your-presence-is-heaven-feat-israel-houghton.txt": {
+      "tom": "C"
+    }
+  }
+}

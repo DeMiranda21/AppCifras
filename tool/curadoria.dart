@@ -36,7 +36,7 @@ Future<void> main(List<String> argumentos) async {
   final opcoes = _lerOpcoes(argumentos);
   if (opcoes == null) {
     stderr.writeln(
-      'Uso: dart run tool/curadoria.dart --biblioteca <pasta> --lote <nome> [--simular] [--reavaliar] [--adotar-cho-editado|--substituir-cho-editado] [--detalhes]',
+      'Uso: dart run tool/curadoria.dart --biblioteca <pasta> --lote <nome> [--simular] [--reavaliar] [--overrides-adicionais <arquivo>] [--adotar-cho-editado|--substituir-cho-editado] [--detalhes]',
     );
     exitCode = 64;
     return;
@@ -149,6 +149,7 @@ OpcoesCuradoria? _lerOpcoes(List<String> argumentos) {
   var reavaliar = false;
   var adotarChoEditado = false;
   var substituirChoEditado = false;
+  final arquivosOverridesAdicionais = <File>[];
   for (var i = 0; i < argumentos.length; i++) {
     switch (argumentos[i]) {
       case '--biblioteca' when i + 1 < argumentos.length:
@@ -163,6 +164,8 @@ OpcoesCuradoria? _lerOpcoes(List<String> argumentos) {
         adotarChoEditado = true;
       case '--substituir-cho-editado':
         substituirChoEditado = true;
+      case '--overrides-adicionais' when i + 1 < argumentos.length:
+        arquivosOverridesAdicionais.add(File(argumentos[++i]));
       case '--detalhes':
         break;
       default:
@@ -177,6 +180,7 @@ OpcoesCuradoria? _lerOpcoes(List<String> argumentos) {
     reavaliar: reavaliar,
     adotarChoEditado: adotarChoEditado,
     substituirChoEditado: substituirChoEditado,
+    arquivosOverridesAdicionais: List.unmodifiable(arquivosOverridesAdicionais),
   );
 }
 

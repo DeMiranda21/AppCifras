@@ -22,6 +22,7 @@ class OpcoesCuradoria {
     this.reavaliar = false,
     this.adotarChoEditado = false,
     this.substituirChoEditado = false,
+    this.arquivosOverridesAdicionais = const [],
   });
 
   final Directory biblioteca;
@@ -30,6 +31,7 @@ class OpcoesCuradoria {
   final bool reavaliar;
   final bool adotarChoEditado;
   final bool substituirChoEditado;
+  final List<File> arquivosOverridesAdicionais;
 }
 
 class ResumoCuradoria {
@@ -136,7 +138,10 @@ class CuradoriaBiblioteca {
     final manifesto = await _lerManifesto(manifestoArquivo);
     _validarManifesto(manifesto);
     final checkpoint = await _lerCheckpoint(checkpointArquivo);
-    final overrides = await OverridesCuradoria.carregar(opcoes.biblioteca);
+    final overrides = await OverridesCuradoria.carregar(
+      opcoes.biblioteca,
+      adicionais: opcoes.arquivosOverridesAdicionais,
+    );
     final entradas = (manifesto['entradas'] as List)
         .cast<Map<String, Object?>>();
 
