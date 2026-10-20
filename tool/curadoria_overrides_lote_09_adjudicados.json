@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 09/a-biblia.txt": {
+      "tom": "D#"
+    },
+    "Lote 09/a-cancao-do-amor.txt": {
+      "tom": "E"
+    },
+    "Lote 09/a-terra-inteira.txt": {
+      "tom": "Em"
+    },
+    "Lote 09/abertura-shema-israel-deus-de-israel-shailailai-salmo-24-pot-pourri.txt": {
+      "tom": "F#m"
+    },
+    "Lote 09/adore-o-grande-eu-sou.txt": {
+      "tom": "F"
+    },
+    "Lote 09/aguas-purificadoras.txt": {
+      "tom": "D"
+    },
+    "Lote 09/alegria.txt": {
+      "tom": "C"
+    },
+    "Lote 09/anseio.txt": {
+      "tom": "F"
+    },
+    "Lote 09/coracao-igual-ao-teu-diante-do-trono.txt": {
+      "tom": "F"
+    },
+    "Lote 09/cordeiro-e-leao.txt": {
+      "tom": "Cm"
+    },
+    "Lote 09/corpo-de-cristo.txt": {
+      "tom": "D"
+    },
+    "Lote 09/desperta.txt": {
+      "tom": "Em"
+    },
+    "Lote 09/deus-de-israel.txt": {
+      "tom": "Eb"
+    },
+    "Lote 09/deus-esta-perto-de-nos.txt": {
+      "tom": "A"
+    },
+    "Lote 09/dono-do-meu-coracao(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 09/e-tempo.txt": {
+      "tom": "Am"
+    },
+    "Lote 09/em-cristo-jesus.txt": {
+      "tom": "D"
+    },
+    "Lote 09/em-meio-a-tua-gloria.txt": {
+      "tom": "Bm"
+    },
+    "Lote 09/em-teus-atrios.txt": {
+      "tom": "Em"
+    },
+    "Lote 09/espirito-santo-diante-do-trono.txt": {
+      "tom": "F#m"
+    },
+    "Lote 09/este-e-o-dia.txt": {
+      "tom": "F"
+    },
+    "Lote 09/eu-jamais-serei.txt": {
+      "tom": "D"
+    },
+    "Lote 09/eu-te-abencoo.txt": {
+      "tom": "Ab"
+    },
+    "Lote 09/exaltado(simplificada).txt": {
+      "tom": "E"
+    },
+    "Lote 09/familia-bendita-do-senhor.txt": {
+      "tom": "A"
+    },
+    "Lote 09/faz-outra-vez.txt": {
+      "tom": "C"
+    },
+    "Lote 09/foi-o-sangue.txt": {
+      "tom": "G"
+    },
+    "Lote 09/gente-como-nos.txt": {
+      "tom": "Em"
+    },
+    "Lote 09/ha-alegria-com-alegria-cantai-pot-pourri.txt": {
+      "tom": "Gm"
+    },
+    "Lote 09/ha-alegria.txt": {
+      "tom": "A"
+    },
+    "Lote 09/lindo.txt": {
+      "tom": "D"
+    },
+    "Lote 09/mais-que-vencedor.txt": {
+      "tom": "Cm"
+    },
+    "Lote 09/me-ama.txt": {
+      "tom": "A"
+    },
+    "Lote 09/me-libertou.txt": {
+      "tom": "Dm"
+    },
+    "Lote 09/medley-pentecostal.txt": {
+      "tom": "D"
+    },
+    "Lote 09/nao-ha-outro-igual.txt": {
+      "tom": "Am"
+    },
+    "Lote 09/nao-havera-impossiveis.txt": {
+      "tom": "A"
+    },
+    "Lote 09/nao-olho-circunstancias.txt": {
+      "tom": "A"
+    },
+    "Lote 09/nos-bracos-do-pai.txt": {
+      "tom": "Bb"
+    },
+    "Lote 09/o-amor-do-nosso-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 09/o-ar-que-eu-respiro.txt": {
+      "tom": "A"
+    },
+    "Lote 09/o-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 09/o-espirito-e-a-noiva-dizem-vem.txt": {
+      "tom": "D"
+    },
+    "Lote 09/o-teu-amor.txt": {
+      "tom": "A"
+    },
+    "Lote 09/o-vencedor.txt": {
+      "tom": "B"
+    },
+    "Lote 09/pai-da-criacao.txt": {
+      "tom": "E"
+    },
+    "Lote 09/pela-manha.txt": {
+      "tom": "A"
+    },
+    "Lote 09/pelo-teu-amor.txt": {
+      "tom": "A"
+    },
+    "Lote 09/pelos-olhos-da-fe.txt": {
+      "tom": "G"
+    },
+    "Lote 09/perto-de-ti.txt": {
+      "tom": "E"
+    },
+    "Lote 09/por-tudo-que-tu-es.txt": {
+      "tom": "D"
+    },
+    "Lote 09/quando-nasce-uma-crianca.txt": {
+      "tom": "Bm"
+    },
+    "Lote 09/rei-da-gloria-diante-do-trono.txt": {
+      "tom": "Am"
+    },
+    "Lote 09/santo-como-tu-es.txt": {
+      "tom": "C"
+    },
+    "Lote 09/santo-diante-do-trono.txt": {
+      "tom": "Em"
+    },
+    "Lote 09/se-renovam.txt": {
+      "tom": "D"
+    },
+    "Lote 09/seja-pra-mim.txt": {
+      "tom": "G"
+    },
+    "Lote 09/senhor-dos-exercitos-rei.txt": {
+      "tom": "Am"
+    },
+    "Lote 09/shalom-jerusalem.txt": {
+      "tom": "Bm"
+    },
+    "Lote 09/so-um-relance.txt": {
+      "tom": "G"
+    },
+    "Lote 09/sol-da-justica.txt": {
+      "tom": "E"
+    },
+    "Lote 09/te-agradeco.txt": {
+      "tom": "Eb"
+    },
+    "Lote 09/tem-todo-poder.txt": {
+      "tom": "G"
+    },
+    "Lote 09/tempo-de-restituicao.txt": {
+      "tom": "Am"
+    },
+    "Lote 09/teu-dominio-nao-tera-fim.txt": {
+      "tom": "F"
+    },
+    "Lote 09/toque-minhas-maos.txt": {
+      "tom": "Bb"
+    },
+    "Lote 09/tu-es-you.txt": {
+      "tom": "B"
+    },
+    "Lote 09/tua-visao.txt": {
+      "tom": "G"
+    },
+    "Lote 09/tudo-por-ti.txt": {
+      "tom": "B"
+    },
+    "Lote 09/valorize-se.txt": {
+      "tom": "F"
+    },
+    "Lote 09/vaso-de-alabastro.txt": {
+      "tom": "G"
+    },
+    "Lote 09/vem-filho-amado.txt": {
+      "tom": "Bb"
+    },
+    "Lote 09/vem-o-fonte.txt": {
+      "tom": "D"
+    },
+    "Lote 09/vem-senhor.txt": {
+      "tom": "A"
+    }
+  }
+}
