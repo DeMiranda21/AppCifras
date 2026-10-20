@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 19/fe-na-vida.txt": {
+      "tom": "A"
+    },
+    "Lote 19/tudo-que-eu-sou.txt": {
+      "tom": "C#m"
+    }
+  }
+}
