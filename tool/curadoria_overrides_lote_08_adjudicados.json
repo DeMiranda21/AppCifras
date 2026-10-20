@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 08/a-ti-o-pai.txt": {
+      "tom": "A"
+    },
+    "Lote 08/agnus-dei-david-quinlan.txt": {
+      "tom": "C"
+    },
+    "Lote 08/alem-do-veu-david-quinlan.txt": {
+      "tom": "E"
+    },
+    "Lote 08/all-i-want-to-do.txt": {
+      "tom": "G"
+    },
+    "Lote 08/aumenta-minha-fe.txt": {
+      "tom": "F"
+    },
+    "Lote 08/bendize-ao-senhor.txt": {
+      "tom": "C"
+    },
+    "Lote 08/cantando-desde-a-eternidade.txt": {
+      "tom": "G"
+    },
+    "Lote 08/essencia-da-adoracao.txt": {
+      "tom": "E"
+    },
+    "Lote 08/estou-apaixonado.txt": {
+      "tom": "G"
+    },
+    "Lote 08/fogo-refinador.txt": {
+      "tom": "E"
+    },
+    "Lote 08/geracao-que-danca.txt": {
+      "tom": "D"
+    },
+    "Lote 08/grande-e-o-senhor-david-quinlan.txt": {
+      "tom": "D"
+    },
+    "Lote 08/louvemos-ao-senhor-magnifiquemos-hosana-motivo-do-louvor-pot-pourri.txt": {
+      "tom": "F"
+    },
+    "Lote 08/luz-das-nacoes.txt": {
+      "tom": "G"
+    },
+    "Lote 08/nenhum-outro.txt": {
+      "tom": "G"
+    },
+    "Lote 08/ninguem-me-toca-como-tu.txt": {
+      "tom": "G"
+    },
+    "Lote 08/pode-me-chamar-de-maluco.txt": {
+      "tom": "F"
+    },
+    "Lote 08/quando-olho-em-teus-olhos.txt": {
+      "tom": "A"
+    },
+    "Lote 08/que-amigo-encontrei.txt": {
+      "tom": "C"
+    },
+    "Lote 08/quem-sou-eu-senhor.txt": {
+      "tom": "G"
+    },
+    "Lote 08/santo-e-ungido.txt": {
+      "tom": "G"
+    },
+    "Lote 08/senhor-temos-tanta-fome.txt": {
+      "tom": "A"
+    },
+    "Lote 08/som-da-chuva.txt": {
+      "tom": "Dm"
+    },
+    "Lote 08/something-new.txt": {
+      "tom": "A"
+    },
+    "Lote 08/sua-bandeira-sobre-mim.txt": {
+      "tom": "G"
+    },
+    "Lote 08/teu-nome-exalto-meu-senhor.txt": {
+      "tom": "A"
+    },
+    "Lote 08/vem-a-hora-chegou-de-adora-lo.txt": {
+      "tom": "D"
+    },
+    "Lote 08/venha-me-encher.txt": {
+      "tom": "A"
+    }
+  }
+}
