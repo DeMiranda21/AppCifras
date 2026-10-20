@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 05/eu-quero-teu-fogo.txt": {
+      "tom": "G"
+    },
+    "Lote 05/nada-temerei.txt": {
+      "tom": "Am"
+    },
+    "Lote 05/pra-te-adorar.txt": {
+      "tom": "G"
+    }
+  }
+}
