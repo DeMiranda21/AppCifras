@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 07/a-luta-vem-e-passa.txt": {
+      "tom": "F"
+    },
+    "Lote 07/a-minh-alma-esta-cheia-de-paz.txt": {
+      "tom": "C"
+    },
+    "Lote 07/a-verdade-libertara.txt": {
+      "tom": "A"
+    },
+    "Lote 07/alfa-e-omega.txt": {
+      "tom": "A"
+    },
+    "Lote 07/alguem-pergunta-que-povo-e-este.txt": {
+      "tom": "A"
+    },
+    "Lote 07/aquele-que-esta-com-cristo.txt": {
+      "tom": "A"
+    },
+    "Lote 07/assim-que-se-louva-a-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 07/batalha.txt": {
+      "tom": "G"
+    },
+    "Lote 07/buscai-primeiro.txt": {
+      "tom": "C"
+    },
+    "Lote 07/caminhando-eu-vou-para-canaa.txt": {
+      "tom": "A"
+    },
+    "Lote 07/corpo-e-familia-corinhos-evangelicos.txt": {
+      "tom": "A"
+    },
+    "Lote 07/deep-deep.txt": {
+      "tom": "E"
+    },
+    "Lote 07/deixa-o-espirito-santo-te-envolver.txt": {
+      "tom": "Am"
+    },
+    "Lote 07/desde-o-dia-em-que-aceitei-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 07/desemboca-o-vaso.txt": {
+      "tom": "D"
+    },
+    "Lote 07/deus-de-alianca-moria.txt": {
+      "tom": "G#m"
+    },
+    "Lote 07/deus-esta-neste-lugar.txt": {
+      "tom": "C"
+    },
+    "Lote 07/deus-forte-como-jeova.txt": {
+      "tom": "Am"
+    },
+    "Lote 07/diz-ai-igreja.txt": {
+      "tom": "C"
+    },
+    "Lote 07/em-adoracao.txt": {
+      "tom": "G"
+    },
+    "Lote 07/espirito.txt": {
+      "tom": "Am"
+    },
+    "Lote 07/essa-paz-que-eu-sinto.txt": {
+      "tom": "G"
+    },
+    "Lote 07/estou-crescendo.txt": {
+      "tom": "C"
+    },
+    "Lote 07/eu-e-a-minha-casa-serviremos-ao-senhor.txt": {
+      "tom": "E"
+    },
+    "Lote 07/eu-marquei-um-encontro-com-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 07/eu-nao-estava-so.txt": {
+      "tom": "D"
+    },
+    "Lote 07/fe-mais-fe.txt": {
+      "tom": "C"
+    },
+    "Lote 07/feliz-aniversario-junto-com-os-seus.txt": {
+      "tom": "Cm"
+    },
+    "Lote 07/golias-tu-vens-contra-nos.txt": {
+      "tom": "Dm"
+    },
+    "Lote 07/gracas.txt": {
+      "tom": "A"
+    },
+    "Lote 07/ha-momentos.txt": {
+      "tom": "C"
+    },
+    "Lote 07/jesus-e-tudo.txt": {
+      "tom": "E"
+    },
+    "Lote 07/la-no-monte-horebe.txt": {
+      "tom": "D"
+    },
+    "Lote 07/leao-de-juda.txt": {
+      "tom": "Em"
+    },
+    "Lote 07/levante-a-cristo.txt": {
+      "tom": "G"
+    },
+    "Lote 07/louvado-seja-senhor-teu-nome.txt": {
+      "tom": "G"
+    },
+    "Lote 07/louvai-ao-senhor.txt": {
+      "tom": "C"
+    },
+    "Lote 07/nao-ha-um-nome-igual.txt": {
+      "tom": "G"
+    },
+    "Lote 07/nunca-esquecer.txt": {
+      "tom": "A"
+    },
+    "Lote 07/o-senhor-dos-exercitos.txt": {
+      "tom": "Bm"
+    },
+    "Lote 07/pai-abraao.txt": {
+      "tom": "D"
+    },
+    "Lote 07/parabens-pra-voce-corinhos-evangelicos.txt": {
+      "tom": "G"
+    },
+    "Lote 07/pascoa.txt": {
+      "tom": "C"
+    },
+    "Lote 07/pois-e-santo.txt": {
+      "tom": "G"
+    },
+    "Lote 07/quao-bom-e-quao-maravilhoso.txt": {
+      "tom": "D"
+    },
+    "Lote 07/recomecar-corinhos-evangelicos.txt": {
+      "tom": "E"
+    },
+    "Lote 07/renderei-gracas.txt": {
+      "tom": "G"
+    },
+    "Lote 07/santo-justo-digno.txt": {
+      "tom": "G"
+    },
+    "Lote 07/se-o-meu-povo-que-se-chama-pelo-meu-nome.txt": {
+      "tom": "G"
+    },
+    "Lote 07/senhor-eu-sei-que-e-teu-este-lugar.txt": {
+      "tom": "G"
+    },
+    "Lote 07/serenata-banco-no-jardim.txt": {
+      "tom": "D"
+    },
+    "Lote 07/shalala-lala.txt": {
+      "tom": "A"
+    },
+    "Lote 07/solta-o-cabo-da-nau.txt": {
+      "tom": "G"
+    },
+    "Lote 07/vai-abalar.txt": {
+      "tom": "E"
+    },
+    "Lote 07/vaso-novo.txt": {
+      "tom": "D"
+    },
+    "Lote 07/vim-para-adorar-te.txt": {
+      "tom": "E"
+    },
+    "Lote 07/visitante-seja-bem-vindo.txt": {
+      "tom": "C"
+    }
+  }
+}
