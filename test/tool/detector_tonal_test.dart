@@ -78,6 +78,35 @@ void main() {
     expect(resultado.quantidadeAcordes, 12);
   });
 
+  test('linha estruturalmente problemática não causa retrocesso excessivo', () {
+    final linha = '${'-' * 33}|${'-' * 14}11----L--11---------|';
+
+    final resultado = detector.detectar(linha);
+
+    expect(resultado.quantidadeAcordes, 0);
+    expect(resultado.confianca, ConfiancaDeteccaoTom.baixa);
+  });
+
+  test('entrada longa semelhante termina sem falha', () {
+    final linha = '${'-' * 100000}|11----L--11---------|';
+
+    final resultado = detector.detectar(linha);
+
+    expect(resultado.quantidadeAcordes, 0);
+  });
+
+  test('ignora desenho de acorde válido no meio do corpo musical', () {
+    final resultado = detector.detectar('C F G C\nx32010 320003\nAm Dm G7 C');
+
+    expect(resultado.quantidadeAcordes, 8);
+  });
+
+  test('não confunde linha musical comum com desenho de acorde', () {
+    final resultado = detector.detectar('C G Am F');
+
+    expect(resultado.quantidadeAcordes, 4);
+  });
+
   test('tom explícito prevalece sobre a inferência', () async {
     final temporaria = await Directory.systemTemp.createTemp(
       'appcifras_tom_explicito_',

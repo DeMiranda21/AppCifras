@@ -137,7 +137,6 @@ class DetectorTonal {
     r'^\s*(?:tom|key|t[ií]tulo|title|artista|artist|cifra)\s*:',
     caseSensitive: false,
   );
-  static final RegExp _desenho = RegExp(r'^\s*(?:[xXoO0-9|\-]{4,}\s*)+$');
   static final RegExp _entreColchetes = RegExp(r'\[([^\]\r\n]+)\]');
   static final RegExp _rotuloSecao = RegExp(
     r'^(?:\d+[ªº]?\s*)?(?:intro(?:du(?:ç|c)[aã]o)?|verso|estrofe|primeira parte|segunda parte|terceira parte|pr[eé][ -]?refr[aã]o|refr[aã]o|coro|ponte|bridge|interl[uú]dio|instrumental|solo|final|riff)\b\s*:?',
@@ -255,7 +254,7 @@ class DetectorTonal {
           _afinacao.hasMatch(linha) ||
           _notaExecucao.hasMatch(linha) ||
           _diretivaMetadado.hasMatch(linha) ||
-          _desenho.hasMatch(linha) ||
+          _ehDesenho(linha) ||
           _pareceExplicacao(linha)) {
         continue;
       }
@@ -324,6 +323,40 @@ class DetectorTonal {
     final uteis = _removerSecoesRepetidas(secoes);
     return _ExtracaoTonal(List.unmodifiable(uteis));
   }
+
+  bool _ehDesenho(String linha) {
+    var tamanhoTrecho = 0;
+    var encontrouTrecho = false;
+    for (final unidade in linha.codeUnits) {
+      if (_ehEspaco(unidade)) {
+        if (tamanhoTrecho > 0) {
+          if (tamanhoTrecho < 4) return false;
+          encontrouTrecho = true;
+          tamanhoTrecho = 0;
+        }
+        continue;
+      }
+      if (!_ehCaractereDeDesenho(unidade)) return false;
+      tamanhoTrecho++;
+    }
+    if (tamanhoTrecho > 0) {
+      if (tamanhoTrecho < 4) return false;
+      encontrouTrecho = true;
+    }
+    return encontrouTrecho;
+  }
+
+  bool _ehEspaco(int unidade) =>
+      unidade == 0x20 || (unidade >= 0x09 && unidade <= 0x0d);
+
+  bool _ehCaractereDeDesenho(int unidade) =>
+      unidade == 0x78 ||
+      unidade == 0x58 ||
+      unidade == 0x6f ||
+      unidade == 0x4f ||
+      (unidade >= 0x30 && unidade <= 0x39) ||
+      unidade == 0x7c ||
+      unidade == 0x2d;
 
   bool _pareceExplicacao(String linha) {
     final semColchetes = linha.replaceAll(_entreColchetes, '');
