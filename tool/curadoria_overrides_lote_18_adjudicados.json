@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 18/a-deus(versão 2).txt": {
+      "tom": "C#m"
+    },
+    "Lote 18/a-deus.txt": {
+      "tom": "C#m"
+    },
+    "Lote 18/acredito.txt": {
+      "tom": "D"
+    },
+    "Lote 18/alem-do-que-os-olhos-podem-ver.txt": {
+      "tom": "E"
+    },
+    "Lote 18/amanha(versão 2).txt": {
+      "tom": "A"
+    },
+    "Lote 18/atitude-oficina-g3.txt": {
+      "tom": "F"
+    },
+    "Lote 18/compartilhar.txt": {
+      "tom": "Dm"
+    },
+    "Lote 18/contra-cultura.txt": {
+      "tom": "Bm"
+    },
+    "Lote 18/davi(versão 2).txt": {
+      "tom": "Gm"
+    },
+    "Lote 18/davi-oficina-g3.txt": {
+      "tom": "Gm"
+    },
+    "Lote 18/espelhos-magicos(versão 2).txt": {
+      "tom": "Bm"
+    },
+    "Lote 18/espelhos-magicos.txt": {
+      "tom": "Bm"
+    },
+    "Lote 18/eu-sei-oficina-g3.txt": {
+      "tom": "F"
+    },
+    "Lote 18/mais-que-vencedores-oficina-g3.txt": {
+      "tom": "A"
+    },
+    "Lote 18/mas-que-vencedores.txt": {
+      "tom": "A"
+    },
+    "Lote 18/meus-proprios-meios.txt": {
+      "tom": "Cm"
+    },
+    "Lote 18/mi-pastor.txt": {
+      "tom": "E"
+    },
+    "Lote 18/novos-ceus-oficina-g3.txt": {
+      "tom": "D"
+    },
+    "Lote 18/o-tempo(versão 2).txt": {
+      "tom": "F"
+    },
+    "Lote 18/o-tempo(versão 3).txt": {
+      "tom": "F"
+    },
+    "Lote 18/pastor.txt": {
+      "tom": "E"
+    },
+    "Lote 18/perfeita-uniao.txt": {
+      "tom": "Em"
+    },
+    "Lote 18/pirou.txt": {
+      "tom": "Am"
+    },
+    "Lote 18/sempre-mais.txt": {
+      "tom": "D"
+    },
+    "Lote 18/vencendo-vem-jesus-oficina-g3.txt": {
+      "tom": "D"
+    },
+    "Lote 18/viver-por-fe.txt": {
+      "tom": "Em"
+    }
+  }
+}
