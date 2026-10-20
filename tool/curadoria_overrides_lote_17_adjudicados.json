@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 17/desenvolvendo-amor.txt": {
+      "tom": "Em"
+    },
+    "Lote 17/ele-me-amou-primeiro.txt": {
+      "tom": "F"
+    },
+    "Lote 17/fala.txt": {
+      "tom": "G"
+    },
+    "Lote 17/felizes-sao.txt": {
+      "tom": "F#m"
+    },
+    "Lote 17/para-onde-eu-irei(simplificada).txt": {
+      "tom": "Am"
+    },
+    "Lote 17/porto-seguro.txt": {
+      "tom": "D"
+    },
+    "Lote 17/postura-do-reino(versão 2).txt": {
+      "tom": "Bb"
+    },
+    "Lote 17/postura-do-reino.txt": {
+      "tom": "Bb"
+    },
+    "Lote 17/puro-e-simples.txt": {
+      "tom": "E"
+    },
+    "Lote 17/te-adorarei-ministerio-morada.txt": {
+      "tom": "F#m"
+    },
+    "Lote 17/tempo.txt": {
+      "tom": "G#m"
+    },
+    "Lote 17/uma-coisa.txt": {
+      "tom": "Bm"
+    }
+  }
+}
