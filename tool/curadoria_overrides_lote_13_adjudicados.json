@@ -1,0 +1,476 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 13/a-barca-da-vida.txt": {
+      "tom": "F"
+    },
+    "Lote 13/a-face-adorada-de-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 13/a-mao-do-arado.txt": {
+      "tom": "C"
+    },
+    "Lote 13/a-mensagem-da-cruz(versão 2).txt": {
+      "tom": "F"
+    },
+    "Lote 13/a-mensagem-da-cruz-harpa-crista.txt": {
+      "tom": "G"
+    },
+    "Lote 13/a-minha-vida-jesus-ja-transformou.txt": {
+      "tom": "G"
+    },
+    "Lote 13/a-preciosa-fonte.txt": {
+      "tom": "D"
+    },
+    "Lote 13/a-voz-do-bom-pastor.txt": {
+      "tom": "G"
+    },
+    "Lote 13/aceita-o-perdao-de-jesus.txt": {
+      "tom": "E"
+    },
+    "Lote 13/adoracao.txt": {
+      "tom": "D"
+    },
+    "Lote 13/alma-abatida(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 13/andando-para-o-ceu.txt": {
+      "tom": "Eb"
+    },
+    "Lote 13/ao-estrugir-a-trombeta.txt": {
+      "tom": "Dm"
+    },
+    "Lote 13/as-cordas-do-coracao.txt": {
+      "tom": "D"
+    },
+    "Lote 13/as-palavras-de-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 13/as-palavras-de-jesus.txt": {
+      "tom": "D"
+    },
+    "Lote 13/as-promessas-que-nao-falham.txt": {
+      "tom": "E"
+    },
+    "Lote 13/avante-eu-vou.txt": {
+      "tom": "A"
+    },
+    "Lote 13/avante-servos-de-jesus.txt": {
+      "tom": "E"
+    },
+    "Lote 13/benigno-salvador.txt": {
+      "tom": "A"
+    },
+    "Lote 13/bom-estarmos-aqui-harpa-crista.txt": {
+      "tom": "G"
+    },
+    "Lote 13/bondoso-amigo.txt": {
+      "tom": "F"
+    },
+    "Lote 13/breve-verei-o-bom-jesus(versão 2).txt": {
+      "tom": "G"
+    },
+    "Lote 13/breve-verei-o-bom-jesus.txt": {
+      "tom": "G"
+    },
+    "Lote 13/canta-o-crente.txt": {
+      "tom": "D"
+    },
+    "Lote 13/chuvas-de-graca(versão 2).txt": {
+      "tom": "G"
+    },
+    "Lote 13/cidade-de-deus.txt": {
+      "tom": "E"
+    },
+    "Lote 13/consagrado-ao-senhor.txt": {
+      "tom": "C"
+    },
+    "Lote 13/conversaremos-ali-no-ceu.txt": {
+      "tom": "F"
+    },
+    "Lote 13/cristo-a-fonte-escondida(versão 2).txt": {
+      "tom": "Db"
+    },
+    "Lote 13/cristo-a-fonte-escondida.txt": {
+      "tom": "C"
+    },
+    "Lote 13/cristo-em-breve-vem.txt": {
+      "tom": "G"
+    },
+    "Lote 13/cristo-morreu-por-mim.txt": {
+      "tom": "F"
+    },
+    "Lote 13/cristo-o-fiel-amigo(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 13/cristo-voltara.txt": {
+      "tom": "C"
+    },
+    "Lote 13/da-teu-fardo-a-jesus.txt": {
+      "tom": "F"
+    },
+    "Lote 13/deixa-entrar-o-rei-da-gloria.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/deixa-penetrar-a-luz.txt": {
+      "tom": "E"
+    },
+    "Lote 13/desce-o-fogo-santo.txt": {
+      "tom": "G"
+    },
+    "Lote 13/deus-amou-de-tal-maneira.txt": {
+      "tom": "A"
+    },
+    "Lote 13/deus-enviou.txt": {
+      "tom": "D"
+    },
+    "Lote 13/deus-esta-aqui-harpa-crista.txt": {
+      "tom": "D"
+    },
+    "Lote 13/deus-prometeu.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/deus-vai-te-guiar.txt": {
+      "tom": "Em"
+    },
+    "Lote 13/doce-nome-de-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 13/e-meu-o-ceu.txt": {
+      "tom": "D"
+    },
+    "Lote 13/e-o-tempo-de-cegar.txt": {
+      "tom": "C"
+    },
+    "Lote 13/em-belem.txt": {
+      "tom": "E"
+    },
+    "Lote 13/em-jesus(versão 2).txt": {
+      "tom": "A"
+    },
+    "Lote 13/em-jesus-tens-a-palma-da-vitoria.txt": {
+      "tom": "G"
+    },
+    "Lote 13/em-jesus.txt": {
+      "tom": "C"
+    },
+    "Lote 13/esforca-a-minha-coragem.txt": {
+      "tom": "Am"
+    },
+    "Lote 13/este-mundo-nao-compreende.txt": {
+      "tom": "G"
+    },
+    "Lote 13/eu-te-louvarei-senhor-harpa-crista.txt": {
+      "tom": "D"
+    },
+    "Lote 13/exultacao-do-crente.txt": {
+      "tom": "C"
+    },
+    "Lote 13/fala-do-amor-de-cristo.txt": {
+      "tom": "E"
+    },
+    "Lote 13/fala-jesus-querido(versão 2).txt": {
+      "tom": "A"
+    },
+    "Lote 13/firme-nas-promessas(versão 2).txt": {
+      "tom": "F"
+    },
+    "Lote 13/fonte-transbordante.txt": {
+      "tom": "A"
+    },
+    "Lote 13/gloria-gloria-aleluia.txt": {
+      "tom": "G"
+    },
+    "Lote 13/gloriosa-paz.txt": {
+      "tom": "G"
+    },
+    "Lote 13/gozo-do-ceu.txt": {
+      "tom": "G"
+    },
+    "Lote 13/graca-graca.txt": {
+      "tom": "G"
+    },
+    "Lote 13/grandioso-es-tu-harpa-crista.txt": {
+      "tom": "D"
+    },
+    "Lote 13/grato-a-ti.txt": {
+      "tom": "D"
+    },
+    "Lote 13/ha-paz-e-alegria.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/ha-poder-sim.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-115(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 13/hino-126.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-127.txt": {
+      "tom": "C"
+    },
+    "Lote 13/hino-15.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-18.txt": {
+      "tom": "Dm"
+    },
+    "Lote 13/hino-186.txt": {
+      "tom": "C"
+    },
+    "Lote 13/hino-192.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-193.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-212.txt": {
+      "tom": "F"
+    },
+    "Lote 13/hino-225.txt": {
+      "tom": "E"
+    },
+    "Lote 13/hino-244.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-298.txt": {
+      "tom": "F"
+    },
+    "Lote 13/hino-302.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-305.txt": {
+      "tom": "D"
+    },
+    "Lote 13/hino-35.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-36.txt": {
+      "tom": "D"
+    },
+    "Lote 13/hino-39.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-4.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-400.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-422.txt": {
+      "tom": "E"
+    },
+    "Lote 13/hino-432.txt": {
+      "tom": "A"
+    },
+    "Lote 13/hino-442.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-459.txt": {
+      "tom": "G"
+    },
+    "Lote 13/hino-469.txt": {
+      "tom": "Am"
+    },
+    "Lote 13/hino-509.txt": {
+      "tom": "E"
+    },
+    "Lote 13/hino-545.txt": {
+      "tom": "A"
+    },
+    "Lote 13/imploramos-o-consolador.txt": {
+      "tom": "G"
+    },
+    "Lote 13/jesus-meu-salvador.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/levantai-vosso-olhos.txt": {
+      "tom": "C"
+    },
+    "Lote 13/louvai-a-jesus.txt": {
+      "tom": "A"
+    },
+    "Lote 13/luz-do-mundo-harpa-crista.txt": {
+      "tom": "E"
+    },
+    "Lote 13/mais-perto-meu-deus-de-ti.txt": {
+      "tom": "F"
+    },
+    "Lote 13/maravilhoso-e-jesus.txt": {
+      "tom": "G"
+    },
+    "Lote 13/nao-posso-explicar.txt": {
+      "tom": "C"
+    },
+    "Lote 13/no-jardim.txt": {
+      "tom": "C"
+    },
+    "Lote 13/o-desce-fogo-santo.txt": {
+      "tom": "C"
+    },
+    "Lote 13/o-estandarte-da-verdade.txt": {
+      "tom": "F"
+    },
+    "Lote 13/o-evangelho-da-salvacao.txt": {
+      "tom": "A"
+    },
+    "Lote 13/o-exilado.txt": {
+      "tom": "C"
+    },
+    "Lote 13/o-fim-das-lutas.txt": {
+      "tom": "D"
+    },
+    "Lote 13/o-gozo-de-estar-preparado.txt": {
+      "tom": "G"
+    },
+    "Lote 13/o-gozo-dos-santos.txt": {
+      "tom": "C"
+    },
+    "Lote 13/o-grande-curador.txt": {
+      "tom": "D"
+    },
+    "Lote 13/o-meu-jesus.txt": {
+      "tom": "A"
+    },
+    "Lote 13/o-nome-soberano.txt": {
+      "tom": "D"
+    },
+    "Lote 13/o-pecador-desalentado.txt": {
+      "tom": "D"
+    },
+    "Lote 13/o-rei-esta-voltando.txt": {
+      "tom": "D"
+    },
+    "Lote 13/o-salvador-me-achou.txt": {
+      "tom": "A"
+    },
+    "Lote 13/o-senhor-da-ceifa-chama.txt": {
+      "tom": "E"
+    },
+    "Lote 13/olhai-pra-o-cordeiro-de-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 13/opera-em-mim.txt": {
+      "tom": "D"
+    },
+    "Lote 13/os-dons-do-ceu.txt": {
+      "tom": "G"
+    },
+    "Lote 13/os-guerreiros-se-preparam.txt": {
+      "tom": "D"
+    },
+    "Lote 13/para-o-ceu-meu-lar.txt": {
+      "tom": "C"
+    },
+    "Lote 13/pela-cruz-ao-ceu-irei.txt": {
+      "tom": "F"
+    },
+    "Lote 13/pelejar-por-jesus.txt": {
+      "tom": "A"
+    },
+    "Lote 13/pensando-em-jesus.txt": {
+      "tom": "D"
+    },
+    "Lote 13/plena-paz(versão 3).txt": {
+      "tom": "C"
+    },
+    "Lote 13/quao-grande-es-tu(versão 2).txt": {
+      "tom": "A"
+    },
+    "Lote 13/quao-grande-es-tu-harpa-crista.txt": {
+      "tom": "A"
+    },
+    "Lote 13/que-bencao.txt": {
+      "tom": "G"
+    },
+    "Lote 13/que-mudanca.txt": {
+      "tom": "D"
+    },
+    "Lote 13/redentor-onipotente.txt": {
+      "tom": "F"
+    },
+    "Lote 13/reina-em-mim.txt": {
+      "tom": "A"
+    },
+    "Lote 13/rude-cruz-harpa-crista.txt": {
+      "tom": "G"
+    },
+    "Lote 13/santo-santo-es-tu-senhor.txt": {
+      "tom": "A"
+    },
+    "Lote 13/saudosa-lembranca(versão 2).txt": {
+      "tom": "C"
+    },
+    "Lote 13/saudosa-lembranca.txt": {
+      "tom": "A"
+    },
+    "Lote 13/se-o-senhor-e-por-nos.txt": {
+      "tom": "D"
+    },
+    "Lote 13/segura-na-mao-de-deus.txt": {
+      "tom": "C#"
+    },
+    "Lote 13/servir-a-jesus.txt": {
+      "tom": "G"
+    },
+    "Lote 13/sinto-vida-no-senhor.txt": {
+      "tom": "E"
+    },
+    "Lote 13/so-em-jesus.txt": {
+      "tom": "A"
+    },
+    "Lote 13/sobre-as-ondas-do-mar.txt": {
+      "tom": "G"
+    },
+    "Lote 13/sois-bem-vindos.txt": {
+      "tom": "A"
+    },
+    "Lote 13/solta-o-cabo-da-nau-harpa-crista.txt": {
+      "tom": "A"
+    },
+    "Lote 13/tempo-de-segar.txt": {
+      "tom": "C"
+    },
+    "Lote 13/tentado-nao-cedas.txt": {
+      "tom": "D"
+    },
+    "Lote 13/trabalhadores-do-evangelho(versão 2).txt": {
+      "tom": "E"
+    },
+    "Lote 13/tudo-em-cristo.txt": {
+      "tom": "D"
+    },
+    "Lote 13/um-povo-forte.txt": {
+      "tom": "E"
+    },
+    "Lote 13/uma-flor-gloriosa.txt": {
+      "tom": "C"
+    },
+    "Lote 13/vasos-transbordantes.txt": {
+      "tom": "G"
+    },
+    "Lote 13/vem-a-cristo.txt": {
+      "tom": "D"
+    },
+    "Lote 13/vem-a-mim-pecador.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/vem-cear-harpa-crista.txt": {
+      "tom": "C"
+    },
+    "Lote 13/vencendo-vem-jesus(versão 2).txt": {
+      "tom": "G"
+    },
+    "Lote 13/vencendo-vem-jesus-harpa-crista.txt": {
+      "tom": "C"
+    },
+    "Lote 13/vida-abundante.txt": {
+      "tom": "Bb"
+    },
+    "Lote 13/viva-a-cristo.txt": {
+      "tom": "D"
+    }
+  }
+}
