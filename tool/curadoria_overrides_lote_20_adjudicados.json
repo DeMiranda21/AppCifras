@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 20/a-guerra-ganha-esta.txt": {
+      "tom": "Cm"
+    },
+    "Lote 20/andando-sobre-as-aguas.txt": {
+      "tom": "Dm"
+    },
+    "Lote 20/aquele.txt": {
+      "tom": "F"
+    },
+    "Lote 20/buscar-me-eis.txt": {
+      "tom": "G"
+    },
+    "Lote 20/caiu-a-babilonia.txt": {
+      "tom": "D"
+    },
+    "Lote 20/celebracao.txt": {
+      "tom": "E"
+    },
+    "Lote 20/celebrai.txt": {
+      "tom": "Gm"
+    },
+    "Lote 20/cristo-vencedor.txt": {
+      "tom": "F"
+    },
+    "Lote 20/debaixo-dos-meus-pes.txt": {
+      "tom": "Em"
+    },
+    "Lote 20/digno-es.txt": {
+      "tom": "A"
+    },
+    "Lote 20/dupla-honra.txt": {
+      "tom": "C"
+    },
+    "Lote 20/e-a-gente-vai-louvando.txt": {
+      "tom": "Dm"
+    },
+    "Lote 20/entramos-neste-lugar.txt": {
+      "tom": "G"
+    },
+    "Lote 20/espero-em-ti-renascer-praise.txt": {
+      "tom": "G"
+    },
+    "Lote 20/espirito-espirito.txt": {
+      "tom": "E"
+    },
+    "Lote 20/eu-sou-de-jesus.txt": {
+      "tom": "Dm"
+    },
+    "Lote 20/festa-renascer-praise.txt": {
+      "tom": "Dm"
+    },
+    "Lote 20/genesis.txt": {
+      "tom": "G"
+    },
+    "Lote 20/israel-de-deus.txt": {
+      "tom": "C"
+    },
+    "Lote 20/levantai.txt": {
+      "tom": "Dm"
+    },
+    "Lote 20/lugar-de-adoracao.txt": {
+      "tom": "A"
+    },
+    "Lote 20/lugares-altos-renascer-praise.txt": {
+      "tom": "Bb"
+    },
+    "Lote 20/moria.txt": {
+      "tom": "C"
+    },
+    "Lote 20/na-tua-presenca.txt": {
+      "tom": "B"
+    },
+    "Lote 20/nao-aceito-ser-mais-um.txt": {
+      "tom": "G"
+    },
+    "Lote 20/nao-havera-impossiveis-renascer-praise.txt": {
+      "tom": "C"
+    },
+    "Lote 20/no-mover-das-tuas-aguas.txt": {
+      "tom": "D"
+    },
+    "Lote 20/o-senhor-e-a-minha-luz.txt": {
+      "tom": "G"
+    },
+    "Lote 20/os-filhos-de-deus.txt": {
+      "tom": "F#m"
+    },
+    "Lote 20/pode-parar.txt": {
+      "tom": "Am"
+    },
+    "Lote 20/pra-sempre-renascer-praise.txt": {
+      "tom": "Ab"
+    },
+    "Lote 20/profetiza.txt": {
+      "tom": "Cm"
+    },
+    "Lote 20/reconciliacao.txt": {
+      "tom": "G"
+    },
+    "Lote 20/santo-santo-santo-renascer-praise.txt": {
+      "tom": "F"
+    },
+    "Lote 20/se-eu-nao-tivesse-a-ti.txt": {
+      "tom": "A"
+    },
+    "Lote 20/teu-amor-me-faz-viver.txt": {
+      "tom": "G"
+    },
+    "Lote 20/vem-espirito.txt": {
+      "tom": "D"
+    },
+    "Lote 20/vento-impetuoso-renascer-praise.txt": {
+      "tom": "C"
+    },
+    "Lote 20/vou-me-encher.txt": {
+      "tom": "D"
+    }
+  }
+}
