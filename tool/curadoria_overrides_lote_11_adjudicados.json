@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 11/agindo-deus.txt": {
+      "tom": "Am"
+    },
+    "Lote 11/alvo-mais-que-a-neve.txt": {
+      "tom": "D"
+    },
+    "Lote 11/batiza-me.txt": {
+      "tom": "Am"
+    },
+    "Lote 11/desde-a-antiguidade.txt": {
+      "tom": "G"
+    },
+    "Lote 11/deus-tem-o-melhor-pra-mim.txt": {
+      "tom": "A"
+    },
+    "Lote 11/dias-de-elias-fernandinho.txt": {
+      "tom": "A"
+    },
+    "Lote 11/digno.txt": {
+      "tom": "B"
+    },
+    "Lote 11/ele-vem-fernandinho.txt": {
+      "tom": "A"
+    },
+    "Lote 11/emanuel-fernandinho.txt": {
+      "tom": "E"
+    },
+    "Lote 11/eu-jamais-serei-o-mesmo.txt": {
+      "tom": "Bb"
+    },
+    "Lote 11/exaltarei-teu-nome.txt": {
+      "tom": "F"
+    },
+    "Lote 11/faz-chover(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 11/fidelidade.txt": {
+      "tom": "G"
+    },
+    "Lote 11/fogo-santo.txt": {
+      "tom": "G#"
+    },
+    "Lote 11/geracao-de-samuel.txt": {
+      "tom": "E"
+    },
+    "Lote 11/geracao-eleita.txt": {
+      "tom": "Bb"
+    },
+    "Lote 11/grandioso-es-tu.txt": {
+      "tom": "A#"
+    },
+    "Lote 11/ja-estou-crucificado.txt": {
+      "tom": "G"
+    },
+    "Lote 11/me-leva-part-gabriela-rocha.txt": {
+      "tom": "G"
+    },
+    "Lote 11/me-leva.txt": {
+      "tom": "G"
+    },
+    "Lote 11/preciso-de-ti-fernandinho.txt": {
+      "tom": "D"
+    },
+    "Lote 11/sou-feliz-fernandinho.txt": {
+      "tom": "D#"
+    },
+    "Lote 11/te-adorar(versão 2).txt": {
+      "tom": "Bm"
+    },
+    "Lote 11/um-dia-em-tua-casa.txt": {
+      "tom": "F#m"
+    },
+    "Lote 11/vem-cear.txt": {
+      "tom": "G"
+    }
+  }
+}
