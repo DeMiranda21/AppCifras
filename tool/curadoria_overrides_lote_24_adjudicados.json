@@ -1,0 +1,266 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 24/a-biblia-tem-razao.txt": {
+      "tom": "A"
+    },
+    "Lote 24/a-chuva-e-o-orvalho.txt": {
+      "tom": "Dm"
+    },
+    "Lote 24/a-contradicao-da-cruz.txt": {
+      "tom": "C"
+    },
+    "Lote 24/a-estrela.txt": {
+      "tom": "F"
+    },
+    "Lote 24/a-procura.txt": {
+      "tom": "C"
+    },
+    "Lote 24/a-razao-do-meu-viver.txt": {
+      "tom": "G"
+    },
+    "Lote 24/a-solucao.txt": {
+      "tom": "F"
+    },
+    "Lote 24/a-volta-de-jesus.txt": {
+      "tom": "F"
+    },
+    "Lote 24/acima-das-circustancias.txt": {
+      "tom": "C"
+    },
+    "Lote 24/adoradores-do-rei.txt": {
+      "tom": "C"
+    },
+    "Lote 24/adorai-o-rei.txt": {
+      "tom": "G"
+    },
+    "Lote 24/agradecimento.txt": {
+      "tom": "C"
+    },
+    "Lote 24/aguas.txt": {
+      "tom": "A"
+    },
+    "Lote 24/alem-do-rio-azul.txt": {
+      "tom": "C"
+    },
+    "Lote 24/aprenda-com-jesus.txt": {
+      "tom": "F"
+    },
+    "Lote 24/ate-aqui-eu-cheguei.txt": {
+      "tom": "D"
+    },
+    "Lote 24/ate-quando-voz-da-verdade.txt": {
+      "tom": "G"
+    },
+    "Lote 24/brilhara.txt": {
+      "tom": "A"
+    },
+    "Lote 24/casa-fortissima.txt": {
+      "tom": "C"
+    },
+    "Lote 24/clamai-cantando.txt": {
+      "tom": "C"
+    },
+    "Lote 24/conquiste.txt": {
+      "tom": "Dm"
+    },
+    "Lote 24/coracao-valente-voz-da-verdade.txt": {
+      "tom": "C"
+    },
+    "Lote 24/cristo-reina.txt": {
+      "tom": "E"
+    },
+    "Lote 24/deus-conosco.txt": {
+      "tom": "A"
+    },
+    "Lote 24/deus-dormiu-la-em-casa.txt": {
+      "tom": "C"
+    },
+    "Lote 24/deus-tem-algo-a-dizer.txt": {
+      "tom": "A"
+    },
+    "Lote 24/doce-espirito-santo.txt": {
+      "tom": "F"
+    },
+    "Lote 24/dono-do-reino.txt": {
+      "tom": "A"
+    },
+    "Lote 24/encontro-eterno.txt": {
+      "tom": "Em"
+    },
+    "Lote 24/esperanca-voz-da-verdade.txt": {
+      "tom": "G"
+    },
+    "Lote 24/eu-navegarei-voz-da-verdade.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/eu-vi-passar.txt": {
+      "tom": "G"
+    },
+    "Lote 24/eu-vi.txt": {
+      "tom": "E"
+    },
+    "Lote 24/fabrica-de-deus.txt": {
+      "tom": "G"
+    },
+    "Lote 24/filhos-do-vento.txt": {
+      "tom": "F"
+    },
+    "Lote 24/gideao.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/gloria-ao-santo.txt": {
+      "tom": "E"
+    },
+    "Lote 24/gol-da-minha-vida.txt": {
+      "tom": "C"
+    },
+    "Lote 24/graca-voz-da-verdade.txt": {
+      "tom": "D"
+    },
+    "Lote 24/guia-de-israel.txt": {
+      "tom": "Bm"
+    },
+    "Lote 24/herois.txt": {
+      "tom": "A"
+    },
+    "Lote 24/hora-do-salvador.txt": {
+      "tom": "A"
+    },
+    "Lote 24/hosana-voz-da-verdade.txt": {
+      "tom": "E"
+    },
+    "Lote 24/igrejinha.txt": {
+      "tom": "C"
+    },
+    "Lote 24/invisivel.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/janela.txt": {
+      "tom": "G"
+    },
+    "Lote 24/livro-da-vida.txt": {
+      "tom": "D"
+    },
+    "Lote 24/loucura-santa.txt": {
+      "tom": "C"
+    },
+    "Lote 24/luz.txt": {
+      "tom": "A"
+    },
+    "Lote 24/madeira.txt": {
+      "tom": "C"
+    },
+    "Lote 24/menino-abandonado.txt": {
+      "tom": "D"
+    },
+    "Lote 24/meu-destino.txt": {
+      "tom": "B"
+    },
+    "Lote 24/natureza-divina.txt": {
+      "tom": "Gm"
+    },
+    "Lote 24/nem-so-de-pao.txt": {
+      "tom": "F"
+    },
+    "Lote 24/nome-excelso.txt": {
+      "tom": "D"
+    },
+    "Lote 24/o-convite.txt": {
+      "tom": "G"
+    },
+    "Lote 24/o-ladrao-perdoado.txt": {
+      "tom": "C"
+    },
+    "Lote 24/o-meu-amado.txt": {
+      "tom": "C"
+    },
+    "Lote 24/o-trono-de-deus.txt": {
+      "tom": "G"
+    },
+    "Lote 24/o-vaso-e-o-oleiro.txt": {
+      "tom": "Gm"
+    },
+    "Lote 24/palavra-de-deus.txt": {
+      "tom": "D"
+    },
+    "Lote 24/pao-vivo.txt": {
+      "tom": "E"
+    },
+    "Lote 24/pedras.txt": {
+      "tom": "G"
+    },
+    "Lote 24/posso.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/pra-nunca-mais-chorar.txt": {
+      "tom": "D"
+    },
+    "Lote 24/pra-que.txt": {
+      "tom": "E"
+    },
+    "Lote 24/primavera-voz-da-verdade.txt": {
+      "tom": "D"
+    },
+    "Lote 24/quando-deus-se-cala(versão 2).txt": {
+      "tom": "G"
+    },
+    "Lote 24/querer-e-poder.txt": {
+      "tom": "G"
+    },
+    "Lote 24/quero-mais-de-ti.txt": {
+      "tom": "F"
+    },
+    "Lote 24/recomecar-voz-da-verdade.txt": {
+      "tom": "C"
+    },
+    "Lote 24/reflexo.txt": {
+      "tom": "F#m"
+    },
+    "Lote 24/renova-me-voz-da-verdade.txt": {
+      "tom": "D"
+    },
+    "Lote 24/rio-de-deus.txt": {
+      "tom": "E"
+    },
+    "Lote 24/sabedoria-de-deus.txt": {
+      "tom": "Em"
+    },
+    "Lote 24/samuel-voz-da-verdade.txt": {
+      "tom": "G"
+    },
+    "Lote 24/sangue-cor-purpura.txt": {
+      "tom": "C"
+    },
+    "Lote 24/senhor-do-universo-voz-da-verdade.txt": {
+      "tom": "E"
+    },
+    "Lote 24/sete-horas-da-manha.txt": {
+      "tom": "G"
+    },
+    "Lote 24/sombras.txt": {
+      "tom": "D"
+    },
+    "Lote 24/sou-jesus.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/torre-forte.txt": {
+      "tom": "Am"
+    },
+    "Lote 24/toureiro-da-cruz.txt": {
+      "tom": "Dm"
+    },
+    "Lote 24/trem-das-sete.txt": {
+      "tom": "A"
+    },
+    "Lote 24/venham-todos.txt": {
+      "tom": "D"
+    },
+    "Lote 24/volte-para-vencer.txt": {
+      "tom": "Gm"
+    },
+    "Lote 24/zaqueu.txt": {
+      "tom": "A"
+    }
+  }
+}
