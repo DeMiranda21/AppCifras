@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 06/a-cruz-ainda-me-faz-sonhar.txt": {
+      "tom": "G"
+    },
+    "Lote 06/a-gloria-e-tua.txt": {
+      "tom": "D"
+    },
+    "Lote 06/aca.txt": {
+      "tom": "C#"
+    },
+    "Lote 06/acalma-o-meu-coracao-imperfeito-pot-pourri.txt": {
+      "tom": "A"
+    },
+    "Lote 06/acalma-o-meu-coracao.txt": {
+      "tom": "B"
+    },
+    "Lote 06/adorador.txt": {
+      "tom": "E"
+    },
+    "Lote 06/colisao.txt": {
+      "tom": "E"
+    },
+    "Lote 06/ele-chegou.txt": {
+      "tom": "Bm"
+    },
+    "Lote 06/enche-o-templo.txt": {
+      "tom": "D"
+    },
+    "Lote 06/imperfeito(simplificada).txt": {
+      "tom": "G"
+    },
+    "Lote 06/imperfeito.txt": {
+      "tom": "D"
+    },
+    "Lote 06/justificado.txt": {
+      "tom": "C"
+    },
+    "Lote 06/me-leve-ao-extremo.txt": {
+      "tom": "D"
+    },
+    "Lote 06/meu-hospital.txt": {
+      "tom": "D"
+    },
+    "Lote 06/o-sonho-nao-morreu.txt": {
+      "tom": "C"
+    },
+    "Lote 06/primeira-essencia(versão 2).txt": {
+      "tom": "E"
+    },
+    "Lote 06/sete-trombetas(versão 2).txt": {
+      "tom": "Em"
+    },
+    "Lote 06/vida-simples.txt": {
+      "tom": "D"
+    }
+  }
+}
