@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 22/abro-mao-trazendo-a-arca.txt": {
+      "tom": "F#m"
+    },
+    "Lote 22/acende-a-chama.txt": {
+      "tom": "C#m"
+    },
+    "Lote 22/adorai.txt": {
+      "tom": "E"
+    },
+    "Lote 22/celebre.txt": {
+      "tom": "F#m"
+    },
+    "Lote 22/contigo-habitarei.txt": {
+      "tom": "D"
+    },
+    "Lote 22/desperta-me.txt": {
+      "tom": "B"
+    },
+    "Lote 22/deus-do-impossivel-trazendo-a-arca.txt": {
+      "tom": "E"
+    },
+    "Lote 22/dono-das-estrelas.txt": {
+      "tom": "C"
+    },
+    "Lote 22/estacoes.txt": {
+      "tom": "D"
+    },
+    "Lote 22/eu-espero-em-ti.txt": {
+      "tom": "D"
+    },
+    "Lote 22/habito-no-abrigo.txt": {
+      "tom": "B"
+    },
+    "Lote 22/maior-prazer.txt": {
+      "tom": "E"
+    },
+    "Lote 22/me-arrebataste.txt": {
+      "tom": "C"
+    },
+    "Lote 22/meu-amado.txt": {
+      "tom": "F"
+    },
+    "Lote 22/minha-fontes-estao-em-ti.txt": {
+      "tom": "G"
+    },
+    "Lote 22/muda-me.txt": {
+      "tom": "F#m"
+    },
+    "Lote 22/na-corte-do-egito(versão 2).txt": {
+      "tom": "Dm"
+    },
+    "Lote 22/nao-vou-desistir-trazendo-a-arca.txt": {
+      "tom": "Bm"
+    },
+    "Lote 22/nosso-deus-e-santo.txt": {
+      "tom": "G"
+    },
+    "Lote 22/olha-pra-mim.txt": {
+      "tom": "Am"
+    },
+    "Lote 22/por-todo-lado.txt": {
+      "tom": "A"
+    },
+    "Lote 22/reina-o-senhor.txt": {
+      "tom": "Em"
+    },
+    "Lote 22/sobre-a-terra.txt": {
+      "tom": "G"
+    },
+    "Lote 22/vem-como-quiser.txt": {
+      "tom": "D"
+    }
+  }
+}
