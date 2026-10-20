@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 12/a-voz.txt": {
+      "tom": "A"
+    },
+    "Lote 12/amo-o-senhor-gabriela-rocha.txt": {
+      "tom": "A"
+    },
+    "Lote 12/cuida-de-mim.txt": {
+      "tom": "Gm"
+    },
+    "Lote 12/nada-alem-de-ti.txt": {
+      "tom": "A"
+    },
+    "Lote 12/pra-sempre-acende-um-fogo-a-ele-a-gloria-pot-pourri(simplificada).txt": {
+      "tom": "C"
+    }
+  }
+}
