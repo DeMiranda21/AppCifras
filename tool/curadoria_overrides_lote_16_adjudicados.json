@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 16/a-cruz-vazia.txt": {
+      "tom": "F#"
+    },
+    "Lote 16/aba-pai.txt": {
+      "tom": "D"
+    },
+    "Lote 16/alegria-do-senhor.txt": {
+      "tom": "F#m"
+    },
+    "Lote 16/aquele-que-esta-com-cristo-kleber-lucas.txt": {
+      "tom": "G"
+    },
+    "Lote 16/cantai.txt": {
+      "tom": "G"
+    },
+    "Lote 16/deixa-a-lua-brilhar.txt": {
+      "tom": "G"
+    },
+    "Lote 16/deus-pai.txt": {
+      "tom": "G"
+    },
+    "Lote 16/eis-me-aqui-kleber-lucas.txt": {
+      "tom": "Am"
+    },
+    "Lote 16/ele-nos-amou-primeiro.txt": {
+      "tom": "G"
+    },
+    "Lote 16/facil-diferenca.txt": {
+      "tom": "A"
+    },
+    "Lote 16/incendeia-kleber-lucas.txt": {
+      "tom": "Cm"
+    },
+    "Lote 16/maravilhas.txt": {
+      "tom": "C#m"
+    },
+    "Lote 16/melhor-amigo.txt": {
+      "tom": "B"
+    },
+    "Lote 16/meu-maior-prazer-kleber-lucas.txt": {
+      "tom": "Fm"
+    },
+    "Lote 16/nao-posso-te-deixar.txt": {
+      "tom": "G"
+    },
+    "Lote 16/o-cordeiro-que-venceu.txt": {
+      "tom": "Dm"
+    },
+    "Lote 16/o-rei-esta-voltando-kleber-lucas.txt": {
+      "tom": "Bm"
+    },
+    "Lote 16/oh-espirito.txt": {
+      "tom": "Gm"
+    },
+    "Lote 16/perdao-kleber-lucas.txt": {
+      "tom": "A"
+    },
+    "Lote 16/purifica-me.txt": {
+      "tom": "Am"
+    },
+    "Lote 16/quatro-estacoes.txt": {
+      "tom": "F"
+    },
+    "Lote 16/sai-do-meu-caminho.txt": {
+      "tom": "C#m"
+    },
+    "Lote 16/segura-na-mao-de-deus-kleber-lucas.txt": {
+      "tom": "A"
+    },
+    "Lote 16/templo-do-meu-ser.txt": {
+      "tom": "A"
+    },
+    "Lote 16/todas-as-vezes.txt": {
+      "tom": "C"
+    },
+    "Lote 16/vou-deixar-na-cruz.txt": {
+      "tom": "F"
+    }
+  }
+}
