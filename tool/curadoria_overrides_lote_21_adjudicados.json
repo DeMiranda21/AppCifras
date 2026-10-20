@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 21/a-alegria-esta-no-coracao-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/a-dracma-e-o-seu-dono.txt": {
+      "tom": "G"
+    },
+    "Lote 21/aleluia-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/amizade-com-deus.txt": {
+      "tom": "E"
+    },
+    "Lote 21/amor-de-um-poeta(versão 2).txt": {
+      "tom": "Am"
+    },
+    "Lote 21/amor-de-um-poeta.txt": {
+      "tom": "C"
+    },
+    "Lote 21/cabo-da-nau.txt": {
+      "tom": "D"
+    },
+    "Lote 21/casa-do-pai(versão 2).txt": {
+      "tom": "C"
+    },
+    "Lote 21/como-agradecer-a-ti.txt": {
+      "tom": "Am"
+    },
+    "Lote 21/como-e-bom-poder-acordar.txt": {
+      "tom": "Em"
+    },
+    "Lote 21/cristo-cura-sim-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/da-linda-patria.txt": {
+      "tom": "F"
+    },
+    "Lote 21/deus-da-forca.txt": {
+      "tom": "Am"
+    },
+    "Lote 21/deus-da-minha-vida.txt": {
+      "tom": "Dm"
+    },
+    "Lote 21/deus-me-ama(versão 3).txt": {
+      "tom": "C"
+    },
+    "Lote 21/deus-me-ama.txt": {
+      "tom": "F"
+    },
+    "Lote 21/dios-me-ama-part-danilo-montero.txt": {
+      "tom": "F"
+    },
+    "Lote 21/e-era-assim-que-tava-eu.txt": {
+      "tom": "G#m"
+    },
+    "Lote 21/ele-e-o-amor(versão 2).txt": {
+      "tom": "Gm"
+    },
+    "Lote 21/esse-e-que-e-deus.txt": {
+      "tom": "B"
+    },
+    "Lote 21/eu-nao-sei-viver-sem-voce.txt": {
+      "tom": "G"
+    },
+    "Lote 21/eu-sou-blindado.txt": {
+      "tom": "Bm"
+    },
+    "Lote 21/father-s-house.txt": {
+      "tom": "G"
+    },
+    "Lote 21/filho-meu(versão 2).txt": {
+      "tom": "Bm"
+    },
+    "Lote 21/filho-meu.txt": {
+      "tom": "Bm"
+    },
+    "Lote 21/meu-irmaozinho.txt": {
+      "tom": "Em"
+    },
+    "Lote 21/meu-mundo.txt": {
+      "tom": "G"
+    },
+    "Lote 21/momentos-com-o-senhor.txt": {
+      "tom": "Cm"
+    },
+    "Lote 21/nada-alem-de-ti-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/nao-deixe-o-pecado-entrar.txt": {
+      "tom": "Dm"
+    },
+    "Lote 21/nao-ha-outro-nome.txt": {
+      "tom": "Am"
+    },
+    "Lote 21/nao-tardara.txt": {
+      "tom": "D"
+    },
+    "Lote 21/o-amor-e-tudo.txt": {
+      "tom": "Am"
+    },
+    "Lote 21/o-que-queres-de-mim.txt": {
+      "tom": "Em"
+    },
+    "Lote 21/pai-eu-nao-confio-em-mim(versão 2).txt": {
+      "tom": "Gm"
+    },
+    "Lote 21/pela-graca-thalles-roberto.txt": {
+      "tom": "E"
+    },
+    "Lote 21/porque-ele-vive-thalles-roberto.txt": {
+      "tom": "B"
+    },
+    "Lote 21/preciso-voltar-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/quando-essa-igreja-ora.txt": {
+      "tom": "G"
+    },
+    "Lote 21/quando-eu-digo-o-seu-nome.txt": {
+      "tom": "F#m"
+    },
+    "Lote 21/quem-e-voce.txt": {
+      "tom": "Bm"
+    },
+    "Lote 21/quero-aprender-com-jesus(simplificada).txt": {
+      "tom": "Dm"
+    },
+    "Lote 21/quero-sua-vida-em-mim.txt": {
+      "tom": "A"
+    },
+    "Lote 21/sacrificio.txt": {
+      "tom": "Bm"
+    },
+    "Lote 21/samuel-thalles-roberto.txt": {
+      "tom": "C"
+    },
+    "Lote 21/se-liga-no-groove.txt": {
+      "tom": "Em"
+    },
+    "Lote 21/te-agradeco-thalles-roberto.txt": {
+      "tom": "Am"
+    },
+    "Lote 21/tocou-me-thalles-roberto.txt": {
+      "tom": "A"
+    },
+    "Lote 21/tudo-que-sonhei.txt": {
+      "tom": "G"
+    },
+    "Lote 21/vencendo-vem-jesus-thalles-roberto.txt": {
+      "tom": "E"
+    }
+  }
+}
