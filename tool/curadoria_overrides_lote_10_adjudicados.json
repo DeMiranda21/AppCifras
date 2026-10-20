@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 10/aborto-nao.txt": {
+      "tom": "Am"
+    },
+    "Lote 10/adorai-adonai.txt": {
+      "tom": "Am"
+    },
+    "Lote 10/amada-minha.txt": {
+      "tom": "A"
+    },
+    "Lote 10/amo-estar.txt": {
+      "tom": "A"
+    },
+    "Lote 10/canaa.txt": {
+      "tom": "E"
+    },
+    "Lote 10/clama-brasil.txt": {
+      "tom": "F"
+    },
+    "Lote 10/com-voce.txt": {
+      "tom": "F"
+    },
+    "Lote 10/como-se-cura-a-ferida.txt": {
+      "tom": "E"
+    },
+    "Lote 10/elias-e-eliseu-part-eyshila.txt": {
+      "tom": "B"
+    },
+    "Lote 10/elias-e-elizeu.txt": {
+      "tom": "B"
+    },
+    "Lote 10/essa-tal-de-rejeicao.txt": {
+      "tom": "E"
+    },
+    "Lote 10/eu-quero-paz.txt": {
+      "tom": "Am"
+    },
+    "Lote 10/filho-de-davi-fernanda-brum.txt": {
+      "tom": "E"
+    },
+    "Lote 10/forte-e-poderoso.txt": {
+      "tom": "Em"
+    },
+    "Lote 10/gigante-do-amor.txt": {
+      "tom": "C#m"
+    },
+    "Lote 10/hosana-fernanda-brum.txt": {
+      "tom": "G"
+    },
+    "Lote 10/jesus-e-o-rei.txt": {
+      "tom": "C"
+    },
+    "Lote 10/jesus-meu-primeiro-amor.txt": {
+      "tom": "B"
+    },
+    "Lote 10/liberta-me.txt": {
+      "tom": "F#m"
+    },
+    "Lote 10/marcas.txt": {
+      "tom": "B"
+    },
+    "Lote 10/meu-melhor-amigo.txt": {
+      "tom": "A"
+    },
+    "Lote 10/nada-pode-me-separar.txt": {
+      "tom": "A"
+    },
+    "Lote 10/o-teu-amor-fernanda-brum.txt": {
+      "tom": "D"
+    },
+    "Lote 10/outra-vez.txt": {
+      "tom": "Bb"
+    },
+    "Lote 10/palacios.txt": {
+      "tom": "D"
+    },
+    "Lote 10/perdao.txt": {
+      "tom": "C"
+    },
+    "Lote 10/poder-dos-poderes.txt": {
+      "tom": "Am"
+    },
+    "Lote 10/puro-nardo.txt": {
+      "tom": "B"
+    },
+    "Lote 10/quando-o-fogo-se-vai.txt": {
+      "tom": "G"
+    },
+    "Lote 10/respostas.txt": {
+      "tom": "C"
+    },
+    "Lote 10/santo-fernanda-brum.txt": {
+      "tom": "F#m"
+    },
+    "Lote 10/seja-bem-vindo.txt": {
+      "tom": "F"
+    },
+    "Lote 10/sejam-um.txt": {
+      "tom": "C"
+    },
+    "Lote 10/sera.txt": {
+      "tom": "A"
+    },
+    "Lote 10/serpentes-no-deserto.txt": {
+      "tom": "C#m"
+    },
+    "Lote 10/voce-merece.txt": {
+      "tom": "A"
+    }
+  }
+}
