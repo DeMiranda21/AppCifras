@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "overrides": {
+    "Lote 14/dependo-de-ti.txt": {
+      "tom": "G"
+    },
+    "Lote 14/entrega.txt": {
+      "tom": "Em"
+    },
+    "Lote 14/grito-dos-apaixonados.txt": {
+      "tom": "D"
+    },
+    "Lote 14/o-teu-amor-isadora-pompeo.txt": {
+      "tom": "D"
+    },
+    "Lote 14/toca-em-mim-de-novo(versão 2).txt": {
+      "tom": "D"
+    },
+    "Lote 14/vim-para-adorar-te-isadora-pompeo.txt": {
+      "tom": "D"
+    }
+  }
+}
