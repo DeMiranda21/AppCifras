@@ -107,6 +107,58 @@ void main() {
     expect(resultado.quantidadeAcordes, 4);
   });
 
+  test('expõe candidatos na ordem já usada pelo detector', () {
+    final resultado = detector.detectar('Am F G C Am');
+
+    expect(resultado.candidatosOrdenados, hasLength(24));
+    expect(
+      identical(
+        resultado.candidatosOrdenados.first,
+        resultado.primeiroCandidato,
+      ),
+      isTrue,
+    );
+    expect(
+      identical(resultado.candidatosOrdenados[1], resultado.segundoCandidato),
+      isTrue,
+    );
+    for (var i = 1; i < resultado.candidatosOrdenados.length; i++) {
+      expect(
+        resultado.candidatosOrdenados[i - 1].pontuacao,
+        greaterThanOrEqualTo(resultado.candidatosOrdenados[i].pontuacao),
+      );
+    }
+  });
+
+  test('ordem diagnóstica é estável entre execuções equivalentes', () {
+    final primeiro = detector.detectar('Am F G C Am');
+    final segundo = detector.detectar('Am F G C Am');
+
+    expect(
+      segundo.candidatosOrdenados
+          .map((c) => '${c.tom}:${c.pontuacao}')
+          .toList(),
+      primeiro.candidatosOrdenados
+          .map((c) => '${c.tom}:${c.pontuacao}')
+          .toList(),
+    );
+    expect(segundo.tomDetectado, primeiro.tomDetectado);
+    expect(segundo.confianca, primeiro.confianca);
+    expect(segundo.diferencaPontuacao, primeiro.diferencaPontuacao);
+    expect(segundo.possivelModulacao, primeiro.possivelModulacao);
+  });
+
+  test('lista diagnóstica não pode ser modificada externamente', () {
+    final resultado = detector.detectar('Am F G C Am');
+
+    expect(
+      () => resultado.candidatosOrdenados.add(
+        const CandidatoTonal(tom: 'F', pontuacao: 0),
+      ),
+      throwsUnsupportedError,
+    );
+  });
+
   test('tom explícito prevalece sobre a inferência', () async {
     final temporaria = await Directory.systemTemp.createTemp(
       'appcifras_tom_explicito_',

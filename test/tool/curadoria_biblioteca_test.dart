@@ -633,6 +633,139 @@ void main() {
   });
 
   test(
+    'política relativo maior torna pronta ambiguidade tonal isolada',
+    () async {
+      await _habilitarPoliticaRelativoMaior(temporaria);
+      final lote = Directory(
+        '${temporaria.path}${Platform.pathSeparator}Lote 02',
+      );
+      await lote.create();
+      await File('${lote.path}${Platform.pathSeparator}Relativos.txt')
+          .writeAsString('Relativos - Artista\n[Am]a [F]b [G]c [C]d [Am]e');
+
+      final resumo = await CuradoriaBiblioteca().executar(
+        OpcoesCuradoria(biblioteca: temporaria, lote: 'Lote 02', simular: true),
+      );
+      final entrada = resumo.entradas.single;
+
+      expect(resumo.prontos, 1);
+      expect(entrada['tom'], 'C');
+      expect(entrada['origemTom'], 'politica_relativo_maior');
+      expect(entrada['confiancaTom'], 'media');
+      expect(
+        entrada['politicaRelativoMaior'],
+        isA<Map>()
+            .having((m) => m['relativoMenorDescartado'], 'relativo', 'Am')
+            .having((m) => m['candidatosSaoRelativos'], 'relativos', isTrue)
+            .having((m) => m['possivelModulacao'], 'modulação', isFalse)
+            .having(
+              (m) => m['terceiroCandidatoCompetitivo'],
+              'terceiro',
+              isFalse,
+            ),
+      );
+    },
+  );
+
+  test('outra pendência permanece em revisão após a política', () async {
+    await _habilitarPoliticaRelativoMaior(temporaria);
+    final lote = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 02',
+    );
+    await lote.create();
+    await File('${lote.path}${Platform.pathSeparator}Revisar.txt')
+        .writeAsString(
+          'Revisar - Artista\n[Am]a [F]b [G]c [C]d [Am]e\nlinha [incompleta',
+        );
+
+    final resumo = await CuradoriaBiblioteca().executar(
+      OpcoesCuradoria(biblioteca: temporaria, lote: 'Lote 02', simular: true),
+    );
+    final entrada = resumo.entradas.single;
+
+    expect(resumo.revisar, 1);
+    expect(entrada['origemTom'], 'politica_relativo_maior');
+    expect(entrada['motivosRevisao'], isNotEmpty);
+  });
+
+  test('tom explícito prevalece sobre a política editorial', () async {
+    await _habilitarPoliticaRelativoMaior(temporaria);
+    final lote = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 02',
+    );
+    await lote.create();
+    await File(
+      '${lote.path}${Platform.pathSeparator}Explicito.txt',
+    ).writeAsString('Explícito - Artista\nTom: F\n[Am]a [F]b [G]c [C]d [Am]e');
+
+    final entrada = (await CuradoriaBiblioteca().executar(
+      OpcoesCuradoria(biblioteca: temporaria, lote: 'Lote 02', simular: true),
+    )).entradas.single;
+
+    expect(entrada['tom'], 'F');
+    expect(entrada['origemTom'], 'declarado');
+    expect(entrada.containsKey('politicaRelativoMaior'), isFalse);
+  });
+
+  test('override anterior prevalece sobre a política editorial', () async {
+    await _habilitarPoliticaRelativoMaior(temporaria);
+    final lote = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 02',
+    );
+    await lote.create();
+    await File('${lote.path}${Platform.pathSeparator}Override.txt')
+        .writeAsString('Override - Artista\n[Am]a [F]b [G]c [C]d [Am]e');
+    await File(
+      '${temporaria.path}${Platform.pathSeparator}curadoria_overrides.json',
+    ).writeAsString(
+      jsonEncode({
+        'schema': 1,
+        'overrides': {
+          'Lote 02/Override.txt': {'tom': 'D'},
+        },
+      }),
+    );
+
+    final entrada = (await CuradoriaBiblioteca().executar(
+      OpcoesCuradoria(biblioteca: temporaria, lote: 'Lote 02', simular: true),
+    )).entradas.single;
+
+    expect(entrada['tom'], 'D');
+    expect(entrada['origemTom'], 'override');
+    expect(entrada['overrideAplicado'], isTrue);
+    expect(entrada.containsKey('politicaRelativoMaior'), isFalse);
+  });
+
+  test('inferência de confiança alta prevalece sobre a política', () async {
+    await _habilitarPoliticaRelativoMaior(temporaria);
+    final calibracao = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 01',
+    );
+    final lote = Directory(
+      '${temporaria.path}${Platform.pathSeparator}Lote 02',
+    );
+    await calibracao.create();
+    await lote.create();
+    const corpo =
+        '[C]a [F]b [G7]c [C]d\n'
+        '[C]e [F]f [G7]g [C]h\n'
+        '[C]i [F]j [G7]k [C]l';
+    await File('${calibracao.path}${Platform.pathSeparator}Calibrar.txt')
+        .writeAsString('Calibrar - Artista\nTom: C\n$corpo');
+    await File('${lote.path}${Platform.pathSeparator}Alta.txt')
+        .writeAsString('Alta - Artista\n$corpo');
+
+    final entrada = (await CuradoriaBiblioteca().executar(
+      OpcoesCuradoria(biblioteca: temporaria, lote: 'Lote 02', simular: true),
+    )).entradas.single;
+
+    expect(entrada['tom'], 'C');
+    expect(entrada['origemTom'], 'inferido');
+    expect(entrada['confiancaTom'], 'alta');
+    expect(entrada.containsKey('politicaRelativoMaior'), isFalse);
+  });
+
+  test(
     'recupera manifesto válido do backup após escrita interrompida',
     () async {
       final lote = Directory(
@@ -661,6 +794,19 @@ void main() {
     },
   );
 }
+
+Future<void> _habilitarPoliticaRelativoMaior(Directory biblioteca) =>
+    File('${biblioteca.path}${Platform.pathSeparator}curadoria_config.json')
+        .writeAsString(
+          jsonEncode({
+            'schema': 1,
+            'politica_relativo_maior': {
+              'habilitada': true,
+              'margem_terceiro_competitivo': 4,
+              'minimo_acordes': 4,
+            },
+          }),
+        );
 
 Future<Map<String, List<int>>> _fotografar(Directory raiz) async {
   final resultado = <String, List<int>>{};

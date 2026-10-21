@@ -69,7 +69,7 @@ class CandidatoTonal {
 }
 
 class ResultadoDeteccaoTom {
-  const ResultadoDeteccaoTom({
+  ResultadoDeteccaoTom({
     required this.tomDetectado,
     required this.confianca,
     required this.evidencias,
@@ -81,7 +81,8 @@ class ResultadoDeteccaoTom {
     required this.primeiroAcorde,
     required this.ultimoAcorde,
     required this.evidenciasSegundoCandidato,
-  });
+    List<CandidatoTonal> candidatosOrdenados = const [],
+  }) : candidatosOrdenados = List.unmodifiable(candidatosOrdenados);
 
   final String? tomDetectado;
   final ConfiancaDeteccaoTom confianca;
@@ -95,6 +96,13 @@ class ResultadoDeteccaoTom {
   final String? ultimoAcorde;
   final List<String> evidenciasSegundoCandidato;
 
+  /// Diagnóstico imutável na mesma ordem já calculada pelo detector.
+  ///
+  /// A exposição desta lista não participa da pontuação nem da classificação
+  /// de confiança. [primeiroCandidato] e [segundoCandidato] continuam sendo os
+  /// mesmos objetos das posições zero e um, quando existentes.
+  final List<CandidatoTonal> candidatosOrdenados;
+
   Map<String, Object?> toJson() => {
     'tomDetectado': tomDetectado,
     'confianca': confianca.name,
@@ -107,6 +115,7 @@ class ResultadoDeteccaoTom {
     'primeiroAcorde': primeiroAcorde,
     'ultimoAcorde': ultimoAcorde,
     'evidenciasSegundoCandidato': evidenciasSegundoCandidato,
+    'candidatosOrdenados': candidatosOrdenados.map((c) => c.toJson()).toList(),
   };
 }
 
@@ -153,8 +162,11 @@ class DetectorTonal {
     if (ocorrencias.isEmpty) return _resultadoInsuficiente(0);
 
     final candidatos = _pontuar(extracao)..sort(_ordenarCandidatos);
-    final primeiro = candidatos.first;
-    final segundo = candidatos.length > 1 ? candidatos[1] : null;
+    final candidatosOrdenados = List<CandidatoTonal>.unmodifiable(candidatos);
+    final primeiro = candidatosOrdenados.first;
+    final segundo = candidatosOrdenados.length > 1
+        ? candidatosOrdenados[1]
+        : null;
     final diferenca = segundo == null
         ? primeiro.pontuacao
         : primeiro.pontuacao - segundo.pontuacao;
@@ -209,6 +221,7 @@ class DetectorTonal {
       primeiroAcorde: ocorrencias.first.texto,
       ultimoAcorde: ocorrencias.last.texto,
       evidenciasSegundoCandidato: List.unmodifiable(evidenciasSegundo),
+      candidatosOrdenados: candidatosOrdenados,
     );
   }
 
@@ -740,6 +753,7 @@ class DetectorTonal {
         primeiroAcorde: null,
         ultimoAcorde: null,
         evidenciasSegundoCandidato: const [],
+        candidatosOrdenados: const [],
       );
 }
 

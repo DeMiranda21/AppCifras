@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'conversor_curadoria.dart';
 import 'detector_tonal.dart';
 import 'overrides_curadoria.dart';
+import 'politica_relativo_maior.dart';
 
 enum StatusCuradoria { pronto, revisar, bloqueado }
 
@@ -23,6 +24,7 @@ class OpcoesCuradoria {
     this.adotarChoEditado = false,
     this.substituirChoEditado = false,
     this.arquivosOverridesAdicionais = const [],
+    this.configuracao,
   });
 
   final Directory biblioteca;
@@ -32,6 +34,7 @@ class OpcoesCuradoria {
   final bool adotarChoEditado;
   final bool substituirChoEditado;
   final List<File> arquivosOverridesAdicionais;
+  final ConfiguracaoCuradoria? configuracao;
 }
 
 class ResumoCuradoria {
@@ -112,6 +115,9 @@ class CuradoriaBiblioteca {
   }
 
   Future<ResumoCuradoria> _executarInterno(OpcoesCuradoria opcoes) async {
+    final configuracao =
+        opcoes.configuracao ??
+        await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
     final calibracaoTonal = await _calibrarDetectorTonal(opcoes.biblioteca);
     final lote = Directory(_juntar(opcoes.biblioteca.path, opcoes.lote));
     if (!await lote.exists()) {
@@ -224,6 +230,7 @@ class CuradoriaBiblioteca {
             override: overrides.paraOrigem(relativo),
             identidadePendente: identidadePendente,
             calibracaoTonal: calibracaoTonal,
+            configuracao: configuracao,
           );
         }
       } catch (erro, pilha) {
@@ -458,6 +465,7 @@ class CuradoriaBiblioteca {
     required OverrideCuradoriaArquivo? override,
     required Map<String, Object?>? identidadePendente,
     required ResultadoCalibracaoTonal calibracaoTonal,
+    required ConfiguracaoCuradoria configuracao,
   }) {
     final decodificado = detectarCodificacao(bytes);
     final extraida = _extrairMetadados(decodificado.texto, _base(origem.path));
@@ -467,6 +475,7 @@ class CuradoriaBiblioteca {
         ? 'declarado'
         : (override?.tom != null ? 'override' : 'ausente');
     ResultadoDeteccaoTom? deteccaoTom;
+    ResultadoPoliticaRelativoMaior? avaliacaoPoliticaRelativoMaior;
     var confiancaTom = ConfiancaDeteccaoTom.baixa;
     if (tomEfetivo == null) {
       deteccaoTom = _detectorTonal.detectar(analise.corpo);
@@ -476,9 +485,23 @@ class CuradoriaBiblioteca {
         confiancaTom = ConfiancaDeteccaoTom.media;
       }
       if (deteccaoTom.tomDetectado != null &&
-          confiancaTom != ConfiancaDeteccaoTom.baixa) {
+          confiancaTom == ConfiancaDeteccaoTom.alta) {
         tomEfetivo = deteccaoTom.tomDetectado;
         origemTom = 'inferido';
+      } else {
+        if (override == null) {
+          avaliacaoPoliticaRelativoMaior = PoliticaRelativoMaior(
+            configuracao.politicaRelativoMaior,
+          ).avaliar(deteccaoTom);
+        }
+        if (avaliacaoPoliticaRelativoMaior?.aplicada == true) {
+          tomEfetivo = avaliacaoPoliticaRelativoMaior!.tomMaior;
+          origemTom = 'politica_relativo_maior';
+        } else if (deteccaoTom.tomDetectado != null &&
+            confiancaTom == ConfiancaDeteccaoTom.media) {
+          tomEfetivo = deteccaoTom.tomDetectado;
+          origemTom = 'inferido';
+        }
       }
     }
     final observacoes = <String>[
@@ -486,6 +509,12 @@ class CuradoriaBiblioteca {
       ...analise.observacoes,
     ];
     final motivosRevisao = <String>[];
+    if (origemTom == 'politica_relativo_maior') {
+      observacoes.add(
+        'Tom maior selecionado por política editorial entre relativos; '
+        'não representa inferência musical de confiança alta.',
+      );
+    }
     final idMusica =
         override?.idMusicaCompartilhado ??
         _idEstavel(anterior ?? identidadePendente, 'idMusica');
@@ -630,6 +659,25 @@ class CuradoriaBiblioteca {
           ? null
           : double.parse(deteccaoTom.diferencaPontuacao.toStringAsFixed(2)),
       'possivelModulacao': deteccaoTom?.possivelModulacao ?? false,
+      if (avaliacaoPoliticaRelativoMaior?.aplicada == true)
+        'politicaRelativoMaior': avaliacaoPoliticaRelativoMaior!.toJson(
+          deteccao: deteccaoTom!,
+          configuracao: configuracao.politicaRelativoMaior,
+        ),
+      if (configuracao.politicaRelativoMaior.habilitada &&
+          avaliacaoPoliticaRelativoMaior != null)
+        'avaliacaoPoliticaRelativoMaior': avaliacaoPoliticaRelativoMaior.toJson(
+          deteccao: deteccaoTom!,
+          configuracao: configuracao.politicaRelativoMaior,
+        ),
+      if (configuracao.politicaRelativoMaior.habilitada)
+        'configuracaoCuradoria': {
+          'origem': configuracao.origem,
+          'politicaRelativoMaiorHabilitada': true,
+          'margemTerceiroCompetitivo':
+              configuracao.politicaRelativoMaior.margemTerceiroCompetitivo,
+          'minimoAcordes': configuracao.politicaRelativoMaior.minimoAcordes,
+        },
       'nomeVersao':
           override?.nomeVersao ??
           (anterior?['nomeVersao'] as String? ?? 'Original'),
@@ -1458,6 +1506,20 @@ class CuradoriaBiblioteca {
           buffer.writeln(
             '- Segundo candidato tonal: ${segundo['tom']} '
             '(diferença: ${item['diferencaPontuacaoTom']}).',
+          );
+        }
+        if (item['politicaRelativoMaior'] is Map) {
+          final politica = item['politicaRelativoMaior'] as Map;
+          buffer.writeln(
+            '- Política editorial relativo maior: '
+            '${politica['tomMaiorEscolhido']} escolhido; '
+            '${politica['relativoMenorDescartado']} descartado; '
+            'pontuações ${politica['pontuacaoMaior']} e '
+            '${politica['pontuacaoMenor']}; diferença '
+            '${politica['diferencaPontuacaoMaiorMenor']}; '
+            '${politica['quantidadeAcordes']} acordes; '
+            'modulação ausente; terceiro candidato não competitivo '
+            '(margem ${politica['margemTerceiroCompetitivo']}).',
           );
         }
         for (final evidencia in (item['evidenciasTom'] as List? ?? const [])) {
