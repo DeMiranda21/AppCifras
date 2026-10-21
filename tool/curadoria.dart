@@ -33,6 +33,36 @@ Future<void> main(List<String> argumentos) async {
     }
     return;
   }
+  if (argumentos.contains('--origens-arquivo')) {
+    final opcoes = _lerOpcoesSeletivas(argumentos);
+    if (opcoes == null) {
+      stderr.writeln(
+        'Uso: dart run tool/curadoria.dart --biblioteca <pasta> '
+        '--origens-arquivo <arquivo.txt> '
+        '[--overrides-adicionais <arquivo>]',
+      );
+      exitCode = 64;
+      return;
+    }
+    try {
+      final resumo = await CuradoriaBiblioteca().executarSeletivo(opcoes);
+      stdout
+        ..writeln('Execução seletiva')
+        ..writeln('Selecionadas: ${resumo.totalSelecionadas}')
+        ..writeln('Processadas: ${resumo.processadas}')
+        ..writeln('Recuperadas: ${resumo.recuperadas}')
+        ..writeln('Ignoradas: ${resumo.ignoradas}')
+        ..writeln('Prontos: ${resumo.prontos}')
+        ..writeln('Revisar: ${resumo.revisar}')
+        ..writeln('Bloqueados: ${resumo.bloqueados}');
+    } catch (erro, pilha) {
+      stderr
+        ..writeln('Falha na curadoria seletiva: $erro')
+        ..writeln(pilha);
+      exitCode = 1;
+    }
+    return;
+  }
   final opcoes = _lerOpcoes(argumentos);
   if (opcoes == null) {
     stderr.writeln(
@@ -140,6 +170,30 @@ Future<void> main(List<String> argumentos) async {
       ..writeln(pilha);
     exitCode = 1;
   }
+}
+
+OpcoesCuradoriaSeletiva? _lerOpcoesSeletivas(List<String> argumentos) {
+  String? biblioteca;
+  String? origensArquivo;
+  final arquivosOverridesAdicionais = <File>[];
+  for (var i = 0; i < argumentos.length; i++) {
+    switch (argumentos[i]) {
+      case '--biblioteca' when i + 1 < argumentos.length:
+        biblioteca = argumentos[++i];
+      case '--origens-arquivo' when i + 1 < argumentos.length:
+        origensArquivo = argumentos[++i];
+      case '--overrides-adicionais' when i + 1 < argumentos.length:
+        arquivosOverridesAdicionais.add(File(argumentos[++i]));
+      default:
+        return null;
+    }
+  }
+  if (biblioteca == null || origensArquivo == null) return null;
+  return OpcoesCuradoriaSeletiva(
+    biblioteca: Directory(biblioteca),
+    origensArquivo: File(origensArquivo),
+    arquivosOverridesAdicionais: List.unmodifiable(arquivosOverridesAdicionais),
+  );
 }
 
 OpcoesCuradoria? _lerOpcoes(List<String> argumentos) {

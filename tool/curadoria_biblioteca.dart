@@ -37,6 +37,42 @@ class OpcoesCuradoria {
   final ConfiguracaoCuradoria? configuracao;
 }
 
+class OpcoesCuradoriaSeletiva {
+  const OpcoesCuradoriaSeletiva({
+    required this.biblioteca,
+    required this.origensArquivo,
+    this.arquivosOverridesAdicionais = const [],
+    this.configuracao,
+  });
+
+  final Directory biblioteca;
+  final File origensArquivo;
+  final List<File> arquivosOverridesAdicionais;
+  final ConfiguracaoCuradoria? configuracao;
+}
+
+class ResumoCuradoriaSeletiva {
+  const ResumoCuradoriaSeletiva({
+    required this.totalSelecionadas,
+    required this.processadas,
+    required this.recuperadas,
+    required this.ignoradas,
+    required this.prontos,
+    required this.revisar,
+    required this.bloqueados,
+    required this.entradas,
+  });
+
+  final int totalSelecionadas;
+  final int processadas;
+  final int recuperadas;
+  final int ignoradas;
+  final int prontos;
+  final int revisar;
+  final int bloqueados;
+  final List<Map<String, Object?>> entradas;
+}
+
 class ResumoCuradoria {
   const ResumoCuradoria({
     required this.total,
@@ -60,9 +96,16 @@ class ResumoCuradoria {
 }
 
 class CuradoriaBiblioteca {
-  CuradoriaBiblioteca({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
+  CuradoriaBiblioteca({
+    Uuid? uuid,
+    this.depoisDePersistirChoSeletivo,
+    this.calibradorTonal,
+  }) : _uuid = uuid ?? const Uuid();
 
   final Uuid _uuid;
+  final Future<void> Function(String origem)? depoisDePersistirChoSeletivo;
+  final Future<ResultadoCalibracaoTonal> Function(Directory biblioteca)?
+  calibradorTonal;
   final ConversorCuradoriaConservador _conversor =
       ConversorCuradoriaConservador();
   final ClassificadorLinhaCifraTextual _classificador =
@@ -114,11 +157,38 @@ class CuradoriaBiblioteca {
     }
   }
 
+  Future<ResumoCuradoriaSeletiva> executarSeletivo(
+    OpcoesCuradoriaSeletiva opcoes,
+  ) async {
+    final chaveExecucao = opcoes.biblioteca.absolute.path.toLowerCase();
+    if (!_execucoesAtivas.add(chaveExecucao)) {
+      throw StateError('Já existe uma curadoria em execução nesta biblioteca.');
+    }
+    final lock = File(
+      _juntar(opcoes.biblioteca.path, '.curadoria-execucao.lock'),
+    );
+    await lock.parent.create(recursive: true);
+    RandomAccessFile? handle;
+    try {
+      handle = await lock.open(mode: FileMode.append);
+      await handle.lock(FileLock.exclusive);
+      return await _executarSeletivoInterno(opcoes);
+    } finally {
+      if (handle != null) {
+        await handle.unlock();
+        await handle.close();
+      }
+      _execucoesAtivas.remove(chaveExecucao);
+    }
+  }
+
   Future<ResumoCuradoria> _executarInterno(OpcoesCuradoria opcoes) async {
     final configuracao =
         opcoes.configuracao ??
         await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
-    final calibracaoTonal = await _calibrarDetectorTonal(opcoes.biblioteca);
+    final calibracaoTonal = await (calibradorTonal ?? _calibrarDetectorTonal)(
+      opcoes.biblioteca,
+    );
     final lote = Directory(_juntar(opcoes.biblioteca.path, opcoes.lote));
     if (!await lote.exists()) {
       throw ArgumentError('Lote não encontrado: ${lote.path}');
@@ -229,7 +299,8 @@ class CuradoriaBiblioteca {
             entradas: entradas,
             override: overrides.paraOrigem(relativo),
             identidadePendente: identidadePendente,
-            calibracaoTonal: calibracaoTonal,
+            permiteAplicacaoAutomaticaAlta:
+                calibracaoTonal.permiteAplicacaoAutomaticaAlta,
             configuracao: configuracao,
           );
         }
@@ -334,6 +405,460 @@ class CuradoriaBiblioteca {
       );
     }
     return resumo;
+  }
+
+  Future<ResumoCuradoriaSeletiva> _executarSeletivoInterno(
+    OpcoesCuradoriaSeletiva opcoes,
+  ) async {
+    final origens = await _lerOrigensSeletivas(opcoes);
+    final digestSelecao = sha256
+        .convert(utf8.encode(origens.join('\n')))
+        .toString();
+    final manifestoArquivo = File(
+      _juntar(opcoes.biblioteca.path, 'manifest.json'),
+    );
+    if (!await manifestoArquivo.exists()) {
+      throw StateError(
+        'Manifesto inexistente; o modo seletivo exige origens já registradas.',
+      );
+    }
+    final manifesto = await _lerManifesto(manifestoArquivo);
+    _validarManifesto(manifesto);
+    final entradas = (manifesto['entradas'] as List)
+        .cast<Map<String, Object?>>();
+    for (final origem in origens) {
+      if (_entradaPorOrigem(entradas, origem) == null) {
+        throw ArgumentError('Origem não registrada no manifesto: $origem');
+      }
+    }
+
+    final checkpointArquivo = File(
+      _juntar(opcoes.biblioteca.path, '.curadoria-seletiva-checkpoint.json'),
+    );
+    var checkpoint = await _lerCheckpoint(checkpointArquivo);
+    if (checkpoint['concluido'] != true &&
+        checkpoint.isNotEmpty &&
+        checkpoint['digestSelecao'] != digestSelecao) {
+      throw StateError(
+        'Há outra seleção incompleta no checkpoint seletivo; retome-a antes de iniciar uma nova.',
+      );
+    }
+    if (checkpoint['digestSelecao'] != digestSelecao) {
+      checkpoint = <String, Object?>{
+        'schema': 1,
+        'digestSelecao': digestSelecao,
+        'origens': origens,
+        'concluido': false,
+        'concluidas': <String, Object?>{},
+        'pendente': null,
+      };
+      await _salvarJsonAtomico(checkpointArquivo, checkpoint);
+    }
+
+    final configuracao =
+        opcoes.configuracao ??
+        await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
+    final overrides = await OverridesCuradoria.carregar(
+      opcoes.biblioteca,
+      adicionais: opcoes.arquivosOverridesAdicionais,
+    );
+    final permiteAlta = entradas.any(
+      (entrada) =>
+          entrada['origemTom'] == 'inferido' &&
+          entrada['confiancaTom'] == ConfiancaDeteccaoTom.alta.name,
+    );
+    final checkpointNormalArquivo = File(
+      _juntar(opcoes.biblioteca.path, '.curadoria-checkpoint.json'),
+    );
+    final checkpointNormal = await _lerCheckpoint(checkpointNormalArquivo);
+    final concluidas = Map<String, Object?>.from(
+      checkpoint['concluidas'] is Map
+          ? checkpoint['concluidas'] as Map
+          : const <String, Object?>{},
+    );
+    var processadas = 0;
+    var recuperadas = 0;
+    var ignoradas = 0;
+
+    for (final relativo in origens) {
+      final origem = File(_juntarRelativo(opcoes.biblioteca.path, relativo));
+      final bytes = await origem.readAsBytes();
+      final hash = sha256.convert(bytes).toString();
+      final anterior = _entradaPorOrigem(entradas, relativo)!;
+      final pendenteSeletivo = _pendenteParaOrigem(checkpoint, relativo);
+      final pendenteNormal = _identidadePendente(checkpointNormal, relativo);
+      if (pendenteSeletivo == null && pendenteNormal == null) {
+        final edicaoManual = await _detectarEdicaoManual(
+          biblioteca: opcoes.biblioteca,
+          entradaAnterior: anterior,
+        );
+        if (edicaoManual != null) {
+          throw StateError(
+            'CHO editado manualmente em $relativo; a execução seletiva não o substituirá.',
+          );
+        }
+      }
+      final identidadePendente = pendenteSeletivo?['entradaNova'] is Map
+          ? Map<String, Object?>.from(pendenteSeletivo!['entradaNova'] as Map)
+          : pendenteNormal;
+      final lote = relativo.split('/').first;
+      final nova = _processar(
+        opcoes: OpcoesCuradoria(
+          biblioteca: opcoes.biblioteca,
+          lote: lote,
+          reavaliar: true,
+          arquivosOverridesAdicionais: opcoes.arquivosOverridesAdicionais,
+          configuracao: configuracao,
+        ),
+        origem: origem,
+        relativo: relativo,
+        bytes: bytes,
+        hash: hash,
+        anterior: anterior,
+        entradas: entradas,
+        override: overrides.paraOrigem(relativo),
+        identidadePendente: identidadePendente,
+        permiteAplicacaoAutomaticaAlta: permiteAlta,
+        configuracao: configuracao,
+      );
+      final conteudo = nova.remove('_conteudoCho') as String?;
+      nova.remove('_destinoAbsoluto');
+      final jaConcluida =
+          _entradasEquivalentes(anterior, nova) &&
+          await _estadoChoCorresponde(opcoes.biblioteca, nova);
+      if (jaConcluida) {
+        ignoradas++;
+        if (pendenteSeletivo != null) {
+          final rollback = pendenteSeletivo['rollback'];
+          await _removerRollback(
+            rollback is Map ? Map<String, Object?>.from(rollback) : null,
+          );
+        }
+        if (pendenteNormal != null &&
+            _pendenciaCorresponde(pendenteNormal, nova)) {
+          recuperadas++;
+          await _salvarJsonAtomico(checkpointNormalArquivo, {
+            ...checkpointNormal,
+            'pendente': null,
+            'recuperadoPorExecucaoSeletiva': relativo,
+          });
+        }
+        concluidas[relativo] = _registroConcluido(nova, hash);
+        checkpoint = {
+          ...checkpoint,
+          'concluido': false,
+          'concluidas': concluidas,
+          'pendente': pendenteSeletivo != null ? null : checkpoint['pendente'],
+        };
+        await _salvarJsonAtomico(checkpointArquivo, checkpoint);
+        continue;
+      }
+
+      final recuperandoNormal = pendenteNormal != null;
+      if (recuperandoNormal && !_pendenciaCorresponde(pendenteNormal, nova)) {
+        throw StateError(
+          'A operação parcial de $relativo não corresponde ao resultado seletivo esperado.',
+        );
+      }
+      if (pendenteSeletivo != null &&
+          !_pendenciaSeletivaCorresponde(pendenteSeletivo, anterior, nova)) {
+        await _reverterPendenciaSeletiva(opcoes.biblioteca, pendenteSeletivo);
+      }
+
+      final indice = entradas.indexOf(anterior);
+      final entradasProspectivas = <Map<String, Object?>>[
+        ...entradas.take(indice),
+        nova,
+        ...entradas.skip(indice + 1),
+      ];
+      final manifestoProspectivo = <String, Object?>{
+        ...manifesto,
+        'atualizadoEm': DateTime.now().toUtc().toIso8601String(),
+        'entradas': entradasProspectivas,
+      };
+      _validarManifesto(manifestoProspectivo);
+
+      final rollback = pendenteSeletivo?['rollback'] is Map
+          ? Map<String, Object?>.from(pendenteSeletivo!['rollback'] as Map)
+          : await _prepararRollback(opcoes.biblioteca, anterior, relativo);
+      final pendente = <String, Object?>{
+        'origem': relativo,
+        'fase': 'preparada',
+        'hashOrigem': hash,
+        'entradaAnterior': Map<String, Object?>.from(anterior),
+        'entradaNova': Map<String, Object?>.from(nova),
+        'rollback': rollback,
+      };
+      checkpoint = {
+        ...checkpoint,
+        'concluido': false,
+        'concluidas': concluidas,
+        'pendente': pendente,
+      };
+      await _salvarJsonAtomico(checkpointArquivo, checkpoint);
+
+      await _persistirCho(
+        biblioteca: opcoes.biblioteca,
+        entradaAnterior: anterior,
+        entradaNova: nova,
+        conteudo: conteudo,
+      );
+      pendente['fase'] = 'cho_persistido';
+      checkpoint = {...checkpoint, 'pendente': pendente};
+      await _salvarJsonAtomico(checkpointArquivo, checkpoint);
+      await depoisDePersistirChoSeletivo?.call(relativo);
+
+      await _salvarJsonAtomico(manifestoArquivo, manifestoProspectivo);
+      entradas[indice] = nova;
+      manifesto
+        ..['atualizadoEm'] = manifestoProspectivo['atualizadoEm']
+        ..['entradas'] = entradas;
+      await _removerRollback(rollback);
+      concluidas[relativo] = _registroConcluido(nova, hash);
+      checkpoint = {
+        ...checkpoint,
+        'concluido': false,
+        'concluidas': concluidas,
+        'pendente': null,
+      };
+      await _salvarJsonAtomico(checkpointArquivo, checkpoint);
+      processadas++;
+      if (recuperandoNormal) {
+        recuperadas++;
+        await _salvarJsonAtomico(checkpointNormalArquivo, {
+          ...checkpointNormal,
+          'pendente': null,
+          'recuperadoPorExecucaoSeletiva': relativo,
+        });
+      }
+    }
+
+    final selecionadas = origens
+        .map((origem) => _entradaPorOrigem(entradas, origem)!)
+        .toList(growable: false);
+    final resumo = ResumoCuradoriaSeletiva(
+      totalSelecionadas: origens.length,
+      processadas: processadas,
+      recuperadas: recuperadas,
+      ignoradas: ignoradas,
+      prontos: _contar(selecionadas, StatusCuradoria.pronto),
+      revisar: _contar(selecionadas, StatusCuradoria.revisar),
+      bloqueados: _contar(selecionadas, StatusCuradoria.bloqueado),
+      entradas: List.unmodifiable(selecionadas),
+    );
+    await _salvarJsonAtomico(checkpointArquivo, {
+      ...checkpoint,
+      'concluido': true,
+      'pendente': null,
+      'resumo': {
+        'totalSelecionadas': resumo.totalSelecionadas,
+        'processadas': resumo.processadas,
+        'recuperadas': resumo.recuperadas,
+        'ignoradas': resumo.ignoradas,
+        'prontos': resumo.prontos,
+        'revisar': resumo.revisar,
+        'bloqueados': resumo.bloqueados,
+      },
+    });
+    return resumo;
+  }
+
+  Future<List<String>> _lerOrigensSeletivas(
+    OpcoesCuradoriaSeletiva opcoes,
+  ) async {
+    if (!await opcoes.origensArquivo.exists()) {
+      throw ArgumentError(
+        'Arquivo de origens não encontrado: ${opcoes.origensArquivo.path}',
+      );
+    }
+    final texto = await opcoes.origensArquivo.readAsString(encoding: utf8);
+    final origens = <String>[];
+    final vistas = <String>{};
+    final raizReal = await opcoes.biblioteca.resolveSymbolicLinks();
+    for (final bruta in texto.split(RegExp(r'\r\n|\n|\r'))) {
+      final origem = bruta.trim().replaceAll('\\', '/');
+      if (origem.isEmpty) continue;
+      final partes = origem.split('/');
+      if (partes.length != 2 ||
+          !RegExp(r'^Lote \d+$').hasMatch(partes.first) ||
+          partes.any(
+            (parte) => parte.isEmpty || parte == '.' || parte == '..',
+          ) ||
+          !partes.last.toLowerCase().endsWith('.txt') ||
+          origem.contains(':')) {
+        throw ArgumentError('Origem fora da biblioteca ou inválida: $origem');
+      }
+      if (!vistas.add(origem.toLowerCase())) {
+        throw ArgumentError('Origem duplicada: $origem');
+      }
+      final arquivo = File(_juntarRelativo(opcoes.biblioteca.path, origem));
+      if (!await arquivo.exists()) {
+        throw ArgumentError('Origem inexistente: $origem');
+      }
+      final real = await arquivo.resolveSymbolicLinks();
+      final prefixo = raizReal.endsWith(Platform.pathSeparator)
+          ? raizReal
+          : '$raizReal${Platform.pathSeparator}';
+      if (!real.toLowerCase().startsWith(prefixo.toLowerCase())) {
+        throw ArgumentError('Origem fora da biblioteca: $origem');
+      }
+      origens.add(origem);
+    }
+    if (origens.isEmpty) {
+      throw ArgumentError('O arquivo de origens está vazio.');
+    }
+    origens.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return List.unmodifiable(origens);
+  }
+
+  Map<String, Object?>? _pendenteParaOrigem(
+    Map<String, Object?> checkpoint,
+    String origem,
+  ) {
+    final pendente = checkpoint['pendente'];
+    if (pendente is! Map || pendente['origem'] != origem) return null;
+    return Map<String, Object?>.from(pendente);
+  }
+
+  bool _entradasEquivalentes(
+    Map<String, Object?> atual,
+    Map<String, Object?> esperada,
+  ) {
+    Map<String, Object?> normalizar(Map<String, Object?> entrada) => {
+      for (final item in entrada.entries)
+        if (item.key != 'processadoEm' && !item.key.startsWith('_'))
+          item.key: item.value,
+    };
+    return jsonEncode(normalizar(atual)) == jsonEncode(normalizar(esperada));
+  }
+
+  Future<bool> _estadoChoCorresponde(
+    Directory biblioteca,
+    Map<String, Object?> entrada,
+  ) async {
+    final destino = entrada['destino'] as String?;
+    final hash = entrada['hashChoGerado'] as String?;
+    if (destino == null) return hash == null;
+    final arquivo = _arquivoDeDestinoValido(biblioteca, destino, entrada);
+    if (!await arquivo.exists() || hash == null) return false;
+    return sha256.convert(await arquivo.readAsBytes()).toString() == hash;
+  }
+
+  Map<String, Object?> _registroConcluido(
+    Map<String, Object?> entrada,
+    String hashOrigem,
+  ) => {
+    'hashOrigem': hashOrigem,
+    'destino': entrada['destino'],
+    'hashChoGerado': entrada['hashChoGerado'],
+    'status': entrada['status'],
+  };
+
+  bool _pendenciaCorresponde(
+    Map<String, Object?> pendente,
+    Map<String, Object?> nova,
+  ) =>
+      pendente['idMusica'] == nova['idMusica'] &&
+      pendente['idVersaoMusica'] == nova['idVersaoMusica'] &&
+      pendente['destino'] == nova['destino'] &&
+      pendente['hashChoGerado'] == nova['hashChoGerado'];
+
+  bool _pendenciaSeletivaCorresponde(
+    Map<String, Object?> pendente,
+    Map<String, Object?> anterior,
+    Map<String, Object?> nova,
+  ) {
+    final anteriorPendente = pendente['entradaAnterior'];
+    final novaPendente = pendente['entradaNova'];
+    return anteriorPendente is Map &&
+        novaPendente is Map &&
+        _entradasEquivalentes(
+          Map<String, Object?>.from(anteriorPendente),
+          anterior,
+        ) &&
+        _entradasEquivalentes(Map<String, Object?>.from(novaPendente), nova);
+  }
+
+  Future<Map<String, Object?>?> _prepararRollback(
+    Directory biblioteca,
+    Map<String, Object?> anterior,
+    String origem,
+  ) async {
+    final destino = anterior['destino'] as String?;
+    if (destino == null) return null;
+    final arquivo = _arquivoDeDestinoValido(biblioteca, destino, anterior);
+    if (!await arquivo.exists()) return null;
+    final pasta = Directory(_juntar(biblioteca.path, '.curadoria-pendencias'));
+    await pasta.create(recursive: true);
+    final nome = '${sha256.convert(utf8.encode(origem))}.cho';
+    final copia = File(_juntar(pasta.path, nome));
+    await arquivo.copy(copia.path);
+    return {
+      'arquivo': copia.path,
+      'destino': destino,
+      'hash': sha256.convert(await copia.readAsBytes()).toString(),
+    };
+  }
+
+  Future<void> _reverterPendenciaSeletiva(
+    Directory biblioteca,
+    Map<String, Object?> pendente,
+  ) async {
+    final anterior = pendente['entradaAnterior'];
+    final nova = pendente['entradaNova'];
+    if (anterior is! Map || nova is! Map) {
+      throw StateError('Checkpoint seletivo parcial não pode ser revertido.');
+    }
+    final entradaAnterior = Map<String, Object?>.from(anterior);
+    final entradaNova = Map<String, Object?>.from(nova);
+    final destinoNovo = entradaNova['destino'] as String?;
+    if (destinoNovo != null) {
+      final arquivoNovo = _arquivoDeDestinoValido(
+        biblioteca,
+        destinoNovo,
+        entradaNova,
+      );
+      if (await arquivoNovo.exists()) {
+        final hashAtual = sha256
+            .convert(await arquivoNovo.readAsBytes())
+            .toString();
+        if (hashAtual != entradaNova['hashChoGerado']) {
+          throw StateError(
+            'CHO parcial foi alterado e não pode ser revertido com segurança.',
+          );
+        }
+        await arquivoNovo.delete();
+      }
+    }
+    final rollback = pendente['rollback'];
+    if (rollback is Map) {
+      final copia = File(rollback['arquivo'] as String);
+      if (!await copia.exists()) {
+        throw StateError(
+          'Cópia de reversão da operação seletiva não foi encontrada.',
+        );
+      }
+      final hash = sha256.convert(await copia.readAsBytes()).toString();
+      if (hash != rollback['hash']) {
+        throw StateError(
+          'Cópia de reversão da operação seletiva está corrompida.',
+        );
+      }
+      final destino = _arquivoDeDestinoValido(
+        biblioteca,
+        rollback['destino'] as String,
+        entradaAnterior,
+      );
+      await destino.parent.create(recursive: true);
+      await copia.copy(destino.path);
+      await copia.delete();
+    }
+  }
+
+  Future<void> _removerRollback(Map<String, Object?>? rollback) async {
+    if (rollback == null) return;
+    final arquivo = File(rollback['arquivo'] as String);
+    if (await arquivo.exists()) await arquivo.delete();
   }
 
   Future<ResultadoCalibracaoTonal> _calibrarDetectorTonal(
@@ -464,7 +989,7 @@ class CuradoriaBiblioteca {
     required List<Map<String, Object?>> entradas,
     required OverrideCuradoriaArquivo? override,
     required Map<String, Object?>? identidadePendente,
-    required ResultadoCalibracaoTonal calibracaoTonal,
+    required bool permiteAplicacaoAutomaticaAlta,
     required ConfiguracaoCuradoria configuracao,
   }) {
     final decodificado = detectarCodificacao(bytes);
@@ -481,7 +1006,7 @@ class CuradoriaBiblioteca {
       deteccaoTom = _detectorTonal.detectar(analise.corpo);
       confiancaTom = deteccaoTom.confianca;
       if (confiancaTom == ConfiancaDeteccaoTom.alta &&
-          !calibracaoTonal.permiteAplicacaoAutomaticaAlta) {
+          !permiteAplicacaoAutomaticaAlta) {
         confiancaTom = ConfiancaDeteccaoTom.media;
       }
       if (deteccaoTom.tomDetectado != null &&
@@ -1660,6 +2185,8 @@ class CuradoriaBiblioteca {
 
   String _juntar(String a, String b) =>
       '${a.replaceAll(RegExp(r'[\\/]+$'), '')}${Platform.pathSeparator}$b';
+  String _juntarRelativo(String raiz, String relativo) =>
+      relativo.split('/').fold(raiz, (atual, parte) => _juntar(atual, parte));
 }
 
 class _ProjecaoSemantica {
