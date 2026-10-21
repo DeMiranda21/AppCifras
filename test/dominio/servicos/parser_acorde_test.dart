@@ -220,7 +220,13 @@ void main() {
       'C7M': 'Cmaj7',
       'CM7': 'Cmaj7',
       'CΔ7': 'Cmaj7',
+      'C7+': 'Cmaj7',
+      'F#7+': 'F#maj7',
+      'Bb7+': 'Bbmaj7',
       'C°': 'Cdim',
+      'Cº': 'Cdim',
+      'F#º': 'F#dim',
+      'Bbº': 'Bbdim',
       'C+': 'Caug',
       'Cø': 'Cm7(b5)',
       'C4': 'Csus4',
@@ -234,6 +240,42 @@ void main() {
         );
       });
     }
+  });
+
+  group('ParserAcorde - extensões recorrentes', () {
+    final equivalencias = <String, String>{
+      'F#m7(11)': 'F#m7/11',
+      'D9(11)': 'D9/11',
+      'G4(6)': 'G4(6)',
+      'B9(6)/G#': 'B9(6)/G#',
+      'C7M(#11)': 'C7M(#11)',
+      'G#7(b13)': 'G#7(b13)',
+      'C7+(9)': 'C7M/9',
+      'Am7/9/G': 'Am7(9)/G',
+      'C#m7/9/11': 'C#m9(11)',
+    };
+
+    for (final equivalencia in equivalencias.entries) {
+      test('${equivalencia.key} equivale a ${equivalencia.value}', () {
+        expect(
+          _acordeInterpretado(parser, equivalencia.key),
+          _acordeInterpretado(parser, equivalencia.value),
+        );
+      });
+    }
+
+    test('distingue extensão numérica de baixo alternativo', () {
+      final extensao = _acordeInterpretado(parser, 'C7/9');
+      final baixo = _acordeInterpretado(parser, 'C7/G');
+
+      expect(extensao.extensoes, {
+        ExtensaoAcorde.setima,
+        ExtensaoAcorde.nona,
+      });
+      expect(extensao.baixo, isNull);
+      expect(baixo.extensoes, {ExtensaoAcorde.setima});
+      expect(baixo.baixo, const Nota(nome: NomeNota.g));
+    });
   });
 
   group('ParserAcorde - segunda adicionada', () {
@@ -252,16 +294,24 @@ void main() {
   group('ParserAcorde - conteúdo não interpretável', () {
     const textos = [
       'Cmaj9(#11)',
-      'C6/9',
       'Calt',
       'Cno3',
       'texto evidentemente não reconhecível',
       'C7(b9)desconhecido',
-      'C7(#11)',
       'C7(9)(desconhecido)',
       'C2(7)',
       'C2(6)(9)',
-      'C(6)',
+      'Csus',
+      'B-',
+      'C5+',
+      'C7/4',
+      'Csus4/2',
+      'C4/7',
+      'C7/9-',
+      'C9(7+)',
+      'Cº7',
+      'Cm°',
+      'C/G/9',
     ];
 
     for (final texto in textos) {

@@ -28,6 +28,20 @@ void main() {
       expect(projecao.elementos, orderedEquals(musica.documento.elementos));
     });
 
+    test('preserva a grafia recorrente no tom original', () {
+      final musica = _musica(
+        parserDocumento,
+        tom: 'C',
+        conteudo: '[C7+]a [Bº]b [Dm7/11]c [G7(b13)]d',
+      );
+
+      final projecao = _projecaoDisponivel(
+        projetor.executar(musica, musica.tomOriginal),
+      );
+
+      expect(_acordes(projecao), ['C7+', 'Bº', 'Dm7/11', 'G7(b13)']);
+    });
+
     test(
       'transpõe D para F usando o tom de destino como contexto enarmônico',
       () {

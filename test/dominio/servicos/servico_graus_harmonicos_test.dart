@@ -2,6 +2,7 @@ import 'package:appcifras/dominio/objetos_de_valor/acorde.dart';
 import 'package:appcifras/dominio/objetos_de_valor/grau_harmonico.dart';
 import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
+import 'package:appcifras/dominio/servicos/parser_acorde.dart';
 import 'package:appcifras/dominio/servicos/servico_graus_harmonicos.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -85,6 +86,20 @@ void main() {
       expect(resultado, isA<AcordeConvertidoEmGrau>());
       expect(
         (resultado as AcordeConvertidoEmGrau).grau.representacaoRomana,
+        'vii°',
+      );
+    });
+
+    test('converte aliases recorrentes usando a semântica interpretada', () {
+      final parser = ParserAcorde();
+      final tonica = (parser.interpretar('C7+') as AcordeInterpretado).acorde;
+      final diminuto = (parser.interpretar('Bº') as AcordeInterpretado).acorde;
+
+      expect(servico.converter(tonica, doMaior), isA<AcordeConvertidoEmGrau>());
+      expect(
+        (servico.converter(diminuto, doMaior) as AcordeConvertidoEmGrau)
+            .grau
+            .representacaoRomana,
         'vii°',
       );
     });

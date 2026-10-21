@@ -89,26 +89,47 @@ class FormatadorAcorde {
   }
 
   String _formatarMaior(Set<ExtensaoAcorde> extensoes) {
-    if (_conjuntosIguais(extensoes, {
+    if (extensoes.containsAll({
       ExtensaoAcorde.setima,
       ExtensaoAcorde.nona,
       ExtensaoAcorde.decimaPrimeira,
       ExtensaoAcorde.decimaTerceira,
     })) {
-      return '13';
+      return _comExtensoesEntreParenteses(
+        '13',
+        extensoes.difference({
+          ExtensaoAcorde.setima,
+          ExtensaoAcorde.nona,
+          ExtensaoAcorde.decimaPrimeira,
+          ExtensaoAcorde.decimaTerceira,
+        }),
+      );
     }
-    if (_conjuntosIguais(extensoes, {
+    if (extensoes.containsAll({
       ExtensaoAcorde.setima,
       ExtensaoAcorde.nona,
       ExtensaoAcorde.decimaPrimeira,
     })) {
-      return '11';
+      return _comExtensoesEntreParenteses(
+        '11',
+        extensoes.difference({
+          ExtensaoAcorde.setima,
+          ExtensaoAcorde.nona,
+          ExtensaoAcorde.decimaPrimeira,
+        }),
+      );
     }
-    if (_conjuntosIguais(extensoes, {
+    if (extensoes.containsAll({
       ExtensaoAcorde.setima,
       ExtensaoAcorde.nona,
     })) {
-      return '9';
+      return _comExtensoesEntreParenteses(
+        '9',
+        extensoes.difference({
+          ExtensaoAcorde.setima,
+          ExtensaoAcorde.nona,
+        }),
+      );
     }
     if (extensoes.contains(ExtensaoAcorde.setimaMaior)) {
       return _comExtensoesEntreParenteses(
@@ -132,11 +153,23 @@ class FormatadorAcorde {
   }
 
   String _formatarMenor(Set<ExtensaoAcorde> extensoes) {
-    if (_conjuntosIguais(extensoes, {
+    if (extensoes.containsAll({
       ExtensaoAcorde.setima,
       ExtensaoAcorde.nona,
     })) {
-      return 'm9';
+      return _comExtensoesEntreParenteses(
+        'm9',
+        extensoes.difference({
+          ExtensaoAcorde.setima,
+          ExtensaoAcorde.nona,
+        }),
+      );
+    }
+    if (extensoes.contains(ExtensaoAcorde.setimaMaior)) {
+      return _comExtensoesEntreParenteses(
+        'm',
+        extensoes,
+      );
     }
     if (extensoes.contains(ExtensaoAcorde.setima)) {
       return _comExtensoesEntreParenteses(
@@ -157,14 +190,33 @@ class FormatadorAcorde {
     String base,
     Set<ExtensaoAcorde> extensoes,
   ) {
-    const permitidas = {ExtensaoAcorde.nona, ExtensaoAcorde.decimaTerceira};
+    const permitidas = {
+      ExtensaoAcorde.sexta,
+      ExtensaoAcorde.setima,
+      ExtensaoAcorde.setimaMaior,
+      ExtensaoAcorde.nona,
+      ExtensaoAcorde.decimaPrimeira,
+      ExtensaoAcorde.decimaTerceira,
+    };
     if (!permitidas.containsAll(extensoes)) {
       throw UnsupportedError('Combinação de extensões não suportada.');
     }
 
     final componentes = <String>[];
+    if (extensoes.contains(ExtensaoAcorde.sexta)) {
+      componentes.add('(6)');
+    }
+    if (extensoes.contains(ExtensaoAcorde.setima)) {
+      componentes.add('(7)');
+    }
+    if (extensoes.contains(ExtensaoAcorde.setimaMaior)) {
+      componentes.add('(7M)');
+    }
     if (extensoes.contains(ExtensaoAcorde.nona)) {
       componentes.add('(9)');
+    }
+    if (extensoes.contains(ExtensaoAcorde.decimaPrimeira)) {
+      componentes.add('(11)');
     }
     if (extensoes.contains(ExtensaoAcorde.decimaTerceira)) {
       componentes.add('(13)');

@@ -66,9 +66,18 @@ void main() {
       'Cmaj7': 'C7M',
       'CM7': 'C7M',
       'CΔ7': 'C7M',
+      'C7+': 'C7M',
+      'Cm7+': 'Cm(7M)',
       'C°': 'Cdim',
+      'Cº': 'Cdim',
       'C+': 'Caug',
       'Cø': 'Cm7(b5)',
+      'F#m7(11)': 'F#m7(11)',
+      'C7/9': 'C9',
+      'C#m7/9/11': 'C#m9(11)',
+      'B9(6)/G#': 'B9(6)/G#',
+      'C7M(#11)': 'C7M(#11)',
+      'G#7(b13)': 'G#7(b13)',
       'G/B': 'G/B',
       'D/F#': 'D/F#',
       'C7/E': 'C7/E',
@@ -110,6 +119,12 @@ void main() {
 
     test('preserva extensão e inversão', () {
       expect(transporEFormatar('B11/D#', 2), 'C#11/F');
+    });
+
+    test('transpõe aliases e extensões novas sem perder a estrutura', () {
+      expect(transporEFormatar('Bb7+/D', 2), 'C7M/E');
+      expect(transporEFormatar('G#m7/11', 2), 'A#m7(11)');
+      expect(transporEFormatar('F#º', 1), 'Gdim');
     });
 
     test('mantém bemol escolhido pelo contexto tonal', () {

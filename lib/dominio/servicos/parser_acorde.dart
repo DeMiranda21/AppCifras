@@ -28,21 +28,27 @@ class ParserAcorde {
   /// Interpreta [texto] integralmente ou preserva-o como não interpretável.
   ResultadoParserAcorde interpretar(String texto) {
     final partesDaInversao = texto.split('/');
-    if (partesDaInversao.length > 2) {
-      return AcordeNaoInterpretavel(texto);
-    }
-
     final estrutura = _interpretarEstrutura(partesDaInversao.first);
     if (estrutura == null) {
       return AcordeNaoInterpretavel(texto);
     }
 
+    var indice = 1;
+    while (indice < partesDaInversao.length &&
+        _adicionarExtensaoNumerica(
+          estrutura,
+          partesDaInversao[indice],
+        )) {
+      indice += 1;
+    }
+
     Nota? baixo;
-    if (partesDaInversao.length == 2) {
-      baixo = _interpretarNotaCompleta(partesDaInversao.last);
-      if (baixo == null) {
+    if (indice < partesDaInversao.length) {
+      if (indice != partesDaInversao.length - 1) {
         return AcordeNaoInterpretavel(texto);
       }
+      baixo = _interpretarNotaCompleta(partesDaInversao[indice]);
+      if (baixo == null) return AcordeNaoInterpretavel(texto);
     }
 
     return AcordeInterpretado(
@@ -154,6 +160,11 @@ class ParserAcorde {
       case '7M':
       case 'M7':
       case 'Δ7':
+      case '7+':
+        estrutura.extensoes.add(ExtensaoAcorde.setimaMaior);
+        return estrutura;
+      case 'm7+':
+        estrutura.qualidade = QualidadeAcorde.menor;
         estrutura.extensoes.add(ExtensaoAcorde.setimaMaior);
         return estrutura;
       case '9':
@@ -199,6 +210,7 @@ class ParserAcorde {
         return estrutura;
       case 'dim':
       case '°':
+      case 'º':
         estrutura.qualidade = QualidadeAcorde.diminuto;
         return estrutura;
       case 'aug':
@@ -226,6 +238,23 @@ class ParserAcorde {
       case '6' when base == '2':
         estrutura.extensoes.add(ExtensaoAcorde.sexta);
         return true;
+      case '4' when estrutura.qualidade == QualidadeAcorde.maior:
+        estrutura.suspensoes.add(SuspensaoAcorde.quarta);
+        return true;
+      case '6':
+        estrutura.extensoes.add(ExtensaoAcorde.sexta);
+        return true;
+      case '7':
+        return _adicionarSetima(
+          estrutura,
+          ExtensaoAcorde.setima,
+        );
+      case '7M':
+      case '7+':
+        return _adicionarSetima(
+          estrutura,
+          ExtensaoAcorde.setimaMaior,
+        );
       case 'b5':
         estrutura.alteracoes.add(
           AlteracaoAcorde(grau: 5, alteracao: AlteracaoNota.bemol),
@@ -246,15 +275,61 @@ class ParserAcorde {
           AlteracaoAcorde(grau: 9, alteracao: AlteracaoNota.sustenido),
         );
         return true;
+      case '#11':
+        estrutura.alteracoes.add(
+          AlteracaoAcorde(grau: 11, alteracao: AlteracaoNota.sustenido),
+        );
+        return true;
+      case 'b13':
+        estrutura.alteracoes.add(
+          AlteracaoAcorde(grau: 13, alteracao: AlteracaoNota.bemol),
+        );
+        return true;
       case '9':
         estrutura.extensoes.add(ExtensaoAcorde.nona);
+        return true;
+      case '11':
+        estrutura.extensoes.add(ExtensaoAcorde.decimaPrimeira);
         return true;
       case '13':
         estrutura.extensoes.add(ExtensaoAcorde.decimaTerceira);
         return true;
+      case 'add9':
+        estrutura.adicoes.add(AdicaoAcorde.nona);
+        return true;
+      case 'add11':
+        estrutura.adicoes.add(AdicaoAcorde.decimaPrimeira);
+        return true;
       default:
         return false;
     }
+  }
+
+  bool _adicionarExtensaoNumerica(
+    _EstruturaAcorde estrutura,
+    String componente,
+  ) {
+    final extensao = switch (componente) {
+      '9' => ExtensaoAcorde.nona,
+      '11' => ExtensaoAcorde.decimaPrimeira,
+      '13' => ExtensaoAcorde.decimaTerceira,
+      _ => null,
+    };
+    if (extensao == null) return false;
+    estrutura.extensoes.add(extensao);
+    return true;
+  }
+
+  bool _adicionarSetima(
+    _EstruturaAcorde estrutura,
+    ExtensaoAcorde setima,
+  ) {
+    final conflitante = setima == ExtensaoAcorde.setima
+        ? ExtensaoAcorde.setimaMaior
+        : ExtensaoAcorde.setima;
+    if (estrutura.extensoes.contains(conflitante)) return false;
+    estrutura.extensoes.add(setima);
+    return true;
   }
 
   Nota? _interpretarNotaCompleta(String texto) {
