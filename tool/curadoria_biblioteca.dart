@@ -512,7 +512,6 @@ class CuradoriaBiblioteca {
     final configuracao =
         opcoes.configuracao ??
         await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
-    _validarSelecaoPoliticaMelhorTom(origens, entradas, configuracao);
 
     final checkpointArquivo = File(
       _juntar(opcoes.biblioteca.path, '.curadoria-seletiva-checkpoint.json'),
@@ -525,7 +524,29 @@ class CuradoriaBiblioteca {
         'Há outra seleção incompleta no checkpoint seletivo; retome-a antes de iniciar uma nova.',
       );
     }
-    if (checkpoint['digestSelecao'] != digestSelecao) {
+    final checkpointCorresponde = checkpoint['digestSelecao'] == digestSelecao;
+    final concluidasNoCheckpoint =
+        checkpointCorresponde && checkpoint['concluidas'] is Map
+        ? Map<String, Object?>.from(checkpoint['concluidas'] as Map).keys
+              .toSet()
+        : const <String>{};
+    final pendenteNoCheckpoint =
+        checkpointCorresponde && checkpoint['pendente'] is Map
+        ? (checkpoint['pendente'] as Map)['origem'] as String?
+        : null;
+    final origensAindaNaoIniciadas = origens
+        .where(
+          (origem) =>
+              !concluidasNoCheckpoint.contains(origem) &&
+              origem != pendenteNoCheckpoint,
+        )
+        .toList(growable: false);
+    _validarSelecaoPoliticaMelhorTom(
+      origensAindaNaoIniciadas,
+      entradas,
+      configuracao,
+    );
+    if (!checkpointCorresponde) {
       checkpoint = <String, Object?>{
         'schema': 1,
         'digestSelecao': digestSelecao,

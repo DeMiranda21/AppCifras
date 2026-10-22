@@ -314,6 +314,11 @@ void main() {
     expect(retomada.processadas, 1);
     expect(retomada.entradas.single['status'], 'pronto');
     expect(retomada.entradas.single['origemTom'], 'politica_melhor_tom');
+
+    final repetida = await CuradoriaBiblioteca().executarSeletivo(opcoes);
+    expect(repetida.processadas, 0);
+    expect(repetida.ignoradas, 1);
+    expect(repetida.entradas.single['status'], 'pronto');
   });
 }
 
