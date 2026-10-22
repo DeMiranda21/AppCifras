@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/curadoria_biblioteca.dart';
+import '../../tool/politica_melhor_tom.dart';
+import '../../tool/politica_relativo_maior.dart';
 
 void main() {
   late Directory biblioteca;
@@ -195,7 +197,129 @@ void main() {
     expect(resumo.processadas, 1);
     expect(await relatorio.readAsBytes(), relatorioAntes);
   });
+
+  test(
+    'política tonal processa somente a origem explicitamente selecionada',
+    () async {
+      await _prepararLote(biblioteca, 'Lote 04', ['Selecionada', 'Fora']);
+      final lista = await _lista(biblioteca, ['Lote 04/Selecionada.txt']);
+      final antes = await _fotografar(biblioteca);
+
+      final resumo = await CuradoriaBiblioteca().executarSeletivo(
+        OpcoesCuradoriaSeletiva(
+          biblioteca: biblioteca,
+          origensArquivo: lista,
+          simular: true,
+          configuracao: _configuracaoMelhorTom,
+        ),
+      );
+
+      expect(resumo.entradas, hasLength(1));
+      expect(resumo.entradas.single['origem'], 'Lote 04/Selecionada.txt');
+      expect(resumo.entradas.single['status'], 'pronto');
+      expect(resumo.entradas.single['origemTom'], 'politica_melhor_tom');
+      expect(await _fotografar(biblioteca), antes);
+    },
+  );
+
+  test(
+    'outra pendência impede política tonal antes de qualquer escrita',
+    () async {
+      final lote = Directory(_caminho(biblioteca.path, 'Lote 04'));
+      await lote.create(recursive: true);
+      await File(_caminho(lote.path, 'Ambigua.txt')).writeAsString(
+        'Ambígua - Artista\n[Am]a [F]b [G]c [C]d [Am]e\nlinha [incompleta',
+      );
+      await CuradoriaBiblioteca().executar(
+        OpcoesCuradoria(biblioteca: biblioteca, lote: 'Lote 04'),
+      );
+      final lista = await _lista(biblioteca, ['Lote 04/Ambigua.txt']);
+      final antes = await _fotografar(biblioteca);
+
+      await expectLater(
+        CuradoriaBiblioteca().executarSeletivo(
+          OpcoesCuradoriaSeletiva(
+            biblioteca: biblioteca,
+            origensArquivo: lista,
+            configuracao: _configuracaoMelhorTom,
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(await _fotografar(biblioteca), antes);
+    },
+  );
+
+  test('tom explícito e override prevalecem sobre política tonal', () async {
+    final lote = Directory(_caminho(biblioteca.path, 'Lote 04'));
+    await lote.create(recursive: true);
+    await File(
+      _caminho(lote.path, 'Explicita.txt'),
+    ).writeAsString('Explícita - Artista\nTom: F\n[Am]a [F]b [G]c [C]d [Am]e');
+    await File(_caminho(lote.path, 'Override.txt'))
+        .writeAsString('Override - Artista\n[Am]a [F]b [G]c [C]d [Am]e');
+    final override = File(_caminho(biblioteca.path, 'adicional.json'));
+    await override.writeAsString(
+      jsonEncode({
+        'schema': 1,
+        'overrides': {
+          'Lote 04/Override.txt': {'tom': 'D'},
+        },
+      }),
+    );
+
+    final resumo = await CuradoriaBiblioteca().executar(
+      OpcoesCuradoria(
+        biblioteca: biblioteca,
+        lote: 'Lote 04',
+        simular: true,
+        configuracao: _configuracaoMelhorTom,
+        arquivosOverridesAdicionais: [override],
+      ),
+    );
+    final explicita = resumo.entradas.singleWhere(
+      (e) => e['origem'] == 'Lote 04/Explicita.txt',
+    );
+    final sobrescrita = resumo.entradas.singleWhere(
+      (e) => e['origem'] == 'Lote 04/Override.txt',
+    );
+
+    expect(explicita['tom'], 'F');
+    expect(explicita['origemTom'], 'declarado');
+    expect(sobrescrita['tom'], 'D');
+    expect(sobrescrita['origemTom'], 'override');
+  });
+
+  test('política tonal mantém retomada segura após interrupção', () async {
+    await _prepararLote(biblioteca, 'Lote 04', ['Retomavel']);
+    final lista = await _lista(biblioteca, ['Lote 04/Retomavel.txt']);
+    final opcoes = OpcoesCuradoriaSeletiva(
+      biblioteca: biblioteca,
+      origensArquivo: lista,
+      configuracao: _configuracaoMelhorTom,
+    );
+    var interromper = true;
+    final curadoria = CuradoriaBiblioteca(
+      depoisDePersistirChoSeletivo: (_) async {
+        if (interromper) {
+          interromper = false;
+          throw StateError('interrupção sintética');
+        }
+      },
+    );
+
+    await expectLater(curadoria.executarSeletivo(opcoes), throwsStateError);
+    final retomada = await CuradoriaBiblioteca().executarSeletivo(opcoes);
+
+    expect(retomada.processadas, 1);
+    expect(retomada.entradas.single['status'], 'pronto');
+    expect(retomada.entradas.single['origemTom'], 'politica_melhor_tom');
+  });
 }
+
+const _configuracaoMelhorTom = ConfiguracaoCuradoria(
+  politicaMelhorTom: ConfiguracaoPoliticaMelhorTom(habilitada: true),
+);
 
 Future<void> _prepararLote(
   Directory biblioteca,

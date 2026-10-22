@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'conversor_curadoria.dart';
 import 'detector_tonal.dart';
 import 'overrides_curadoria.dart';
+import 'politica_melhor_tom.dart';
 import 'politica_relativo_maior.dart';
 
 enum StatusCuradoria { pronto, revisar, bloqueado }
@@ -41,12 +42,14 @@ class OpcoesCuradoriaSeletiva {
   const OpcoesCuradoriaSeletiva({
     required this.biblioteca,
     required this.origensArquivo,
+    this.simular = false,
     this.arquivosOverridesAdicionais = const [],
     this.configuracao,
   });
 
   final Directory biblioteca;
   final File origensArquivo;
+  final bool simular;
   final List<File> arquivosOverridesAdicionais;
   final ConfiguracaoCuradoria? configuracao;
 }
@@ -160,6 +163,7 @@ class CuradoriaBiblioteca {
   Future<ResumoCuradoriaSeletiva> executarSeletivo(
     OpcoesCuradoriaSeletiva opcoes,
   ) async {
+    if (opcoes.simular) return _simularSeletivoInterno(opcoes);
     final chaveExecucao = opcoes.biblioteca.absolute.path.toLowerCase();
     if (!_execucoesAtivas.add(chaveExecucao)) {
       throw StateError('Já existe uma curadoria em execução nesta biblioteca.');
@@ -180,6 +184,80 @@ class CuradoriaBiblioteca {
       }
       _execucoesAtivas.remove(chaveExecucao);
     }
+  }
+
+  Future<ResumoCuradoriaSeletiva> _simularSeletivoInterno(
+    OpcoesCuradoriaSeletiva opcoes,
+  ) async {
+    final origens = await _lerOrigensSeletivas(opcoes);
+    final manifestoArquivo = File(
+      _juntar(opcoes.biblioteca.path, 'manifest.json'),
+    );
+    if (!await manifestoArquivo.exists()) {
+      throw StateError(
+        'Manifesto inexistente; o modo seletivo exige origens já registradas.',
+      );
+    }
+    final manifesto = await _lerManifesto(manifestoArquivo);
+    _validarManifesto(manifesto);
+    final entradas = (manifesto['entradas'] as List)
+        .cast<Map<String, Object?>>();
+    final configuracao =
+        opcoes.configuracao ??
+        await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
+    _validarSelecaoPoliticaMelhorTom(origens, entradas, configuracao);
+    final overrides = await OverridesCuradoria.carregar(
+      opcoes.biblioteca,
+      adicionais: opcoes.arquivosOverridesAdicionais,
+    );
+    final permiteAlta = entradas.any(
+      (entrada) =>
+          entrada['origemTom'] == 'inferido' &&
+          entrada['confiancaTom'] == ConfiancaDeteccaoTom.alta.name,
+    );
+    final simuladas = <Map<String, Object?>>[];
+    for (final relativo in origens) {
+      final anterior = _entradaPorOrigem(entradas, relativo);
+      if (anterior == null) {
+        throw ArgumentError('Origem não registrada no manifesto: $relativo');
+      }
+      final origem = File(_juntarRelativo(opcoes.biblioteca.path, relativo));
+      final bytes = await origem.readAsBytes();
+      final nova =
+          _processar(
+              opcoes: OpcoesCuradoria(
+                biblioteca: opcoes.biblioteca,
+                lote: relativo.split('/').first,
+                simular: true,
+                reavaliar: true,
+                arquivosOverridesAdicionais: opcoes.arquivosOverridesAdicionais,
+                configuracao: configuracao,
+              ),
+              origem: origem,
+              relativo: relativo,
+              bytes: bytes,
+              hash: sha256.convert(bytes).toString(),
+              anterior: anterior,
+              entradas: entradas,
+              override: overrides.paraOrigem(relativo),
+              identidadePendente: null,
+              permiteAplicacaoAutomaticaAlta: permiteAlta,
+              configuracao: configuracao,
+            )
+            ..remove('_conteudoCho')
+            ..remove('_destinoAbsoluto');
+      simuladas.add(nova);
+    }
+    return ResumoCuradoriaSeletiva(
+      totalSelecionadas: simuladas.length,
+      processadas: simuladas.length,
+      recuperadas: 0,
+      ignoradas: 0,
+      prontos: _contar(simuladas, StatusCuradoria.pronto),
+      revisar: _contar(simuladas, StatusCuradoria.revisar),
+      bloqueados: _contar(simuladas, StatusCuradoria.bloqueado),
+      entradas: List.unmodifiable(simuladas),
+    );
   }
 
   Future<ResumoCuradoria> _executarInterno(OpcoesCuradoria opcoes) async {
@@ -431,6 +509,10 @@ class CuradoriaBiblioteca {
         throw ArgumentError('Origem não registrada no manifesto: $origem');
       }
     }
+    final configuracao =
+        opcoes.configuracao ??
+        await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
+    _validarSelecaoPoliticaMelhorTom(origens, entradas, configuracao);
 
     final checkpointArquivo = File(
       _juntar(opcoes.biblioteca.path, '.curadoria-seletiva-checkpoint.json'),
@@ -455,9 +537,6 @@ class CuradoriaBiblioteca {
       await _salvarJsonAtomico(checkpointArquivo, checkpoint);
     }
 
-    final configuracao =
-        opcoes.configuracao ??
-        await ConfiguracaoCuradoria.carregar(opcoes.biblioteca);
     final overrides = await OverridesCuradoria.carregar(
       opcoes.biblioteca,
       adicionais: opcoes.arquivosOverridesAdicionais,
@@ -709,6 +788,37 @@ class CuradoriaBiblioteca {
     }
     origens.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return List.unmodifiable(origens);
+  }
+
+  void _validarSelecaoPoliticaMelhorTom(
+    List<String> origens,
+    List<Map<String, Object?>> entradas,
+    ConfiguracaoCuradoria configuracao,
+  ) {
+    if (!configuracao.politicaMelhorTom.habilitada) return;
+    const motivosTonais = {
+      'Tom sugerido por inferência com confiança média; exige revisão humana.',
+      'Tom não identificado com confiança suficiente.',
+      'Tom não atribuído: possível modulação ou centros tonais concorrentes.',
+      'Tom não identificado ou inválido.',
+    };
+    for (final origem in origens) {
+      if (origem.toLowerCase() == 'lote 11/yeshua.txt') {
+        throw StateError('Origem protegida não pode ser processada: $origem');
+      }
+      final entrada = _entradaPorOrigem(entradas, origem);
+      final motivos = (entrada?['motivosRevisao'] as List? ?? const [])
+          .whereType<String>()
+          .toList(growable: false);
+      if (entrada == null ||
+          !const {'revisar', 'bloqueado'}.contains(entrada['status']) ||
+          motivos.isEmpty ||
+          motivos.any((motivo) => !motivosTonais.contains(motivo))) {
+        throw StateError(
+          'A política de melhor tom aceita somente pendência exclusivamente tonal: $origem',
+        );
+      }
+    }
   }
 
   Map<String, Object?>? _pendenteParaOrigem(
@@ -1001,31 +1111,40 @@ class CuradoriaBiblioteca {
         : (override?.tom != null ? 'override' : 'ausente');
     ResultadoDeteccaoTom? deteccaoTom;
     ResultadoPoliticaRelativoMaior? avaliacaoPoliticaRelativoMaior;
+    ResultadoPoliticaMelhorTom? avaliacaoPoliticaMelhorTom;
     var confiancaTom = ConfiancaDeteccaoTom.baixa;
     if (tomEfetivo == null) {
       deteccaoTom = _detectorTonal.detectar(analise.corpo);
       confiancaTom = deteccaoTom.confianca;
-      if (confiancaTom == ConfiancaDeteccaoTom.alta &&
-          !permiteAplicacaoAutomaticaAlta) {
-        confiancaTom = ConfiancaDeteccaoTom.media;
-      }
-      if (deteccaoTom.tomDetectado != null &&
-          confiancaTom == ConfiancaDeteccaoTom.alta) {
-        tomEfetivo = deteccaoTom.tomDetectado;
-        origemTom = 'inferido';
+      avaliacaoPoliticaMelhorTom = PoliticaMelhorTom(
+        configuracao.politicaMelhorTom,
+      ).avaliar(deteccaoTom);
+      if (avaliacaoPoliticaMelhorTom.aplicada) {
+        tomEfetivo = avaliacaoPoliticaMelhorTom.candidatoEscolhido!.tom;
+        origemTom = 'politica_melhor_tom';
       } else {
-        if (override == null) {
-          avaliacaoPoliticaRelativoMaior = PoliticaRelativoMaior(
-            configuracao.politicaRelativoMaior,
-          ).avaliar(deteccaoTom);
+        if (confiancaTom == ConfiancaDeteccaoTom.alta &&
+            !permiteAplicacaoAutomaticaAlta) {
+          confiancaTom = ConfiancaDeteccaoTom.media;
         }
-        if (avaliacaoPoliticaRelativoMaior?.aplicada == true) {
-          tomEfetivo = avaliacaoPoliticaRelativoMaior!.tomMaior;
-          origemTom = 'politica_relativo_maior';
-        } else if (deteccaoTom.tomDetectado != null &&
-            confiancaTom == ConfiancaDeteccaoTom.media) {
+        if (deteccaoTom.tomDetectado != null &&
+            confiancaTom == ConfiancaDeteccaoTom.alta) {
           tomEfetivo = deteccaoTom.tomDetectado;
           origemTom = 'inferido';
+        } else {
+          if (override == null) {
+            avaliacaoPoliticaRelativoMaior = PoliticaRelativoMaior(
+              configuracao.politicaRelativoMaior,
+            ).avaliar(deteccaoTom);
+          }
+          if (avaliacaoPoliticaRelativoMaior?.aplicada == true) {
+            tomEfetivo = avaliacaoPoliticaRelativoMaior!.tomMaior;
+            origemTom = 'politica_relativo_maior';
+          } else if (deteccaoTom.tomDetectado != null &&
+              confiancaTom == ConfiancaDeteccaoTom.media) {
+            tomEfetivo = deteccaoTom.tomDetectado;
+            origemTom = 'inferido';
+          }
         }
       }
     }
@@ -1038,6 +1157,12 @@ class CuradoriaBiblioteca {
       observacoes.add(
         'Tom maior selecionado por política editorial entre relativos; '
         'não representa inferência musical de confiança alta.',
+      );
+    }
+    if (origemTom == 'politica_melhor_tom') {
+      observacoes.add(
+        'Primeiro candidato do detector aceito por política editorial '
+        'para pendência exclusivamente tonal.',
       );
     }
     final idMusica =
@@ -1184,6 +1309,9 @@ class CuradoriaBiblioteca {
           ? null
           : double.parse(deteccaoTom.diferencaPontuacao.toStringAsFixed(2)),
       'possivelModulacao': deteccaoTom?.possivelModulacao ?? false,
+      if (configuracao.politicaMelhorTom.habilitada &&
+          avaliacaoPoliticaMelhorTom != null)
+        'politicaMelhorTom': avaliacaoPoliticaMelhorTom.toJson(deteccaoTom!),
       if (avaliacaoPoliticaRelativoMaior?.aplicada == true)
         'politicaRelativoMaior': avaliacaoPoliticaRelativoMaior!.toJson(
           deteccao: deteccaoTom!,
@@ -1195,13 +1323,18 @@ class CuradoriaBiblioteca {
           deteccao: deteccaoTom!,
           configuracao: configuracao.politicaRelativoMaior,
         ),
-      if (configuracao.politicaRelativoMaior.habilitada)
+      if (configuracao.politicaRelativoMaior.habilitada ||
+          configuracao.politicaMelhorTom.habilitada)
         'configuracaoCuradoria': {
           'origem': configuracao.origem,
-          'politicaRelativoMaiorHabilitada': true,
-          'margemTerceiroCompetitivo':
-              configuracao.politicaRelativoMaior.margemTerceiroCompetitivo,
-          'minimoAcordes': configuracao.politicaRelativoMaior.minimoAcordes,
+          if (configuracao.politicaRelativoMaior.habilitada) ...{
+            'politicaRelativoMaiorHabilitada': true,
+            'margemTerceiroCompetitivo':
+                configuracao.politicaRelativoMaior.margemTerceiroCompetitivo,
+            'minimoAcordes': configuracao.politicaRelativoMaior.minimoAcordes,
+          },
+          if (configuracao.politicaMelhorTom.habilitada)
+            'politicaMelhorTomHabilitada': true,
         },
       'nomeVersao':
           override?.nomeVersao ??

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'detector_tonal.dart';
+import 'politica_melhor_tom.dart';
 
 /// Configuração editorial da preferência pelo relativo maior.
 ///
@@ -22,12 +23,14 @@ class ConfiguracaoPoliticaRelativoMaior {
 class ConfiguracaoCuradoria {
   const ConfiguracaoCuradoria({
     this.politicaRelativoMaior = const ConfiguracaoPoliticaRelativoMaior(),
+    this.politicaMelhorTom = const ConfiguracaoPoliticaMelhorTom(),
     this.origem = 'padrao',
   });
 
   static const padrao = ConfiguracaoCuradoria();
 
   final ConfiguracaoPoliticaRelativoMaior politicaRelativoMaior;
+  final ConfiguracaoPoliticaMelhorTom politicaMelhorTom;
   final String origem;
 
   static Future<ConfiguracaoCuradoria> carregar(Directory biblioteca) async {
@@ -44,13 +47,19 @@ class ConfiguracaoCuradoria {
     }
     if (bruto is! Map<String, dynamic> ||
         bruto['schema'] != 1 ||
-        bruto['politica_relativo_maior'] is! Map) {
+        bruto['politica_relativo_maior'] is! Map ||
+        (bruto.containsKey('politica_melhor_tom') &&
+            bruto['politica_melhor_tom'] is! Map)) {
       throw const FormatException(
         'curadoria_config.json deve conter schema 1 e '
         'politica_relativo_maior.',
       );
     }
-    const camposRaiz = {'schema', 'politica_relativo_maior'};
+    const camposRaiz = {
+      'schema',
+      'politica_relativo_maior',
+      'politica_melhor_tom',
+    };
     final desconhecidosRaiz = bruto.keys.where(
       (chave) => !camposRaiz.contains(chave),
     );
@@ -89,11 +98,32 @@ class ConfiguracaoCuradoria {
         'Configuração de politica_relativo_maior inválida.',
       );
     }
+    final dadosMelhorTom = bruto['politica_melhor_tom'] == null
+        ? const <String, dynamic>{}
+        : Map<String, dynamic>.from(bruto['politica_melhor_tom'] as Map);
+    final desconhecidosMelhorTom = dadosMelhorTom.keys.where(
+      (chave) => chave != 'habilitada',
+    );
+    if (desconhecidosMelhorTom.isNotEmpty) {
+      throw FormatException(
+        'Campos desconhecidos em politica_melhor_tom: '
+        '${desconhecidosMelhorTom.join(', ')}.',
+      );
+    }
+    final habilitadaMelhorTom = dadosMelhorTom['habilitada'] ?? false;
+    if (habilitadaMelhorTom is! bool) {
+      throw const FormatException(
+        'Configuração de politica_melhor_tom inválida.',
+      );
+    }
     return ConfiguracaoCuradoria(
       politicaRelativoMaior: ConfiguracaoPoliticaRelativoMaior(
         habilitada: habilitada,
         margemTerceiroCompetitivo: margem.toDouble(),
         minimoAcordes: minimo,
+      ),
+      politicaMelhorTom: ConfiguracaoPoliticaMelhorTom(
+        habilitada: habilitadaMelhorTom,
       ),
       origem: arquivo.path,
     );

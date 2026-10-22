@@ -39,7 +39,7 @@ Future<void> main(List<String> argumentos) async {
       stderr.writeln(
         'Uso: dart run tool/curadoria.dart --biblioteca <pasta> '
         '--origens-arquivo <arquivo.txt> '
-        '[--overrides-adicionais <arquivo>]',
+        '[--simular] [--overrides-adicionais <arquivo>]',
       );
       exitCode = 64;
       return;
@@ -47,7 +47,7 @@ Future<void> main(List<String> argumentos) async {
     try {
       final resumo = await CuradoriaBiblioteca().executarSeletivo(opcoes);
       stdout
-        ..writeln('Execução seletiva')
+        ..writeln('Execução seletiva${opcoes.simular ? ' (simulação)' : ''}')
         ..writeln('Selecionadas: ${resumo.totalSelecionadas}')
         ..writeln('Processadas: ${resumo.processadas}')
         ..writeln('Recuperadas: ${resumo.recuperadas}')
@@ -175,6 +175,7 @@ Future<void> main(List<String> argumentos) async {
 OpcoesCuradoriaSeletiva? _lerOpcoesSeletivas(List<String> argumentos) {
   String? biblioteca;
   String? origensArquivo;
+  var simular = false;
   final arquivosOverridesAdicionais = <File>[];
   for (var i = 0; i < argumentos.length; i++) {
     switch (argumentos[i]) {
@@ -182,6 +183,8 @@ OpcoesCuradoriaSeletiva? _lerOpcoesSeletivas(List<String> argumentos) {
         biblioteca = argumentos[++i];
       case '--origens-arquivo' when i + 1 < argumentos.length:
         origensArquivo = argumentos[++i];
+      case '--simular':
+        simular = true;
       case '--overrides-adicionais' when i + 1 < argumentos.length:
         arquivosOverridesAdicionais.add(File(argumentos[++i]));
       default:
@@ -192,6 +195,7 @@ OpcoesCuradoriaSeletiva? _lerOpcoesSeletivas(List<String> argumentos) {
   return OpcoesCuradoriaSeletiva(
     biblioteca: Directory(biblioteca),
     origensArquivo: File(origensArquivo),
+    simular: simular,
     arquivosOverridesAdicionais: List.unmodifiable(arquivosOverridesAdicionais),
   );
 }
