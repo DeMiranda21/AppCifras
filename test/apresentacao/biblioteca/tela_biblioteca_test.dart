@@ -14,6 +14,7 @@ import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import 'package:appcifras/aplicacao/entrada/preparar_entrada_musica.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_musica.dart';
+import 'package:appcifras/aplicacao/portas/obter_informacoes_app.dart';
 import 'package:appcifras/aplicacao/portas/pasta_curada_externa.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_sincronizacao.dart';
@@ -33,6 +34,19 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final parser = ParserDocumentoChordPro();
 
+  Musica criarMusica(String id, String titulo, {String artista = 'Artista'}) =>
+      Musica(
+        id: IdMusica(id),
+        documento: parser.interpretar(
+          '{title: $titulo}\n{artist: $artista}\n{key: C}\n[C]Letra',
+        ),
+      );
+
+  List<String> titulosDaLista(WidgetTester tester) => tester
+      .widgetList<ListTile>(find.byType(ListTile))
+      .map((item) => (item.title as Text).data!)
+      .toList();
+
   SalvarRascunhoChordPro salvador(_RepositorioFake repositorio) =>
       SalvarRascunhoChordPro(
         repositorio: repositorio,
@@ -46,6 +60,7 @@ void main() {
     _RepositorioClassificacaoFake? classificacao,
     GerenciarPastaCurada? gerenciarPastaCurada,
     Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada,
+    ObterInformacoesApp? obterInformacoesApp,
   }) => tester.pumpWidget(
     MaterialApp(
       home: TelaBiblioteca(
@@ -79,6 +94,7 @@ void main() {
             : SalvarClassificacaoMusica(classificacao),
         gerenciarPastaCurada: gerenciarPastaCurada,
         sincronizarPastaCurada: sincronizarPastaCurada,
+        obterInformacoesApp: obterInformacoesApp,
       ),
     ),
   );
@@ -105,6 +121,66 @@ void main() {
     expect(find.text('Cole ou digite sua cifra.'), findsOneWidget);
     expect(find.text('Título'), findsNothing);
   });
+
+  testWidgets('mostra versão e hash do build no diálogo Sobre', (tester) async {
+    await montar(
+      tester,
+      _RepositorioFake(),
+      obterInformacoesApp: const _ObterInformacoesAppFake(
+        InformacoesApp(versao: '1.0.0', numeroBuild: '1', commitGit: 'abc1234'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('abrir-sobre-app')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sobre o AppCifras'), findsOneWidget);
+    expect(find.text('AppCifras 1.0.0 (1)'), findsOneWidget);
+    expect(find.text('Build: abc1234'), findsOneWidget);
+  });
+
+  testWidgets('ausência de hash não quebra o diálogo Sobre', (tester) async {
+    await montar(
+      tester,
+      _RepositorioFake(),
+      obterInformacoesApp: const _ObterInformacoesAppFake(
+        InformacoesApp(versao: '1.0.0', numeroBuild: '1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('abrir-sobre-app')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AppCifras 1.0.0 (1)'), findsOneWidget);
+    expect(find.text('Build: não identificado'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Biblioteca mistura músicas locais e sincronizadas em A-Z e mantém após recarga',
+    (tester) async {
+      final repositorio = _RepositorioFake()
+        ..musicas.addAll([
+          criarMusica('local-z', 'zulu'),
+          criarMusica('sincronizada-a', 'Árvore'),
+          criarMusica('local-b', 'BETA'),
+          criarMusica('local-a', 'âncora'),
+        ]);
+      await montar(tester, repositorio);
+      await tester.pumpAndSettle();
+
+      expect(titulosDaLista(tester), ['âncora', 'Árvore', 'BETA', 'zulu']);
+
+      await tester.tap(find.byKey(const ValueKey('local-b')));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(titulosDaLista(tester), ['âncora', 'Árvore', 'BETA', 'zulu']);
+    },
+  );
 
   testWidgets('não analisa texto vazio', (tester) async {
     await abrirEntrada(tester, _RepositorioFake());
@@ -811,7 +887,11 @@ void main() {
   testWidgets('retorno da sincronização recarrega Biblioteca e pesquisa', (
     tester,
   ) async {
-    final repositorio = _RepositorioFake();
+    final repositorio = _RepositorioFake()
+      ..musicas.addAll([
+        criarMusica('local-z', 'Zelo'),
+        criarMusica('local-a', 'Árvore'),
+      ]);
     final configuracao = _RepositorioConfiguracaoPastaFake()
       ..configuracao = ConfiguracaoPastaSincronizada(
         uriArvore: 'content://provider/tree/curada',
@@ -850,6 +930,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('sincronizada')), findsNothing);
+    expect(titulosDaLista(tester), ['Árvore', 'Zelo']);
 
     await tester.tap(find.byKey(const ValueKey('abrir-pasta-curada')));
     await tester.pumpAndSettle();
@@ -859,10 +940,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
+    expect(titulosDaLista(tester), ['Árvore', 'Nova sincronizada', 'Zelo']);
     await tester.enterText(find.byType(TextField).first, 'graça sincronizada');
     await tester.pump();
     expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
   });
+}
+
+class _ObterInformacoesAppFake implements ObterInformacoesApp {
+  const _ObterInformacoesAppFake(this.informacoes);
+
+  final InformacoesApp informacoes;
+
+  @override
+  Future<InformacoesApp> executar() async => informacoes;
 }
 
 class _RepositorioConfiguracaoPastaFake

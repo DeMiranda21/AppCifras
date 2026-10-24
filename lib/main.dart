@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'apresentacao/biblioteca/tela_biblioteca.dart';
 import 'composicao/composicao_appcifras.dart';
+import 'infraestrutura/plataforma/obter_informacoes_app_plataforma.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,6 +90,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       reordenarItensListaCulto: widget.composicao.reordenarItensListaCulto,
       gerenciarPastaCurada: widget.composicao.gerenciarPastaCurada,
       sincronizarPastaCurada: widget.composicao.sincronizarPastaCurada.executar,
+      obterInformacoesApp: const ObterInformacoesAppPlataforma(),
     ),
   );
 }

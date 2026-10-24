@@ -9,6 +9,7 @@ import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
+import '../../aplicacao/portas/obter_informacoes_app.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
 import '../../aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
@@ -51,6 +52,7 @@ class TelaBiblioteca extends StatefulWidget {
     this.reordenarItensListaCulto,
     this.gerenciarPastaCurada,
     this.sincronizarPastaCurada,
+    this.obterInformacoesApp,
   });
 
   final ListarMusicas listarMusicas;
@@ -80,6 +82,7 @@ class TelaBiblioteca extends StatefulWidget {
   final ReordenarItensListaCulto? reordenarItensListaCulto;
   final GerenciarPastaCurada? gerenciarPastaCurada;
   final Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada;
+  final ObterInformacoesApp? obterInformacoesApp;
 
   @override
   State<TelaBiblioteca> createState() => _TelaBibliotecaState();
@@ -229,11 +232,61 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     }
   }
 
+  Future<void> _abrirSobre() async {
+    final obterInformacoesApp = widget.obterInformacoesApp;
+    if (obterInformacoesApp == null) return;
+    final informacoes = obterInformacoesApp.executar();
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sobre o AppCifras'),
+        content: FutureBuilder<InformacoesApp>(
+          future: informacoes,
+          builder: (context, resultado) {
+            if (resultado.connectionState != ConnectionState.done) {
+              return const SizedBox(
+                width: 32,
+                height: 32,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (resultado.hasError) {
+              return const Text('Não foi possível obter a versão do app.');
+            }
+            final dados = resultado.requireData;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('AppCifras ${dados.versao} (${dados.numeroBuild})'),
+                const SizedBox(height: 8),
+                Text('Build: ${dados.commitGit ?? 'não identificado'}'),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Biblioteca'),
       actions: [
+        if (widget.obterInformacoesApp != null)
+          IconButton(
+            key: const ValueKey('abrir-sobre-app'),
+            tooltip: 'Sobre o AppCifras',
+            onPressed: _abrirSobre,
+            icon: const Icon(Icons.info_outline),
+          ),
         if (widget.gerenciarPastaCurada != null)
           IconButton(
             key: const ValueKey('abrir-pasta-curada'),

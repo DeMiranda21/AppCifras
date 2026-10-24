@@ -19,28 +19,25 @@ void main() {
         ),
       );
 
-  test(
-    'pesquisa título, artista e letra preservando a ordem da Biblioteca',
-    () {
-      final titulo = musica('1', 'Graça Suprema', 'Artista', '[C]Letra');
-      final artista = musica('2', 'Outra', 'Ministério da Graça', '[C]Letra');
-      final letra = musica(
-        '3',
-        'Terceira',
-        'Artista',
-        '[C]Tua graça me alcançou',
-      );
-      final fora = musica('4', 'Quarta', 'Artista', '[C]Outro conteúdo');
+  test('pesquisa título, artista e letra em ordem alfabética', () {
+    final titulo = musica('1', 'Graça Suprema', 'Artista', '[C]Letra');
+    final artista = musica('2', 'Outra', 'Ministério da Graça', '[C]Letra');
+    final letra = musica(
+      '3',
+      'Terceira',
+      'Artista',
+      '[C]Tua graça me alcançou',
+    );
+    final fora = musica('4', 'Quarta', 'Artista', '[C]Outro conteúdo');
 
-      final indice = servico.criarIndice([titulo, artista, letra, fora]);
+    final indice = servico.criarIndice([titulo, artista, letra, fora]);
 
-      expect(indice.filtrar(ConsultaPesquisaMusicas(texto: 'graca')), [
-        titulo,
-        artista,
-        letra,
-      ]);
-    },
-  );
+    expect(indice.filtrar(ConsultaPesquisaMusicas(texto: 'graca')), [
+      titulo,
+      artista,
+      letra,
+    ]);
+  });
 
   test('normaliza caixa, acentos, espaços e expressão completa', () {
     final musicaComLetra = musica(
@@ -67,6 +64,32 @@ void main() {
       indice.filtrar(ConsultaPesquisaMusicas(texto: 'inexistente')),
       isEmpty,
     );
+  });
+
+  test('ordena por título ignorando caixa e acentos', () {
+    final zulu = musica('z', 'zulu', 'Artista', '[C]Letra');
+    final arvore = musica('a', 'Árvore', 'Artista', '[C]Letra');
+    final ancora = musica('b', 'âncora', 'Artista', '[C]Letra');
+    final beta = musica('c', 'BETA', 'Artista', '[C]Letra');
+
+    final indice = servico.criarIndice([zulu, beta, arvore, ancora]);
+
+    expect(indice.filtrar(ConsultaPesquisaMusicas()), [
+      ancora,
+      arvore,
+      beta,
+      zulu,
+    ]);
+  });
+
+  test('desempata título normalizado por original e IdMusica', () {
+    final idDois = musica('2', 'Árvore', 'Artista', '[C]Letra');
+    final idUm = musica('1', 'Árvore', 'Artista', '[C]Letra');
+    final caixa = musica('3', 'árvore', 'Artista', '[C]Letra');
+
+    final indice = servico.criarIndice([caixa, idDois, idUm]);
+
+    expect(indice.filtrar(ConsultaPesquisaMusicas()), [idUm, idDois, caixa]);
   });
 
   test('não indexa acordes nem diretivas técnicas', () {
@@ -131,9 +154,9 @@ void main() {
     );
 
     expect(indice.filtrar(ConsultaPesquisaMusicas()), [
+      animada,
       calma,
       moderada,
-      animada,
       semEnergia,
     ]);
     expect(
@@ -165,8 +188,8 @@ void main() {
     );
 
     expect(indice.filtrar(ConsultaPesquisaMusicas(tags: [TagMusica('CEIA')])), [
-      ceia,
       ambas,
+      ceia,
     ]);
     expect(
       indice.filtrar(

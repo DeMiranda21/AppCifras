@@ -18,6 +18,7 @@ class ServicoPesquisaMusicas {
         musica: musica,
         classificacao: classificacoes[musica.id] ?? const ClassificacaoMusica(),
         linhasVisiveis: _extrairLinhasVisiveis(musica.documento),
+        tituloNormalizado: normalizarPesquisa(musica.titulo),
         textoNormalizado: normalizarPesquisa(
           '${musica.titulo}\n${musica.artista}\n'
           '${_extrairConteudoVisivel(musica.documento)}',
@@ -56,9 +57,28 @@ class ServicoPesquisaMusicas {
 
 class IndicePesquisaMusicas {
   IndicePesquisaMusicas(Iterable<TextoPesquisaMusica> entradas)
-    : _entradas = List.unmodifiable(entradas);
+    : _entradas = List.unmodifiable(
+        List<TextoPesquisaMusica>.of(entradas)..sort(_compararPorTitulo),
+      );
 
   final List<TextoPesquisaMusica> _entradas;
+
+  static int _compararPorTitulo(
+    TextoPesquisaMusica primeira,
+    TextoPesquisaMusica segunda,
+  ) {
+    final tituloNormalizado = primeira.tituloNormalizado.compareTo(
+      segunda.tituloNormalizado,
+    );
+    if (tituloNormalizado != 0) return tituloNormalizado;
+
+    final tituloOriginal = primeira.musica.titulo.compareTo(
+      segunda.musica.titulo,
+    );
+    if (tituloOriginal != 0) return tituloOriginal;
+
+    return primeira.musica.id.valor.compareTo(segunda.musica.id.valor);
+  }
 
   List<TagMusica> get tagsDisponiveis {
     final tags = <String, TagMusica>{};
@@ -128,12 +148,14 @@ class TextoPesquisaMusica {
     required this.musica,
     required this.classificacao,
     required this.linhasVisiveis,
+    required this.tituloNormalizado,
     required this.textoNormalizado,
   });
 
   final Musica musica;
   final ClassificacaoMusica classificacao;
   final List<LinhaPesquisaMusica> linhasVisiveis;
+  final String tituloNormalizado;
   final String textoNormalizado;
 
   String? primeiraLinhaCorrespondente(String textoNormalizado) {
