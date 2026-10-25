@@ -129,9 +129,10 @@ persistência.
 ## Modelo atual — origem sincronizada
 
 OrigemSincronizada é o vínculo leve entre uma VersaoMusica e o arquivo que a
-representa na única pasta curada. Sua presença distingue uma versão gerenciada
-pela pasta de uma versão exclusivamente local. Não é uma abstração de múltiplas
-fontes nem transforma a pasta em outra Biblioteca.
+representa na única Biblioteca Oficial pública. Sua presença distingue uma
+versão gerenciada pelo catálogo oficial de uma versão exclusivamente local.
+Não é uma abstração de múltiplas fontes nem transforma a publicação externa em
+outra Biblioteca local.
 
 Cada arquivo da fonte corresponde a uma VersaoMusica. Vários arquivos podem
 declarar o mesmo IdMusica, desde que tenham IdVersaoMusica distintos. Título,
@@ -143,13 +144,19 @@ própria versão.
 Uma versão com origem presente é somente leitura no fluxo comum. Alteração do
 usuário cria outra VersaoMusica local com novo ID e sem origem sincronizada. A
 versão local pode ser editada e definida como principal, mas não é enviada à
-pasta. A marca de principal vinda da fonte inicializa uma Música nova; depois da
-incorporação, qual versão é principal permanece estado local.
+publicação oficial. A marca de principal vinda da fonte inicializa uma Música
+nova; depois da incorporação, qual versão é principal permanece estado local.
 
 Ausência do arquivo não encerra a identidade nem apaga conteúdo. A versão, a
 preferência de último tom e as referências de ItemListaCulto permanecem; apenas
 o vínculo passa a ausente. O reaparecimento dos mesmos IdMusica e
 IdVersaoMusica reativa o vínculo existente.
+
+A publicação oficial usa manifesto versionado e arquivos `.cho` por HTTPS. O
+manifesto transporta somente identidade, hash, tamanho e localizador relativo;
+metadados musicais continuam no ChordPro schema 2. Nome de arquivo, path e
+geração não substituem IdMusica ou IdVersaoMusica como identidade. O conteúdo
+oficial é incorporado ao armazenamento local e permanece disponível offline.
 
 ## Conceitos musicais
 

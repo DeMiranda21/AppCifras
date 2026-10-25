@@ -8,11 +8,12 @@ O uso cotidiano não depende de internet nem exige conhecimento de ChordPro.
 
 ## Meta imediata de produção pessoal
 
-A próxima versão utilizável deve permitir a jornada completa: sincronizar uma
-pasta curada, localizar uma música na Biblioteca, abrir e transpor a versão
-correta, organizá-la em Lista de Culto, usá-la em ensaio ou culto e continuar
-consultando todo o conteúdo já local sem acesso à origem. Melhorias amplas de
-edição e conveniência serão priorizadas depois de observar esse uso real.
+A próxima versão utilizável deve permitir a jornada completa: atualizar a
+Biblioteca Oficial pública, localizar uma música na Biblioteca, abrir e
+transpor a versão correta, organizá-la em Lista de Culto, usá-la em ensaio ou
+culto e continuar consultando todo o conteúdo já local sem acesso à origem.
+Melhorias amplas de edição e conveniência serão priorizadas depois de observar
+esse uso real.
 
 ## Capacidades atuais
 
@@ -85,12 +86,18 @@ O rework do editor comum e o diagnóstico contextual dos trechos que bloqueiam
 transposição continuam desejáveis, mas não são requisito para iniciar uso
 pessoal em produção. O uso real determinará o próximo recorte dessas melhorias.
 
-### Sincronização da pasta curada
+### Atualização da Biblioteca Oficial
 
-A próxima entrega funcional permite selecionar pelo sistema Android uma única
-pasta curada, manter a autorização entre execuções e sincronizar seus arquivos
-`.cho` filhos diretos. Subpastas não são percorridas no primeiro MVP. O fluxo
-não converte `.txt`, não abre revisão interativa e não substitui importação.
+A Biblioteca Oficial é única e pública. O usuário não faz login nem escolhe
+pasta remota. A atualização futura consulta por HTTPS um manifesto versionado,
+baixa somente os arquivos `.cho` necessários, incorpora-os ao armazenamento
+local e mantém a Biblioteca utilizável offline. O fluxo não converte `.txt`,
+não abre revisão interativa e não substitui importação.
+
+O curador prepara cada geração com uma ferramenta local que valida integralmente
+os arquivos antes de produzir `manifest.json` e os bytes prontos para
+hospedagem. O manifesto contém identidades, SHA-256, tamanho e path relativo;
+título, artista, tom e nome da versão permanecem no ChordPro schema 2.
 
 Cada arquivo usa schema 2 e identifica explicitamente a Musica, a VersaoMusica,
 o nome da versão e, para a primeira incorporação, a principal inicial. Nome,
@@ -100,18 +107,22 @@ independentes.
 
 Versões sincronizadas presentes são somente leitura. O usuário que desejar
 alterá-las cria uma nova versão local, que pode ser editada e definida como
-principal, mas não retorna à pasta. Atualizações externas preservam os IDs e as
-referências das Listas; uma alternativa já usada em Lista exige que o curador
-publique novo IdVersaoMusica em vez de sobrescrevê-la.
+principal, mas não retorna à publicação oficial. Atualizações externas
+preservam os IDs e as referências das Listas; uma alternativa já usada em
+Lista exige que o curador publique novo IdVersaoMusica em vez de sobrescrevê-la.
 
 Quando um arquivo desaparece após uma enumeração completa, seu conteúdo local,
 último tom e referências são preservados e a origem passa a ausente. Reaparecer
-com os mesmos IDs recupera o mesmo vínculo. Falha de acesso à pasta não é
-remoção. O conteúdo incorporado continua disponível offline.
+com os mesmos IDs recupera o mesmo vínculo. Falha de acesso ou de uma geração
+incompleta não é remoção. O conteúdo incorporado continua disponível offline.
 
 Ao fim, um relatório simples informa adicionadas, atualizadas, inalteradas,
 origens ausentes e ignoradas com erro, com arquivo e motivo breve para cada
 falha.
+
+A integração Android SAF implementada anteriormente permanece temporariamente
+até a migração para HTTPS ser validada, mas não é mais o mecanismo alvo da
+Biblioteca Oficial.
 
 ### Demais evoluções
 

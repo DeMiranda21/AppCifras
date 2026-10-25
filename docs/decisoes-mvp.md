@@ -8,8 +8,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Android é a plataforma inicial, com mínimo API 23; Samsung Galaxy A72 é a
   referência de validação.
 - O produto é local e offline, com uma única Biblioteca principal e oficial,
-  alimentada pelo AppCifras e pela sincronização inicial com uma pasta curada.
-  Nuvem genérica, backup entre aparelhos,
+  alimentada pelo AppCifras e pela atualização de uma Biblioteca Oficial
+  pública. Nuvem genérica, backup entre aparelhos,
   compartilhamento, colaboração, múltiplas bibliotecas públicas ou assináveis
   e IA não fazem parte da versão atual.
 - Cada versão gerenciada usa arquivo UTF-8 .cho nomeado por IdVersaoMusica.
@@ -20,14 +20,37 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   e múltiplas. Ambas são classificações locais no SQLite, não diretivas do
   ChordPro; Tema e Momento não fazem parte desta etapa.
 - Importação introduz conteúdo novo na Biblioteca; sincronização mantém
-  conteúdo conhecido alinhado à única pasta curada. São fluxos distintos.
+  conteúdo conhecido alinhado à única Biblioteca Oficial. São fluxos distintos.
   Importação genérica e em lote continuam evoluções futuras.
 
-## Sincronização com pasta curada
+## Distribuição da Biblioteca Oficial
 
-- A pasta é uma única fonte editorial controlada de arquivos `.cho` revisados.
+- Existe uma única Biblioteca Oficial pública, preparada pelo curador. O
+  usuário não faz login, não fornece conta de serviço e não escolhe pasta
+  remota; apenas solicita a atualização.
+- O protocolo alvo é um manifesto público versionado e arquivos `.cho`
+  acessíveis por HTTPS. Google Drive pode ser área de trabalho do curador, mas
+  Drive e SAF não fazem parte do protocolo consumido pelo aplicativo.
+- Cada geração válida é preparada integralmente antes de ficar disponível. O
+  manifesto declara schema, geração, data de publicação e, para cada versão,
+  IdMusica, IdVersaoMusica, SHA-256, tamanho e path relativo seguro. O contrato
+  exato está em `manifesto-biblioteca-oficial.md`.
+- Os arquivos publicados preservam exatamente os bytes ChordPro validados; o
+  manifesto não duplica título, artista, tom ou nome da versão. O ChordPro
+  schema 2 continua sendo a fonte desses metadados.
+- Depois de baixado e incorporado, o conteúdo oficial permanece local e
+  utilizável offline. Versões exclusivamente locais coexistem na mesma
+  Biblioteca visual.
+- A implementação SAF entregue em S3–S5 permanece temporariamente no código
+  até a migração HTTPS ser validada, mas deixa de ser o mecanismo alvo da
+  Biblioteca Oficial.
+
+## Contrato musical da sincronização oficial
+
+- A publicação é uma única fonte editorial controlada de arquivos `.cho`
+  revisados.
   O MVP não cria abstração para múltiplas fontes, múltiplas bibliotecas, nuvem,
-  colaboração ou envio de alterações locais à pasta.
+  colaboração ou envio de alterações locais à publicação oficial.
 - Cada arquivo representa exatamente uma VersaoMusica concreta. Arquivos com o
   mesmo IdMusica podem representar versões diferentes.
 - Todo arquivo sincronizável usa `{appcifras_schema:2}` e declara exatamente um
@@ -50,8 +73,9 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   IdVersaoMusica. A versão sincronizada permanece intacta; não há merge,
   desvinculação automática nem sobrescrita local.
 - Versão criada no aplicativo permanece local, segue as regras normais de
-  edição e principal e não é enviada à pasta. Colisão entre seu IdVersaoMusica
-  e um arquivo externo é erro, sem adoção automática pela sincronização.
+  edição e principal e não é enviada à publicação oficial. Colisão entre seu
+  IdVersaoMusica e um arquivo externo é erro, sem adoção automática pela
+  sincronização.
 - Mesmo IdMusica e IdVersaoMusica representam a mesma versão apesar de mudança
   de nome ou caminho do arquivo. Uma principal sincronizada pode atualizar o
   mesmo ID. Uma alternativa sincronizada pode fazê-lo enquanto nunca tiver sido
@@ -62,34 +86,31 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   ausente. Não há exclusão nem arquivamento automático, inclusive da principal.
   Se reaparecer com os mesmos IDs, volta a ser presente e continua sendo a
   mesma versão.
-- O primeiro MVP considera somente arquivos `.cho` filhos diretos da pasta. A
-  busca recursiva em subpastas fica para evolução orientada por uso real.
+- O publicador local considera somente arquivos `.cho` filhos diretos da pasta
+  curada de entrada e produz paths estáveis próprios para a saída.
 - Mesmo IdVersaoMusica em dois arquivos faz ambos serem rejeitados. Se o mesmo
   IdVersaoMusica estiver ligado a IdMusica diferentes, todo o conjunto é
   rejeitado. Mesmo IdMusica com IdVersaoMusica diferentes é permitido. Arquivo
   sem ID de versão é rejeitado. Título ou artista divergentes no grupo da mesma
   Música rejeitam o grupo. Erro de arquivo ou grupo não impede Músicas
   independentes.
-- A configuração única da pasta guarda URI da árvore, autorização persistente,
-  nome legível opcional e data da última sincronização concluída para exibição.
-  A origem por versão guarda IdVersaoMusica, localizador atual na árvore, hash
+- A origem por versão guarda IdVersaoMusica, localizador publicado atual, hash
   SHA-256 dos bytes externos e estado presente ou ausente. IdMusica é derivado
   da VersaoMusica. Não se guardam histórico de hashes, merge base, timestamps
   por arquivo, várias fontes ou prioridade entre fontes.
 - SHA-256 dos bytes externos é a verdade para detectar alteração. Timestamp e
   tamanho não decidem atualização. Uma sincronização sem mudanças é idempotente.
-- O processamento enumera os filhos diretos, lê e valida os `.cho`, monta o
-  inventário completo, detecta inconsistências, agrupa por Música e aplica
+- O processamento consome uma geração completa, lê e valida os `.cho`, monta o
+  inventário, detecta inconsistências, agrupa por Música e aplica
   somente grupos válidos. Falha isolada não interrompe outros grupos. Se a
   enumeração falhar ou estiver incompleta, arquivos não vistos não são tratados
   como removidos.
 - A persistência é segura por Música e reutiliza transações e gravação
   `.tmp`/`.bak`. A Biblioteca deve permanecer utilizável depois de falha ou
   interrupção, sem estado parcial observável.
-- No Android, a pasta é escolhida pelo Storage Access Framework como document
-  tree. O aplicativo persiste a autorização da URI `content://`, lê somente a
-  árvore autorizada e não pede permissão ampla ao armazenamento. Autorização
-  revogada ou provedor indisponível é falha de acesso, não remoção.
+- A seleção Android por Storage Access Framework é implementação transitória
+  já entregue. Não deve ser removida antes da migração HTTPS validada, nem deve
+  orientar novas decisões do protocolo oficial.
 - O resultado informa quantidades adicionadas, atualizadas, inalteradas, com
   origem ausente e ignoradas com erro. Cada erro mostra arquivo e motivo breve;
   não há dashboard de sincronização no MVP.

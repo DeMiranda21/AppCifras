@@ -10,7 +10,7 @@ ordem de trabalho, sem representar cronograma.
 O objetivo imediato é alcançar a menor versão confiável para produção pessoal
 em ensaios, cultos e manutenção cotidiana. O cenário de sucesso é:
 
-1. sincronizar uma pasta curada de arquivos `.cho`;
+1. atualizar a Biblioteca Oficial pública a partir de uma geração publicada;
 2. encontrar a música na Biblioteca;
 3. abrir a VersaoMusica correta e transpor quando necessário;
 4. preparar e navegar uma Lista de Culto;
@@ -47,10 +47,38 @@ e da visualização. Não ampliar o editor nem iniciar refinamentos gerais antes
 sincronização. Regressões de integridade, leitura, navegação ou desempenho no
 caminho principal continuam bloqueadoras.
 
-## Prioridade 1 — Sincronização inicial com pasta curada
+## Prioridade 1 — Biblioteca Oficial por manifesto e HTTPS
 
-O contrato do MVP está fechado em `decisoes-mvp.md`. A implementação segue
-fatias verticais pequenas, sem framework para outras fontes.
+O contrato do MVP está fechado em `decisoes-mvp.md`. A implementação S1–S5
+permanece como fundação de validação, identidade, persistência, aplicação e
+relatório. O SAF de S3 continua temporariamente até a migração ser validada,
+mas o protocolo alvo passa a ser manifesto público versionado e arquivos `.cho`
+por HTTPS, sem login e sem escolha de pasta remota.
+
+### M1 — Contrato do manifesto e publicador local
+
+- consolidar o contrato em `manifesto-biblioteca-oficial.md`;
+- definir modelos Dart-pure, schema versionado, serialização e validação do
+  manifesto;
+- reutilizar S1 para validar UTF-8, ChordPro schema 2, identidades, grupos e
+  principal única antes da publicação;
+- copiar os bytes sem normalização para paths estáveis derivados de
+  IdVersaoMusica;
+- gerar em diretório temporário, verificar SHA-256/tamanho e somente então
+  finalizar a geração local;
+- produzir relatório sem alterar a pasta curada original.
+
+### Próximas fatias da migração
+
+1. escolher hospedagem HTTPS e publicar uma geração de teste;
+2. implementar cliente do manifesto e download verificado, sem alterar ainda a
+   aplicação S4;
+3. adaptar S4 para comparação incremental e ausência por geração completa;
+4. trocar a UX para “Atualizar biblioteca” e validar no A72;
+5. somente depois remover configuração, canais Android e implementação SAF que
+   ficarem sem uso.
+
+## Fundação entregue — S1–S5 com pasta curada/SAF
 
 ### S1 — Schema 2 e validação pura
 
@@ -127,7 +155,7 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 
 | Tema | Estado para a produção pessoal | Próximo critério |
 | --- | --- | --- |
-| Sincronização da pasta curada | Bloqueador imediato | Implementar S1–S5 |
+| Biblioteca Oficial por HTTPS | Bloqueador imediato | Implementar M1 e migrar S4/S5 incrementalmente |
 | Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
 | Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
 | C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
@@ -174,10 +202,11 @@ transições.
 
 ## Dependências principais
 
-    Schema 2 + validação pura → origem sincronizada e persistência
-    Persistência + Android SAF → orquestração idempotente → relatório e A72
-    Sincronização validada → jornada real no A72 → prioridades por evidência
+    S1–S5 entregues → manifesto + publicador local
+    Manifesto → hospedagem HTTPS → cliente e download verificado
+    Cliente HTTPS + S4 → sincronização incremental → nova UX → validação A72
+    Migração validada → remoção segura do SAF transitório
     Uso real do editor → recorte do rework e diagnóstico da transposição
     Versões/arranjos entregues → C3 e tom por item, se o uso justificar
     Contexto da Lista → consultas e estatísticas derivadas
-    Sincronização curada validada → backup e fontes remotas futuras
+    Biblioteca Oficial validada → backup e fontes remotas futuras

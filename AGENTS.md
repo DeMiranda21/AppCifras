@@ -4,9 +4,9 @@
 
 App Flutter para músicos, centrado em uma Biblioteca Musical local para
 consulta e organização de cifras. O aplicativo deve continuar útil sem
-internet. A sincronização inicial com uma pasta curada é a próxima entrega para
-abastecer essa Biblioteca; depois da sincronização, o uso essencial continua
-offline.
+internet. A Biblioteca Oficial pública é preparada pelo curador e será
+distribuída por manifesto versionado e arquivos `.cho` via HTTPS; depois da
+atualização local, o uso essencial continua offline.
 
 ## Hierarquia da documentação
 
@@ -49,8 +49,9 @@ Inclui:
 - visualização por cifras, graus ou ambas;
 - Listas de Culto com criação, inclusão, reordenação, navegação e versão
   concreta por item; tom por item permanece evolução aprovada;
-- sincronização com uma pasta curada de arquivos `.cho`, com falhas isoladas
-  por arquivo e uso local posterior;
+- atualização a partir de uma única Biblioteca Oficial pública, sem login nem
+  escolha de pasta remota, com falhas isoladas por arquivo e uso local
+  posterior;
 - funcionamento offline.
 
 Ficam fora do MVP atual: sincronização genérica em nuvem ou entre aparelhos,
@@ -71,10 +72,10 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
 - Lista de Culto tem identidade própria e seus itens referenciam músicas e a
   versão escolhida por ID. O tom da ocasião permanece evolução futura.
 - Registro de Tom e Tag não são entidades completas no MVP. Origem sincronizada
-  é um vínculo leve de uma VersaoMusica com a única pasta curada; não criar uma
-  abstração genérica de fontes ou bibliotecas. Não criar subsistema separado de
-  histórico de execução enquanto Listas de Culto forem a memória operacional
-  das ministrações.
+  é um vínculo leve de uma VersaoMusica com a única Biblioteca Oficial; não
+  criar uma abstração genérica de fontes ou bibliotecas. Não criar subsistema
+  separado de histórico de execução enquanto Listas de Culto forem a memória
+  operacional das ministrações.
 - A transposição nunca altera o conteúdo original nem o tom original da
   música.
 - Na exibição por graus, converta somente acordes diatônicos para o tom atual.
@@ -119,5 +120,7 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
 - O subconjunto de acordes aceito pelo parser está definido em
   `docs/decisoes-mvp.md`; a notação atual usa fundamentais A–G.
 - Metadados associados ao ChordPro continuam sujeitos a esquema versionado.
-- Arquivos da pasta curada usam o schema 2, com identidades explícitas de
-  Musica e VersaoMusica; arquivos locais antigos não exigem migração imediata.
+- Arquivos publicados usam o schema 2, com identidades explícitas de Musica e
+  VersaoMusica; arquivos locais antigos não exigem migração imediata. O Android
+  SAF permanece temporariamente no código legado, mas não é o protocolo alvo
+  da Biblioteca Oficial.
