@@ -8,7 +8,9 @@ import '../aplicacao/casos_de_uso/musicas.dart';
 import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../aplicacao/casos_de_uso/versoes_musicas.dart';
+import '../aplicacao/biblioteca_oficial/preparar_atualizacao_biblioteca_oficial.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
+import '../aplicacao/portas/fonte_biblioteca_oficial.dart';
 import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
 import '../aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
@@ -39,6 +41,7 @@ import '../infraestrutura/identidade/gerador_id_item_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
+import '../infraestrutura/http/fonte_biblioteca_oficial_http.dart';
 import '../infraestrutura/persistencia/banco_biblioteca.dart';
 import '../infraestrutura/persistencia/consulta_detalhe_lista_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
@@ -67,10 +70,17 @@ class ComposicaoAppCifras {
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
+    required FonteBibliotecaOficial fonteBibliotecaOficial,
   }) : _repositorioMusicasEdicao = repositorio,
        _repositorioVersoesEdicao = repositorioVersoes,
        _repositorioTomEdicao = repositorioTomExecucao,
        repositorioOrigensSincronizadas = repositorioOrigens,
+       _fonteBibliotecaOficial = fonteBibliotecaOficial,
+       prepararAtualizacaoBibliotecaOficial =
+           PrepararAtualizacaoBibliotecaOficial(
+             fonteBibliotecaOficial,
+             repositorioOrigens,
+           ),
        repositorioConfiguracaoPastaSincronizada = repositorioConfiguracaoPasta,
        gerenciarPastaCurada = GerenciarPastaCurada(
          pastaCuradaExterna,
@@ -188,6 +198,9 @@ class ComposicaoAppCifras {
   final CriarVersaoMusica criarVersaoMusica;
   final AvaliarPoliticaEdicaoVersao avaliarPoliticaEdicaoVersao;
   final RepositorioOrigensSincronizadas repositorioOrigensSincronizadas;
+  final FonteBibliotecaOficial _fonteBibliotecaOficial;
+  final PrepararAtualizacaoBibliotecaOficial
+  prepararAtualizacaoBibliotecaOficial;
   final RepositorioConfiguracaoPastaSincronizada
   repositorioConfiguracaoPastaSincronizada;
   final GerenciarPastaCurada gerenciarPastaCurada;
@@ -249,6 +262,7 @@ class ComposicaoAppCifras {
     required GeradorIdListaCulto geradorIdListaCulto,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
+    FonteBibliotecaOficial? fonteBibliotecaOficial,
   }) => ComposicaoAppCifras._(
     banco: banco,
     repositorio: repositorio,
@@ -273,6 +287,8 @@ class ComposicaoAppCifras {
     geradorIdListaCulto: geradorIdListaCulto,
     geradorIdItemListaCulto: geradorIdItemListaCulto,
     parserDocumento: parserDocumento,
+    fonteBibliotecaOficial:
+        fonteBibliotecaOficial ?? const FonteBibliotecaOficialIndisponivel(),
   );
 
   static Future<ComposicaoAppCifras> inicializar() async {
@@ -305,6 +321,11 @@ class ComposicaoAppCifras {
         parserDocumento: parserDocumento,
         validadorSchema: validadorSchema,
       );
+      final fonteBibliotecaOficial = baseUrlBibliotecaOficialConfigurada.isEmpty
+          ? const FonteBibliotecaOficialIndisponivel()
+          : FonteBibliotecaOficialHttp(
+              baseUrl: baseUrlBibliotecaOficialConfigurada,
+            );
 
       return ComposicaoAppCifras._(
         banco: banco,
@@ -323,6 +344,7 @@ class ComposicaoAppCifras {
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
         geradorIdItemListaCulto: GeradorIdItemListaCultoUuid(),
         parserDocumento: parserDocumento,
+        fonteBibliotecaOficial: fonteBibliotecaOficial,
       );
     } catch (_) {
       await banco.close();
@@ -330,7 +352,12 @@ class ComposicaoAppCifras {
     }
   }
 
-  Future<void> encerrar() => _encerramento ??= _banco.close();
+  Future<void> encerrar() => _encerramento ??= _encerrarRecursos();
+
+  Future<void> _encerrarRecursos() async {
+    _fonteBibliotecaOficial.fechar();
+    await _banco.close();
+  }
 }
 
 class _ConsultaDetalheListaCultoVazia implements ConsultaDetalheListaCulto {

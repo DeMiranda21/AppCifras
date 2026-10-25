@@ -13,7 +13,7 @@ class EntradaManifestoBibliotecaOficial {
     required this.tamanhoBytes,
     required String caminho,
   }) : sha256 = _validarSha256(sha256),
-       caminho = _validarCaminhoRelativo(caminho) {
+       caminho = validarCaminhoRelativoBibliotecaOficial(caminho) {
     if (tamanhoBytes <= 0) {
       throw FormatException('O tamanho do arquivo deve ser maior que zero.');
     }
@@ -53,31 +53,41 @@ class EntradaManifestoBibliotecaOficial {
     }
     return valor;
   }
+}
 
-  static String _validarCaminhoRelativo(String valor) {
-    if (valor.isEmpty ||
-        valor.startsWith('/') ||
-        valor.startsWith('\\') ||
-        valor.contains('\\') ||
-        valor.contains('?') ||
-        valor.contains('#') ||
-        valor.contains('%') ||
-        valor.contains('://') ||
-        valor.startsWith('//')) {
-      throw FormatException('Path relativo inseguro no manifesto: $valor');
-    }
-    final segmentos = valor.split('/');
-    if (segmentos.any(
-      (segmento) =>
-          segmento.isEmpty ||
-          segmento == '.' ||
-          segmento == '..' ||
-          !RegExp(r'^[A-Za-z0-9._~-]+$').hasMatch(segmento),
-    )) {
-      throw FormatException('Path relativo inseguro no manifesto: $valor');
-    }
-    return valor;
+class SchemaManifestoBibliotecaOficialNaoSuportado extends FormatException {
+  SchemaManifestoBibliotecaOficialNaoSuportado(int schema)
+    : super('Schema de manifesto desconhecido: $schema.');
+}
+
+class CaminhoBibliotecaOficialInseguro extends FormatException {
+  CaminhoBibliotecaOficialInseguro(String caminho)
+    : super('Path relativo inseguro no manifesto: $caminho');
+}
+
+String validarCaminhoRelativoBibliotecaOficial(String valor) {
+  if (valor.isEmpty ||
+      valor.startsWith('/') ||
+      valor.startsWith('\\') ||
+      valor.contains('\\') ||
+      valor.contains('?') ||
+      valor.contains('#') ||
+      valor.contains('%') ||
+      valor.contains('://') ||
+      valor.startsWith('//')) {
+    throw CaminhoBibliotecaOficialInseguro(valor);
   }
+  final segmentos = valor.split('/');
+  if (segmentos.any(
+    (segmento) =>
+        segmento.isEmpty ||
+        segmento == '.' ||
+        segmento == '..' ||
+        !RegExp(r'^[A-Za-z0-9._~-]+$').hasMatch(segmento),
+  )) {
+    throw CaminhoBibliotecaOficialInseguro(valor);
+  }
+  return valor;
 }
 
 class ManifestoBibliotecaOficial {
@@ -90,7 +100,7 @@ class ManifestoBibliotecaOficial {
        publicadoEm = publicadoEm.toUtc(),
        arquivos = _validarEOrdenarArquivos(arquivos) {
     if (schema != schemaManifestoBibliotecaOficialAtual) {
-      throw FormatException('Schema de manifesto desconhecido: $schema.');
+      throw SchemaManifestoBibliotecaOficialNaoSuportado(schema);
     }
   }
 
