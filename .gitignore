@@ -5,3 +5,6 @@ build/
 .metadata
 .DS_Store
 .flutter-plugins-dependencies
+
+# Relatórios gerados pelas ferramentas locais de curadoria.
+tool/relatorios/
