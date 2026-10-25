@@ -474,7 +474,7 @@ class _PastaCuradaExternaIndisponivel implements PastaCuradaExterna {
   Future<void> verificarAcesso(String uriArvore) async => _indisponivel();
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
   ) async => _indisponivel();
 

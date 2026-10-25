@@ -135,9 +135,9 @@ class SincronizarPastaCurada {
       );
     }
 
-    late final List<DocumentoPastaCurada> documentos;
+    late final ResultadoEnumeracaoPastaCurada enumeracao;
     try {
-      documentos = await _pastaExterna.listarFilhosDiretos(
+      enumeracao = await _pastaExterna.listarFilhosDiretos(
         configuracao.uriArvore,
       );
     } catch (erro) {
@@ -147,10 +147,21 @@ class SincronizarPastaCurada {
       );
     }
 
+    final documentos = enumeracao.documentos;
     final candidatos = <ArquivoSincronizacaoCandidato>[];
     final idsFisicamentePresentes = <IdVersaoMusica>{};
-    var leituraCompleta = true;
-    var ausenciasSeguras = true;
+    var leituraCompleta = enumeracao.completa;
+    var ausenciasSeguras = enumeracao.completa;
+    if (!enumeracao.completa) {
+      erros.add(
+        const ErroSincronizacao(
+          codigo: CodigoErroSincronizacao.enumeracaoPasta,
+          mensagem:
+              'O provedor não concluiu a enumeração da pasta a tempo; '
+              'nenhuma origem será marcada como ausente.',
+        ),
+      );
+    }
     for (final documento in documentos.where(
       (item) => !item.ehDiretorio && item.nome.toLowerCase().endsWith('.cho'),
     )) {

@@ -980,9 +980,10 @@ class _PastaExternaBibliotecaFake implements PastaCuradaExterna {
       Uint8List(0);
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
-  ) async => const [];
+  ) async =>
+      ResultadoEnumeracaoPastaCurada(documentos: const [], completa: true);
 
   @override
   Future<PastaCuradaSelecionada?> selecionarPasta() async => null;

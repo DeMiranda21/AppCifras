@@ -307,6 +307,42 @@ void main() {
     );
   });
 
+  test(
+    'enumeração parcial não autoriza ausência e a completa inclui arquivo novo',
+    () async {
+      pasta
+        ..adicionar('primeira.cho', _cho('m1', 'v1', principal: true))
+        ..adicionar('segunda.cho', _cho('m2', 'v2', principal: true));
+      await casoDeUso.executar();
+      pasta
+        ..remover('segunda.cho')
+        ..enumeracaoCompleta = false;
+
+      final parcial = await casoDeUso.executar();
+
+      expect(parcial.enumeracaoCompleta, isFalse);
+      expect(parcial.origensAusentes, 0);
+      expect(
+        parcial.erros.map((erro) => erro.codigo),
+        contains(CodigoErroSincronizacao.enumeracaoPasta),
+      );
+      expect(
+        (await sincronizacao.obterPorVersao(IdVersaoMusica('v2')))?.presente,
+        isTrue,
+      );
+
+      pasta
+        ..adicionar('segunda.cho', _cho('m2', 'v2', principal: true))
+        ..adicionar('nova.cho', _cho('m3', 'v3', principal: true))
+        ..enumeracaoCompleta = true;
+      final completa = await casoDeUso.executar();
+
+      expect(completa.enumeracaoCompleta, isTrue);
+      expect(completa.adicionadas, 1);
+      expect(await musicas.obterPorId(IdMusica('m3')), isNotNull);
+    },
+  );
+
   test('arquivo inválido reconhecível não vira ausência e não bloqueia outro grupo', () async {
     pasta.adicionar('principal.cho', _cho('m1', 'v1', principal: true));
     await casoDeUso.executar();
@@ -460,6 +496,7 @@ class _PastaFake implements PastaCuradaExterna {
   final Map<String, Uint8List> _arquivos = {};
   final Set<String> falharLeitura = {};
   bool falharEnumeracao = false;
+  bool enumeracaoCompleta = true;
 
   void adicionar(String nome, String conteudo) {
     _arquivos[nome] = Uint8List.fromList(utf8.encode(conteudo));
@@ -475,21 +512,22 @@ class _PastaFake implements PastaCuradaExterna {
   Future<void> verificarAcesso(String uriArvore) async {}
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
   ) async {
     if (falharEnumeracao) {
       throw const FalhaPastaCurada(TipoFalhaPastaCurada.leitura, 'falha');
     }
-    return _arquivos.keys
-        .map(
-          (nome) => DocumentoPastaCurada(
-            localizador: 'doc:$nome',
-            nome: nome,
-            ehDiretorio: false,
-          ),
-        )
-        .toList();
+    return ResultadoEnumeracaoPastaCurada(
+      completa: enumeracaoCompleta,
+      documentos: _arquivos.keys.map(
+        (nome) => DocumentoPastaCurada(
+          localizador: 'doc:$nome',
+          nome: nome,
+          ehDiretorio: false,
+        ),
+      ),
+    );
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/services.dart';
 
 import '../../aplicacao/portas/pasta_curada_externa.dart';
@@ -35,15 +37,23 @@ class PastaCuradaSafAndroid implements PastaCuradaExterna {
   }
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
   ) async {
     try {
-      final resultado = await _canal.invokeListMethod<Object?>(
+      final resultado = await _canal.invokeMapMethod<String, Object?>(
         'listarFilhosDiretos',
         {'uri': uriArvore},
       );
-      return (resultado ?? const [])
+      if (resultado == null) {
+        throw const FalhaPastaCurada(
+          TipoFalhaPastaCurada.leitura,
+          'O provedor não retornou o resultado da enumeração.',
+        );
+      }
+      final documentosBrutos =
+          resultado['documentos'] as List<Object?>? ?? const <Object?>[];
+      final documentos = documentosBrutos
           .map((item) {
             final dados = Map<Object?, Object?>.from(item! as Map);
             return DocumentoPastaCurada(
@@ -54,6 +64,18 @@ class PastaCuradaSafAndroid implements PastaCuradaExterna {
             );
           })
           .toList(growable: false);
+      final completa = resultado['completa'] as bool? ?? false;
+      developer.log(
+        'Dart recebeu ${documentos.length} documentos; '
+        'completa=$completa; tentativas=${resultado['tentativas']}; '
+        'linhasBrutas=${resultado['linhasBrutas']}; '
+        'arquivosCho=${resultado['arquivosCho']}.',
+        name: 'AppCifrasSAF',
+      );
+      return ResultadoEnumeracaoPastaCurada(
+        documentos: documentos,
+        completa: completa,
+      );
     } on PlatformException catch (erro) {
       throw _converterErro(erro);
     }

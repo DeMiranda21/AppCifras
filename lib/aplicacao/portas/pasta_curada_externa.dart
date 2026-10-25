@@ -29,6 +29,16 @@ class DocumentoPastaCurada {
   final String? tipoMime;
 }
 
+class ResultadoEnumeracaoPastaCurada {
+  ResultadoEnumeracaoPastaCurada({
+    required Iterable<DocumentoPastaCurada> documentos,
+    required this.completa,
+  }) : documentos = List.unmodifiable(documentos);
+
+  final List<DocumentoPastaCurada> documentos;
+  final bool completa;
+}
+
 enum TipoFalhaPastaCurada {
   autorizacaoRevogada,
   provedorIndisponivel,
@@ -51,7 +61,7 @@ abstract interface class PastaCuradaExterna {
 
   Future<void> verificarAcesso(String uriArvore);
 
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(String uriArvore);
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(String uriArvore);
 
   Future<Uint8List> lerBytes(DocumentoPastaCurada documento);
 }

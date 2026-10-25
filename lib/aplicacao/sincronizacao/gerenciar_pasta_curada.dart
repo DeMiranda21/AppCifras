@@ -46,10 +46,16 @@ class GerenciarPastaCurada {
   Future<List<DocumentoPastaCurada>> listarArquivosCho() async {
     final configuracao = await _configuracaoObrigatoria();
     await _pastaExterna.verificarAcesso(configuracao.uriArvore);
-    final filhos = await _pastaExterna.listarFilhosDiretos(
+    final enumeracao = await _pastaExterna.listarFilhosDiretos(
       configuracao.uriArvore,
     );
-    return filhos
+    if (!enumeracao.completa) {
+      throw const FalhaPastaCurada(
+        TipoFalhaPastaCurada.provedorIndisponivel,
+        'O provedor não concluiu a leitura da pasta a tempo.',
+      );
+    }
+    return enumeracao.documentos
         .where(
           (documento) =>
               !documento.ehDiretorio &&

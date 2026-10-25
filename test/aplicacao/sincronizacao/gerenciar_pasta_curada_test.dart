@@ -74,6 +74,29 @@ void main() {
     expect(pastaExterna.listagens, 1);
   });
 
+  test(
+    'enumeração incompleta não apresenta contagem parcial como final',
+    () async {
+      repositorio.configuracao = _configuracao(
+        'content://provider/tree/curada',
+      );
+      pastaExterna
+        ..filhos = [_documento('content://provider/document/1', 'cache.cho')]
+        ..enumeracaoCompleta = false;
+
+      await expectLater(
+        gerenciar.listarArquivosCho(),
+        throwsA(
+          isA<FalhaPastaCurada>().having(
+            (erro) => erro.tipo,
+            'tipo',
+            TipoFalhaPastaCurada.provedorIndisponivel,
+          ),
+        ),
+      );
+    },
+  );
+
   test('erro de acesso não remove nem modifica configuração', () async {
     final existente = _configuracao('content://provider/tree/curada');
     repositorio.configuracao = existente;
@@ -185,6 +208,7 @@ class _PastaCuradaExternaFake implements PastaCuradaExterna {
   DocumentoPastaCurada? documentoLido;
   int selecoes = 0;
   int listagens = 0;
+  bool enumeracaoCompleta = true;
 
   @override
   Future<PastaCuradaSelecionada?> selecionarPasta() async {
@@ -200,12 +224,15 @@ class _PastaCuradaExternaFake implements PastaCuradaExterna {
   }
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
   ) async {
     listagens++;
     uriListada = uriArvore;
-    return filhos;
+    return ResultadoEnumeracaoPastaCurada(
+      documentos: filhos,
+      completa: enumeracaoCompleta,
+    );
   }
 
   @override

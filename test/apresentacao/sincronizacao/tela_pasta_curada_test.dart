@@ -351,9 +351,9 @@ class _PastaExternaFake implements PastaCuradaExterna {
   }
 
   @override
-  Future<List<DocumentoPastaCurada>> listarFilhosDiretos(
+  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
     String uriArvore,
-  ) async => filhos;
+  ) async => ResultadoEnumeracaoPastaCurada(documentos: filhos, completa: true);
 
   @override
   Future<Uint8List> lerBytes(DocumentoPastaCurada documento) async {
