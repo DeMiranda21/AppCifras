@@ -10,75 +10,13 @@ import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../portas/aplicador_sincronizacao_pasta_curada.dart';
 import '../portas/pasta_curada_externa.dart';
 import '../portas/repositorio_sincronizacao.dart';
+import 'aplicar_grupo_sincronizacao.dart';
 import 'configuracao_pasta_sincronizada.dart';
 import 'modelos_sincronizacao.dart';
 import 'montar_inventario_pasta_curada.dart';
+import 'resultado_sincronizacao.dart';
 
-enum CodigoErroSincronizacao {
-  configuracaoAusente,
-  acessoPasta,
-  enumeracaoPasta,
-  leituraArquivo,
-  arquivoInvalido,
-  grupoInvalido,
-  grupoNovoSemPrincipal,
-  colisaoVersaoLocal,
-  alternativaUsadaEmLista,
-  falhaAplicacao,
-  falhaAoAvaliarAusencias,
-  falhaAoMarcarAusencia,
-  falhaAoAtualizarConfiguracao,
-}
-
-class ErroSincronizacao {
-  const ErroSincronizacao({
-    required this.codigo,
-    required this.mensagem,
-    this.localizador,
-  });
-
-  final CodigoErroSincronizacao codigo;
-  final String mensagem;
-  final String? localizador;
-}
-
-enum CodigoAvisoSincronizacao {
-  principalExternaDivergente,
-  alternativaUsadaEmLista,
-}
-
-class AvisoSincronizacao {
-  const AvisoSincronizacao({
-    required this.codigo,
-    required this.mensagem,
-    this.localizador,
-  });
-
-  final CodigoAvisoSincronizacao codigo;
-  final String mensagem;
-  final String? localizador;
-}
-
-class ResultadoSincronizacao {
-  ResultadoSincronizacao({
-    required this.adicionadas,
-    required this.atualizadas,
-    required this.inalteradas,
-    required this.origensAusentes,
-    required Iterable<ErroSincronizacao> erros,
-    required Iterable<AvisoSincronizacao> avisos,
-    required this.enumeracaoCompleta,
-  }) : erros = List.unmodifiable(erros),
-       avisos = List.unmodifiable(avisos);
-
-  final int adicionadas;
-  final int atualizadas;
-  final int inalteradas;
-  final int origensAusentes;
-  final List<ErroSincronizacao> erros;
-  final List<AvisoSincronizacao> avisos;
-  final bool enumeracaoCompleta;
-}
+export 'resultado_sincronizacao.dart';
 
 class SincronizarPastaCurada {
   SincronizarPastaCurada({
@@ -94,9 +32,12 @@ class SincronizarPastaCurada {
   }) : _pastaExterna = pastaExterna,
        _repositorioConfiguracao = repositorioConfiguracao,
        _repositorioOrigens = repositorioOrigens,
-       _repositorioMusicas = repositorioMusicas,
-       _repositorioVersoes = repositorioVersoes,
-       _aplicador = aplicador,
+       _aplicarGrupo = AplicarGrupoSincronizacao(
+         repositorioOrigens: repositorioOrigens,
+         repositorioMusicas: repositorioMusicas,
+         repositorioVersoes: repositorioVersoes,
+         aplicador: aplicador,
+       ),
        _montarInventario = montarInventario ?? MontarInventarioPastaCurada(),
        _parserDocumento = parserDocumento ?? ParserDocumentoChordPro(),
        _agora = agora ?? DateTime.now;
@@ -104,9 +45,7 @@ class SincronizarPastaCurada {
   final PastaCuradaExterna _pastaExterna;
   final RepositorioConfiguracaoPastaSincronizada _repositorioConfiguracao;
   final RepositorioOrigensSincronizadas _repositorioOrigens;
-  final RepositorioMusicas _repositorioMusicas;
-  final RepositorioVersoesMusicas _repositorioVersoes;
-  final AplicadorSincronizacaoPastaCurada _aplicador;
+  final AplicarGrupoSincronizacao _aplicarGrupo;
   final MontarInventarioPastaCurada _montarInventario;
   final ParserDocumentoChordPro _parserDocumento;
   final DateTime Function() _agora;
@@ -222,10 +161,12 @@ class SincronizarPastaCurada {
     }
 
     for (final grupo in inventario.gruposValidos) {
-      final contadores = await _aplicarGrupo(grupo, erros, avisos);
-      adicionadas += contadores.adicionadas;
-      atualizadas += contadores.atualizadas;
-      inalteradas += contadores.inalteradas;
+      final resultadoGrupo = await _aplicarGrupo.executar(grupo);
+      adicionadas += resultadoGrupo.adicionadas;
+      atualizadas += resultadoGrupo.atualizadas;
+      inalteradas += resultadoGrupo.inalteradas;
+      erros.addAll(resultadoGrupo.erros);
+      avisos.addAll(resultadoGrupo.avisos);
     }
 
     if (leituraCompleta && ausenciasSeguras) {
@@ -292,169 +233,6 @@ class SincronizarPastaCurada {
     );
   }
 
-  Future<_ContadoresGrupo> _aplicarGrupo(
-    GrupoMusicaSincronizacaoValido grupo,
-    List<ErroSincronizacao> erros,
-    List<AvisoSincronizacao> avisos,
-  ) async {
-    try {
-      final musica = await _repositorioMusicas.obterPorId(grupo.idMusica);
-      if (musica == null) {
-        if (!grupo.avaliacaoCriacao.apta) {
-          erros.add(
-            ErroSincronizacao(
-              codigo: CodigoErroSincronizacao.grupoNovoSemPrincipal,
-              localizador: grupo.arquivos.first.candidato.localizador,
-              mensagem: 'Música nova exige exatamente uma versão principal.',
-            ),
-          );
-          return const _ContadoresGrupo();
-        }
-        for (final arquivo in grupo.arquivos) {
-          if (await _repositorioVersoes.obterVersaoPorId(
-                arquivo.idVersaoMusica,
-              ) !=
-              null) {
-            _registrarColisao(grupo, arquivo, erros);
-            return const _ContadoresGrupo();
-          }
-        }
-        await _aplicador.aplicar(
-          PlanoAplicacaoGrupoSincronizacao(
-            idMusica: grupo.idMusica,
-            criarMusica: true,
-            titulo: grupo.titulo,
-            artista: grupo.artista,
-            versoesNovas: grupo.arquivos.map(
-              (arquivo) => _nova(
-                arquivo,
-                principal:
-                    arquivo.idVersaoMusica ==
-                    grupo.avaliacaoCriacao.principalInicial,
-              ),
-            ),
-            versoesExistentes: const [],
-          ),
-        );
-        return _ContadoresGrupo(adicionadas: grupo.arquivos.length);
-      }
-
-      final novas = <VersaoNovaSincronizacao>[];
-      final existentes = <VersaoExistenteSincronizacao>[];
-      var adicionadas = 0;
-      var atualizadas = 0;
-      var inalteradas = 0;
-      for (final arquivo in grupo.arquivos) {
-        final versao = await _repositorioVersoes.obterVersaoPorId(
-          arquivo.idVersaoMusica,
-        );
-        if (versao == null) {
-          novas.add(_nova(arquivo, principal: false));
-          adicionadas++;
-          if (arquivo.principalDeclarada) {
-            _avisarPrincipal(arquivo, avisos);
-          }
-          continue;
-        }
-        final origem = await _repositorioOrigens.obterPorVersao(versao.id);
-        if (versao.idMusica != grupo.idMusica || origem == null) {
-          _registrarColisao(grupo, arquivo, erros);
-          return const _ContadoresGrupo();
-        }
-        if (versao.principal != arquivo.principalDeclarada) {
-          _avisarPrincipal(arquivo, avisos);
-        }
-        if (origem.hashSha256 == arquivo.hashSha256) {
-          existentes.add(
-            VersaoExistenteSincronizacao(
-              id: versao.id,
-              nome: versao.nome,
-              localizadorExterno: arquivo.candidato.localizador,
-              hashSha256: origem.hashSha256,
-            ),
-          );
-          inalteradas++;
-          continue;
-        }
-        if (!versao.principal &&
-            await _repositorioVersoes.estaUsadaEmLista(versao.id)) {
-          erros.add(
-            ErroSincronizacao(
-              codigo: CodigoErroSincronizacao.alternativaUsadaEmLista,
-              localizador: arquivo.candidato.localizador,
-              mensagem:
-                  'A alternativa usada em Lista exige um novo '
-                  'appcifras_version_id.',
-            ),
-          );
-          avisos.add(
-            AvisoSincronizacao(
-              codigo: CodigoAvisoSincronizacao.alternativaUsadaEmLista,
-              localizador: arquivo.candidato.localizador,
-              mensagem: 'A versão local foi preservada.',
-            ),
-          );
-          existentes.add(
-            VersaoExistenteSincronizacao(
-              id: versao.id,
-              nome: versao.nome,
-              localizadorExterno: arquivo.candidato.localizador,
-              hashSha256: origem.hashSha256,
-            ),
-          );
-          continue;
-        }
-        existentes.add(
-          VersaoExistenteSincronizacao(
-            id: versao.id,
-            nome: arquivo.nomeVersao,
-            localizadorExterno: arquivo.candidato.localizador,
-            hashSha256: arquivo.hashSha256,
-            conteudoChordProAtualizado: arquivo.documento.conteudoOriginal,
-          ),
-        );
-        atualizadas++;
-      }
-
-      await _aplicador.aplicar(
-        PlanoAplicacaoGrupoSincronizacao(
-          idMusica: grupo.idMusica,
-          criarMusica: false,
-          titulo: grupo.titulo,
-          artista: grupo.artista,
-          versoesNovas: novas,
-          versoesExistentes: existentes,
-        ),
-      );
-      return _ContadoresGrupo(
-        adicionadas: adicionadas,
-        atualizadas: atualizadas,
-        inalteradas: inalteradas,
-      );
-    } catch (erro) {
-      erros.add(
-        ErroSincronizacao(
-          codigo: CodigoErroSincronizacao.falhaAplicacao,
-          localizador: grupo.arquivos.first.candidato.localizador,
-          mensagem: 'Falha ao aplicar a música ${grupo.idMusica.valor}: $erro',
-        ),
-      );
-      return const _ContadoresGrupo();
-    }
-  }
-
-  VersaoNovaSincronizacao _nova(
-    ArquivoSincronizacaoValidado arquivo, {
-    required bool principal,
-  }) => VersaoNovaSincronizacao(
-    id: arquivo.idVersaoMusica,
-    nome: arquivo.nomeVersao,
-    conteudoChordPro: arquivo.documento.conteudoOriginal,
-    principal: principal,
-    localizadorExterno: arquivo.candidato.localizador,
-    hashSha256: arquivo.hashSha256,
-  );
-
   IdVersaoMusica? _reconhecerIdVersao(ArquivoSincronizacaoCandidato candidato) {
     try {
       final conteudo = utf8.decode(candidato.bytes, allowMalformed: false);
@@ -471,35 +249,6 @@ class SincronizarPastaCurada {
     }
   }
 
-  void _registrarColisao(
-    GrupoMusicaSincronizacaoValido grupo,
-    ArquivoSincronizacaoValidado arquivo,
-    List<ErroSincronizacao> erros,
-  ) {
-    erros.add(
-      ErroSincronizacao(
-        codigo: CodigoErroSincronizacao.colisaoVersaoLocal,
-        localizador: arquivo.candidato.localizador,
-        mensagem:
-            'O ID ${arquivo.idVersaoMusica.valor} já pertence a uma '
-            'versão local; o grupo ${grupo.idMusica.valor} foi rejeitado.',
-      ),
-    );
-  }
-
-  void _avisarPrincipal(
-    ArquivoSincronizacaoValidado arquivo,
-    List<AvisoSincronizacao> avisos,
-  ) {
-    avisos.add(
-      AvisoSincronizacao(
-        codigo: CodigoAvisoSincronizacao.principalExternaDivergente,
-        localizador: arquivo.candidato.localizador,
-        mensagem: 'A marca de principal externa não alterou a principal local.',
-      ),
-    );
-  }
-
   ResultadoSincronizacao _resultadoGlobal(
     CodigoErroSincronizacao codigo,
     String mensagem,
@@ -512,16 +261,4 @@ class SincronizarPastaCurada {
     avisos: const [],
     enumeracaoCompleta: false,
   );
-}
-
-class _ContadoresGrupo {
-  const _ContadoresGrupo({
-    this.adicionadas = 0,
-    this.atualizadas = 0,
-    this.inalteradas = 0,
-  });
-
-  final int adicionadas;
-  final int atualizadas;
-  final int inalteradas;
 }

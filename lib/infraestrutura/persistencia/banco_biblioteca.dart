@@ -54,8 +54,7 @@ class OrigensSincronizadasVersoes extends Table {
 
 @DataClassName('ConfiguracaoPastaSincronizadaRegistro')
 class ConfiguracoesPastaSincronizada extends Table {
-  IntColumn get id =>
-      integer().customConstraint('NOT NULL CHECK (id = 1)')();
+  IntColumn get id => integer().customConstraint('NOT NULL CHECK (id = 1)')();
 
   TextColumn get uriArvore => text()();
 
@@ -64,6 +63,18 @@ class ConfiguracoesPastaSincronizada extends Table {
   TextColumn get nomeLegivel => text().nullable()();
 
   DateTimeColumn get ultimaSincronizacaoConcluida => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('EstadoBibliotecaOficialRegistro')
+class EstadosBibliotecaOficial extends Table {
+  IntColumn get id => integer().customConstraint('NOT NULL CHECK (id = 1)')();
+
+  TextColumn get ultimaGeracao => text()();
+
+  DateTimeColumn get ultimaAtualizacao => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -135,6 +146,7 @@ class ItensListaCulto extends Table {
     VersoesMusicas,
     OrigensSincronizadasVersoes,
     ConfiguracoesPastaSincronizada,
+    EstadosBibliotecaOficial,
     PreferenciasTomExecucao,
     EnergiasMusicas,
     TagsMusicas,
@@ -148,7 +160,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -208,6 +220,9 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       if (from < 6) {
         await migrator.createTable(origensSincronizadasVersoes);
         await migrator.createTable(configuracoesPastaSincronizada);
+      }
+      if (from < 7) {
+        await migrator.createTable(estadosBibliotecaOficial);
       }
     },
   );
@@ -431,6 +446,22 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   Future<void> limparConfiguracaoPasta() async {
     await delete(configuracoesPastaSincronizada).go();
   }
+
+  Future<EstadoBibliotecaOficialRegistro?> obterEstadoBibliotecaOficial() =>
+      (select(
+        estadosBibliotecaOficial,
+      )..where((tabela) => tabela.id.equals(1))).getSingleOrNull();
+
+  Future<void> salvarEstadoBibliotecaOficial({
+    required String ultimaGeracao,
+    required DateTime ultimaAtualizacao,
+  }) => into(estadosBibliotecaOficial).insertOnConflictUpdate(
+    EstadosBibliotecaOficialCompanion.insert(
+      id: const Value(1),
+      ultimaGeracao: ultimaGeracao,
+      ultimaAtualizacao: ultimaAtualizacao,
+    ),
+  );
 
   Future<bool> possuiItemListaParaMusica(String idMusica) async {
     final resultado = await customSelect(

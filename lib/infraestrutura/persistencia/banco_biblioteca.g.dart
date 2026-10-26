@@ -1488,6 +1488,281 @@ class ConfiguracoesPastaSincronizadaCompanion
   }
 }
 
+class $EstadosBibliotecaOficialTable extends EstadosBibliotecaOficial
+    with
+        TableInfo<
+          $EstadosBibliotecaOficialTable,
+          EstadoBibliotecaOficialRegistro
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EstadosBibliotecaOficialTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL CHECK (id = 1)',
+  );
+  static const VerificationMeta _ultimaGeracaoMeta = const VerificationMeta(
+    'ultimaGeracao',
+  );
+  @override
+  late final GeneratedColumn<String> ultimaGeracao = GeneratedColumn<String>(
+    'ultima_geracao',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ultimaAtualizacaoMeta = const VerificationMeta(
+    'ultimaAtualizacao',
+  );
+  @override
+  late final GeneratedColumn<DateTime> ultimaAtualizacao =
+      GeneratedColumn<DateTime>(
+        'ultima_atualizacao',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [id, ultimaGeracao, ultimaAtualizacao];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'estados_biblioteca_oficial';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EstadoBibliotecaOficialRegistro> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('ultima_geracao')) {
+      context.handle(
+        _ultimaGeracaoMeta,
+        ultimaGeracao.isAcceptableOrUnknown(
+          data['ultima_geracao']!,
+          _ultimaGeracaoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ultimaGeracaoMeta);
+    }
+    if (data.containsKey('ultima_atualizacao')) {
+      context.handle(
+        _ultimaAtualizacaoMeta,
+        ultimaAtualizacao.isAcceptableOrUnknown(
+          data['ultima_atualizacao']!,
+          _ultimaAtualizacaoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ultimaAtualizacaoMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EstadoBibliotecaOficialRegistro map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EstadoBibliotecaOficialRegistro(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      ultimaGeracao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ultima_geracao'],
+      )!,
+      ultimaAtualizacao: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ultima_atualizacao'],
+      )!,
+    );
+  }
+
+  @override
+  $EstadosBibliotecaOficialTable createAlias(String alias) {
+    return $EstadosBibliotecaOficialTable(attachedDatabase, alias);
+  }
+}
+
+class EstadoBibliotecaOficialRegistro extends DataClass
+    implements Insertable<EstadoBibliotecaOficialRegistro> {
+  final int id;
+  final String ultimaGeracao;
+  final DateTime ultimaAtualizacao;
+  const EstadoBibliotecaOficialRegistro({
+    required this.id,
+    required this.ultimaGeracao,
+    required this.ultimaAtualizacao,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['ultima_geracao'] = Variable<String>(ultimaGeracao);
+    map['ultima_atualizacao'] = Variable<DateTime>(ultimaAtualizacao);
+    return map;
+  }
+
+  EstadosBibliotecaOficialCompanion toCompanion(bool nullToAbsent) {
+    return EstadosBibliotecaOficialCompanion(
+      id: Value(id),
+      ultimaGeracao: Value(ultimaGeracao),
+      ultimaAtualizacao: Value(ultimaAtualizacao),
+    );
+  }
+
+  factory EstadoBibliotecaOficialRegistro.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EstadoBibliotecaOficialRegistro(
+      id: serializer.fromJson<int>(json['id']),
+      ultimaGeracao: serializer.fromJson<String>(json['ultimaGeracao']),
+      ultimaAtualizacao: serializer.fromJson<DateTime>(
+        json['ultimaAtualizacao'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'ultimaGeracao': serializer.toJson<String>(ultimaGeracao),
+      'ultimaAtualizacao': serializer.toJson<DateTime>(ultimaAtualizacao),
+    };
+  }
+
+  EstadoBibliotecaOficialRegistro copyWith({
+    int? id,
+    String? ultimaGeracao,
+    DateTime? ultimaAtualizacao,
+  }) => EstadoBibliotecaOficialRegistro(
+    id: id ?? this.id,
+    ultimaGeracao: ultimaGeracao ?? this.ultimaGeracao,
+    ultimaAtualizacao: ultimaAtualizacao ?? this.ultimaAtualizacao,
+  );
+  EstadoBibliotecaOficialRegistro copyWithCompanion(
+    EstadosBibliotecaOficialCompanion data,
+  ) {
+    return EstadoBibliotecaOficialRegistro(
+      id: data.id.present ? data.id.value : this.id,
+      ultimaGeracao: data.ultimaGeracao.present
+          ? data.ultimaGeracao.value
+          : this.ultimaGeracao,
+      ultimaAtualizacao: data.ultimaAtualizacao.present
+          ? data.ultimaAtualizacao.value
+          : this.ultimaAtualizacao,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EstadoBibliotecaOficialRegistro(')
+          ..write('id: $id, ')
+          ..write('ultimaGeracao: $ultimaGeracao, ')
+          ..write('ultimaAtualizacao: $ultimaAtualizacao')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, ultimaGeracao, ultimaAtualizacao);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EstadoBibliotecaOficialRegistro &&
+          other.id == this.id &&
+          other.ultimaGeracao == this.ultimaGeracao &&
+          other.ultimaAtualizacao == this.ultimaAtualizacao);
+}
+
+class EstadosBibliotecaOficialCompanion
+    extends UpdateCompanion<EstadoBibliotecaOficialRegistro> {
+  final Value<int> id;
+  final Value<String> ultimaGeracao;
+  final Value<DateTime> ultimaAtualizacao;
+  const EstadosBibliotecaOficialCompanion({
+    this.id = const Value.absent(),
+    this.ultimaGeracao = const Value.absent(),
+    this.ultimaAtualizacao = const Value.absent(),
+  });
+  EstadosBibliotecaOficialCompanion.insert({
+    this.id = const Value.absent(),
+    required String ultimaGeracao,
+    required DateTime ultimaAtualizacao,
+  }) : ultimaGeracao = Value(ultimaGeracao),
+       ultimaAtualizacao = Value(ultimaAtualizacao);
+  static Insertable<EstadoBibliotecaOficialRegistro> custom({
+    Expression<int>? id,
+    Expression<String>? ultimaGeracao,
+    Expression<DateTime>? ultimaAtualizacao,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ultimaGeracao != null) 'ultima_geracao': ultimaGeracao,
+      if (ultimaAtualizacao != null) 'ultima_atualizacao': ultimaAtualizacao,
+    });
+  }
+
+  EstadosBibliotecaOficialCompanion copyWith({
+    Value<int>? id,
+    Value<String>? ultimaGeracao,
+    Value<DateTime>? ultimaAtualizacao,
+  }) {
+    return EstadosBibliotecaOficialCompanion(
+      id: id ?? this.id,
+      ultimaGeracao: ultimaGeracao ?? this.ultimaGeracao,
+      ultimaAtualizacao: ultimaAtualizacao ?? this.ultimaAtualizacao,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (ultimaGeracao.present) {
+      map['ultima_geracao'] = Variable<String>(ultimaGeracao.value);
+    }
+    if (ultimaAtualizacao.present) {
+      map['ultima_atualizacao'] = Variable<DateTime>(ultimaAtualizacao.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EstadosBibliotecaOficialCompanion(')
+          ..write('id: $id, ')
+          ..write('ultimaGeracao: $ultimaGeracao, ')
+          ..write('ultimaAtualizacao: $ultimaAtualizacao')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PreferenciasTomExecucaoTable extends PreferenciasTomExecucao
     with TableInfo<$PreferenciasTomExecucaoTable, PreferenciasTomExecucaoData> {
   @override
@@ -2899,6 +3174,8 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
       $OrigensSincronizadasVersoesTable(this);
   late final $ConfiguracoesPastaSincronizadaTable
   configuracoesPastaSincronizada = $ConfiguracoesPastaSincronizadaTable(this);
+  late final $EstadosBibliotecaOficialTable estadosBibliotecaOficial =
+      $EstadosBibliotecaOficialTable(this);
   late final $PreferenciasTomExecucaoTable preferenciasTomExecucao =
       $PreferenciasTomExecucaoTable(this);
   late final $EnergiasMusicasTable energiasMusicas = $EnergiasMusicasTable(
@@ -2918,6 +3195,7 @@ abstract class _$BancoBiblioteca extends GeneratedDatabase {
     versoesMusicas,
     origensSincronizadasVersoes,
     configuracoesPastaSincronizada,
+    estadosBibliotecaOficial,
     preferenciasTomExecucao,
     energiasMusicas,
     tagsMusicas,
@@ -4785,6 +5063,197 @@ typedef $$ConfiguracoesPastaSincronizadaTableProcessedTableManager =
       ConfiguracaoPastaSincronizadaRegistro,
       PrefetchHooks Function()
     >;
+typedef $$EstadosBibliotecaOficialTableCreateCompanionBuilder =
+    EstadosBibliotecaOficialCompanion Function({
+      Value<int> id,
+      required String ultimaGeracao,
+      required DateTime ultimaAtualizacao,
+    });
+typedef $$EstadosBibliotecaOficialTableUpdateCompanionBuilder =
+    EstadosBibliotecaOficialCompanion Function({
+      Value<int> id,
+      Value<String> ultimaGeracao,
+      Value<DateTime> ultimaAtualizacao,
+    });
+
+class $$EstadosBibliotecaOficialTableFilterComposer
+    extends Composer<_$BancoBiblioteca, $EstadosBibliotecaOficialTable> {
+  $$EstadosBibliotecaOficialTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ultimaGeracao => $composableBuilder(
+    column: $table.ultimaGeracao,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get ultimaAtualizacao => $composableBuilder(
+    column: $table.ultimaAtualizacao,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EstadosBibliotecaOficialTableOrderingComposer
+    extends Composer<_$BancoBiblioteca, $EstadosBibliotecaOficialTable> {
+  $$EstadosBibliotecaOficialTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ultimaGeracao => $composableBuilder(
+    column: $table.ultimaGeracao,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get ultimaAtualizacao => $composableBuilder(
+    column: $table.ultimaAtualizacao,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EstadosBibliotecaOficialTableAnnotationComposer
+    extends Composer<_$BancoBiblioteca, $EstadosBibliotecaOficialTable> {
+  $$EstadosBibliotecaOficialTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ultimaGeracao => $composableBuilder(
+    column: $table.ultimaGeracao,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get ultimaAtualizacao => $composableBuilder(
+    column: $table.ultimaAtualizacao,
+    builder: (column) => column,
+  );
+}
+
+class $$EstadosBibliotecaOficialTableTableManager
+    extends
+        RootTableManager<
+          _$BancoBiblioteca,
+          $EstadosBibliotecaOficialTable,
+          EstadoBibliotecaOficialRegistro,
+          $$EstadosBibliotecaOficialTableFilterComposer,
+          $$EstadosBibliotecaOficialTableOrderingComposer,
+          $$EstadosBibliotecaOficialTableAnnotationComposer,
+          $$EstadosBibliotecaOficialTableCreateCompanionBuilder,
+          $$EstadosBibliotecaOficialTableUpdateCompanionBuilder,
+          (
+            EstadoBibliotecaOficialRegistro,
+            BaseReferences<
+              _$BancoBiblioteca,
+              $EstadosBibliotecaOficialTable,
+              EstadoBibliotecaOficialRegistro
+            >,
+          ),
+          EstadoBibliotecaOficialRegistro,
+          PrefetchHooks Function()
+        > {
+  $$EstadosBibliotecaOficialTableTableManager(
+    _$BancoBiblioteca db,
+    $EstadosBibliotecaOficialTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EstadosBibliotecaOficialTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$EstadosBibliotecaOficialTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$EstadosBibliotecaOficialTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> ultimaGeracao = const Value.absent(),
+                Value<DateTime> ultimaAtualizacao = const Value.absent(),
+              }) => EstadosBibliotecaOficialCompanion(
+                id: id,
+                ultimaGeracao: ultimaGeracao,
+                ultimaAtualizacao: ultimaAtualizacao,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String ultimaGeracao,
+                required DateTime ultimaAtualizacao,
+              }) => EstadosBibliotecaOficialCompanion.insert(
+                id: id,
+                ultimaGeracao: ultimaGeracao,
+                ultimaAtualizacao: ultimaAtualizacao,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $EstadosBibliotecaOficialTable,
+                    EstadoBibliotecaOficialRegistro
+                  >(table),
+                  BaseReferences<
+                    _$BancoBiblioteca,
+                    $EstadosBibliotecaOficialTable,
+                    EstadoBibliotecaOficialRegistro
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EstadosBibliotecaOficialTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BancoBiblioteca,
+      $EstadosBibliotecaOficialTable,
+      EstadoBibliotecaOficialRegistro,
+      $$EstadosBibliotecaOficialTableFilterComposer,
+      $$EstadosBibliotecaOficialTableOrderingComposer,
+      $$EstadosBibliotecaOficialTableAnnotationComposer,
+      $$EstadosBibliotecaOficialTableCreateCompanionBuilder,
+      $$EstadosBibliotecaOficialTableUpdateCompanionBuilder,
+      (
+        EstadoBibliotecaOficialRegistro,
+        BaseReferences<
+          _$BancoBiblioteca,
+          $EstadosBibliotecaOficialTable,
+          EstadoBibliotecaOficialRegistro
+        >,
+      ),
+      EstadoBibliotecaOficialRegistro,
+      PrefetchHooks Function()
+    >;
 typedef $$PreferenciasTomExecucaoTableCreateCompanionBuilder =
     PreferenciasTomExecucaoCompanion Function({
       required String idVersaoMusica,
@@ -6421,6 +6890,11 @@ class $BancoBibliotecaManager {
       $$ConfiguracoesPastaSincronizadaTableTableManager(
         _db,
         _db.configuracoesPastaSincronizada,
+      );
+  $$EstadosBibliotecaOficialTableTableManager get estadosBibliotecaOficial =>
+      $$EstadosBibliotecaOficialTableTableManager(
+        _db,
+        _db.estadosBibliotecaOficial,
       );
   $$PreferenciasTomExecucaoTableTableManager get preferenciasTomExecucao =>
       $$PreferenciasTomExecucaoTableTableManager(
