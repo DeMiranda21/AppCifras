@@ -7,12 +7,12 @@ import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
+import '../../aplicacao/biblioteca_oficial/atualizar_biblioteca_oficial.dart';
+import '../../aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
 import '../../aplicacao/portas/obter_informacoes_app.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
-import '../../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
-import '../../aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
@@ -20,7 +20,6 @@ import '../../dominio/objetos_de_valor/tag_musica.dart';
 import '../entrada/tela_entrada_musica.dart';
 import '../listas_culto/tela_listas_culto.dart';
 import '../musica/tela_visualizacao_musica.dart';
-import '../sincronizacao/tela_pasta_curada.dart';
 
 class TelaBiblioteca extends StatefulWidget {
   const TelaBiblioteca({
@@ -50,8 +49,8 @@ class TelaBiblioteca extends StatefulWidget {
     this.removerItemListaCulto,
     this.trocarVersaoItemListaCulto,
     this.reordenarItensListaCulto,
-    this.gerenciarPastaCurada,
-    this.sincronizarPastaCurada,
+    this.atualizarBibliotecaOficial,
+    this.obterEstadoBibliotecaOficial,
     this.obterInformacoesApp,
   });
 
@@ -80,8 +79,10 @@ class TelaBiblioteca extends StatefulWidget {
   final RemoverItemListaCulto? removerItemListaCulto;
   final TrocarVersaoItemListaCulto? trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto? reordenarItensListaCulto;
-  final GerenciarPastaCurada? gerenciarPastaCurada;
-  final Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada;
+  final Future<ResultadoAtualizacaoBibliotecaOficial> Function()?
+  atualizarBibliotecaOficial;
+  final Future<EstadoBibliotecaOficial?> Function()?
+  obterEstadoBibliotecaOficial;
   final ObterInformacoesApp? obterInformacoesApp;
 
   @override
@@ -94,11 +95,14 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   final _pesquisa = TextEditingController();
   EnergiaMusica? _energia;
   Set<TagMusica> _tagsSelecionadas = {};
+  EstadoBibliotecaOficial? _estadoBibliotecaOficial;
+  var _atualizandoBiblioteca = false;
 
   @override
   void initState() {
     super.initState();
     _recarregarMusicas();
+    _carregarEstadoBibliotecaOficial();
     _pesquisa.addListener(_atualizarPesquisa);
   }
 
@@ -216,21 +220,68 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     }
   }
 
-  Future<void> _abrirPastaCurada() async {
-    final gerenciarPastaCurada = widget.gerenciarPastaCurada;
-    if (gerenciarPastaCurada == null) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => TelaPastaCurada(
-          gerenciarPastaCurada: gerenciarPastaCurada,
-          sincronizarPastaCurada: widget.sincronizarPastaCurada,
-        ),
-      ),
-    );
-    if (mounted) {
-      setState(_recarregarMusicas);
+  Future<void> _carregarEstadoBibliotecaOficial() async {
+    final obterEstado = widget.obterEstadoBibliotecaOficial;
+    if (obterEstado == null) return;
+    try {
+      final estado = await obterEstado();
+      if (mounted) {
+        setState(() => _estadoBibliotecaOficial = estado);
+      }
+    } catch (_) {
+      // O estado é informativo e não deve impedir o uso offline da Biblioteca.
     }
   }
+
+  Future<void> _atualizarBiblioteca() async {
+    final atualizar = widget.atualizarBibliotecaOficial;
+    if (atualizar == null || _atualizandoBiblioteca) return;
+    setState(() => _atualizandoBiblioteca = true);
+
+    ResultadoAtualizacaoBibliotecaOficial resultado;
+    try {
+      resultado = await atualizar();
+    } catch (erro) {
+      resultado = ResultadoAtualizacaoBibliotecaOficial(
+        geracao: null,
+        adicionadas: 0,
+        atualizadas: 0,
+        inalteradas: 0,
+        origensAusentes: 0,
+        geracaoRegistrada: false,
+        erros: [
+          ErroAtualizacaoBibliotecaOficial(
+            etapa: EtapaErroAtualizacaoBibliotecaOficial.preparacao,
+            mensagem: 'Não foi possível atualizar a biblioteca: $erro',
+          ),
+        ],
+        avisos: const [],
+      );
+    }
+    if (!mounted) return;
+
+    final houveMudancas =
+        resultado.adicionadas > 0 ||
+        resultado.atualizadas > 0 ||
+        resultado.origensAusentes > 0;
+    if (houveMudancas) {
+      _recarregarMusicas();
+    }
+    await _carregarEstadoBibliotecaOficial();
+    if (!mounted) return;
+    setState(() => _atualizandoBiblioteca = false);
+    await _mostrarResultadoAtualizacao(resultado);
+  }
+
+  Future<void> _mostrarResultadoAtualizacao(
+    ResultadoAtualizacaoBibliotecaOficial resultado,
+  ) => showDialog<void>(
+    context: context,
+    builder: (context) => _DialogoResultadoAtualizacao(
+      resultado: resultado,
+      estado: _estadoBibliotecaOficial,
+    ),
+  );
 
   Future<void> _abrirSobre() async {
     final obterInformacoesApp = widget.obterInformacoesApp;
@@ -287,12 +338,20 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
             onPressed: _abrirSobre,
             icon: const Icon(Icons.info_outline),
           ),
-        if (widget.gerenciarPastaCurada != null)
-          IconButton(
-            key: const ValueKey('abrir-pasta-curada'),
-            tooltip: 'Pasta da biblioteca',
-            onPressed: _abrirPastaCurada,
-            icon: const Icon(Icons.folder_outlined),
+        if (widget.atualizarBibliotecaOficial != null)
+          Tooltip(
+            message: 'Atualizar biblioteca',
+            child: TextButton.icon(
+              key: const ValueKey('atualizar-biblioteca'),
+              onPressed: _atualizandoBiblioteca ? null : _atualizarBiblioteca,
+              icon: _atualizandoBiblioteca
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+              label: Text(_atualizandoBiblioteca ? 'Atualizando' : 'Atualizar'),
+            ),
           ),
         if (widget.listarListasCulto != null)
           TextButton.icon(
@@ -307,84 +366,92 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       tooltip: 'Adicionar música',
       child: const Icon(Icons.add),
     ),
-    body: FutureBuilder<IndicePesquisaMusicas>(
-      future: _indiceMusicas,
-      builder: (context, resultado) {
-        if (resultado.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (resultado.hasError) {
-          return const _EstadoErroBiblioteca();
-        }
-        final indice = resultado.requireData;
-        final resultadosSemFiltros = indice.pesquisar(
-          ConsultaPesquisaMusicas(),
-        );
-        if (resultadosSemFiltros.isEmpty) {
-          return const _EstadoBibliotecaVazia();
-        }
-        final resultados = indice.pesquisar(
-          ConsultaPesquisaMusicas(
-            texto: _pesquisa.text,
-            energia: _energia,
-            tags: _tagsSelecionadas,
-          ),
-        );
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
+    body: Column(
+      children: [
+        if (_estadoBibliotecaOficial != null)
+          _EstadoAtualizacaoBiblioteca(estado: _estadoBibliotecaOficial!),
+        Expanded(
+          child: FutureBuilder<IndicePesquisaMusicas>(
+            future: _indiceMusicas,
+            builder: (context, resultado) {
+              if (resultado.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (resultado.hasError) {
+                return const _EstadoErroBiblioteca();
+              }
+              final indice = resultado.requireData;
+              final resultadosSemFiltros = indice.pesquisar(
+                ConsultaPesquisaMusicas(),
+              );
+              if (resultadosSemFiltros.isEmpty) {
+                return const _EstadoBibliotecaVazia();
+              }
+              final resultados = indice.pesquisar(
+                ConsultaPesquisaMusicas(
+                  texto: _pesquisa.text,
+                  energia: _energia,
+                  tags: _tagsSelecionadas,
+                ),
+              );
+              return Column(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _pesquisa,
-                      decoration: InputDecoration(
-                        labelText: 'Pesquisar músicas',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _pesquisa.text.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: 'Limpar pesquisa',
-                                icon: const Icon(Icons.clear),
-                                onPressed: _limparPesquisa,
-                              ),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _pesquisa,
+                            decoration: InputDecoration(
+                              labelText: 'Pesquisar músicas',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _pesquisa.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Limpar pesquisa',
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: _limparPesquisa,
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        _BotaoFiltrosBiblioteca(
+                          quantidadeAtiva: _quantidadeFiltrosAtivos,
+                          aoAbrir: () => _abrirFiltros(indice),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  _BotaoFiltrosBiblioteca(
-                    quantidadeAtiva: _quantidadeFiltrosAtivos,
-                    aoAbrir: () => _abrirFiltros(indice),
+                  Expanded(
+                    child: resultados.isEmpty
+                        ? const _EstadoPesquisaVazia()
+                        : ListView.separated(
+                            itemCount: resultados.length,
+                            itemBuilder: (context, indice) {
+                              final resultadoPesquisa = resultados[indice];
+                              final musica = resultadoPesquisa.musica;
+                              return ListTile(
+                                key: ValueKey(musica.id.valor),
+                                onTap: () => _abrirMusica(musica),
+                                title: Text(musica.titulo),
+                                subtitle: _SubtituloResultadoPesquisa(
+                                  artista: musica.artista,
+                                  trechoLetra: resultadoPesquisa.trechoLetra,
+                                ),
+                              );
+                            },
+                            separatorBuilder: (context, indice) =>
+                                const Divider(height: 1),
+                          ),
                   ),
                 ],
-              ),
-            ),
-            Expanded(
-              child: resultados.isEmpty
-                  ? const _EstadoPesquisaVazia()
-                  : ListView.separated(
-                      itemCount: resultados.length,
-                      itemBuilder: (context, indice) {
-                        final resultadoPesquisa = resultados[indice];
-                        final musica = resultadoPesquisa.musica;
-                        return ListTile(
-                          key: ValueKey(musica.id.valor),
-                          onTap: () => _abrirMusica(musica),
-                          title: Text(musica.titulo),
-                          subtitle: _SubtituloResultadoPesquisa(
-                            artista: musica.artista,
-                            trechoLetra: resultadoPesquisa.trechoLetra,
-                          ),
-                        );
-                      },
-                      separatorBuilder: (context, indice) =>
-                          const Divider(height: 1),
-                    ),
-            ),
-          ],
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     ),
   );
 
@@ -430,6 +497,131 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       classificacoes: classificacoes,
     );
   }
+}
+
+class _EstadoAtualizacaoBiblioteca extends StatelessWidget {
+  const _EstadoAtualizacaoBiblioteca({required this.estado});
+
+  final EstadoBibliotecaOficial estado;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'Última atualização: ${_formatarDataAtualizacao(estado.ultimaAtualizacao)}',
+        key: const ValueKey('ultima-atualizacao-biblioteca'),
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ),
+  );
+}
+
+class _DialogoResultadoAtualizacao extends StatelessWidget {
+  const _DialogoResultadoAtualizacao({
+    required this.resultado,
+    required this.estado,
+  });
+
+  final ResultadoAtualizacaoBibliotecaOficial resultado;
+  final EstadoBibliotecaOficial? estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final falhaGlobal = resultado.geracao == null;
+    final titulo = resultado.concluida
+        ? 'Biblioteca atualizada'
+        : falhaGlobal
+        ? 'Atualização não concluída'
+        : 'Atualização incompleta';
+    final estadoDaGeracao = estado?.ultimaGeracao == resultado.geracao
+        ? estado
+        : null;
+
+    return AlertDialog(
+      title: Text(titulo),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!falhaGlobal) ...[
+              Text(
+                _quantidade(resultado.inalteradas, 'inalterada', 'inalteradas'),
+              ),
+              Text(
+                _quantidade(resultado.adicionadas, 'adicionada', 'adicionadas'),
+              ),
+              Text(
+                _quantidade(resultado.atualizadas, 'atualizada', 'atualizadas'),
+              ),
+              Text(
+                _quantidade(resultado.origensAusentes, 'ausente', 'ausentes'),
+              ),
+              Text(_quantidade(resultado.erros.length, 'erro', 'erros')),
+              const SizedBox(height: 12),
+              Text('Geração: ${resultado.geracao}'),
+              if (estadoDaGeracao != null)
+                Text(
+                  'Última atualização: '
+                  '${_formatarDataAtualizacao(estadoDaGeracao.ultimaAtualizacao)}',
+                ),
+            ],
+            if (resultado.erros.isNotEmpty) ...[
+              if (!falhaGlobal) const SizedBox(height: 12),
+              Text('Erros', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              for (final erro in resultado.erros)
+                Text(
+                  '• ${_mensagemComLocalizador(erro.mensagem, erro.localizador)}',
+                ),
+            ],
+            if (resultado.avisos.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('Avisos', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              for (final aviso in resultado.avisos)
+                Text(
+                  '• ${_mensagemComLocalizador(aviso.mensagem, aviso.localizador)}',
+                ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Fechar'),
+        ),
+      ],
+    );
+  }
+}
+
+String _quantidade(int quantidade, String singular, String plural) =>
+    '$quantidade ${quantidade == 1 ? singular : plural}';
+
+String _mensagemComLocalizador(String mensagem, String? localizador) {
+  if (localizador == null || localizador.trim().isEmpty) return mensagem;
+  final partes = localizador.split(RegExp(r'[/\\]'));
+  return '$mensagem (${partes.last})';
+}
+
+String _formatarDataAtualizacao(DateTime data) {
+  final local = data.toLocal();
+  final agora = DateTime.now();
+  final hora =
+      '${local.hour.toString().padLeft(2, '0')}:'
+      '${local.minute.toString().padLeft(2, '0')}';
+  if (local.year == agora.year &&
+      local.month == agora.month &&
+      local.day == agora.day) {
+    return 'hoje $hora';
+  }
+  final dia = local.day.toString().padLeft(2, '0');
+  final mes = local.month.toString().padLeft(2, '0');
+  return '$dia/$mes/${local.year} $hora';
 }
 
 class _SubtituloResultadoPesquisa extends StatelessWidget {

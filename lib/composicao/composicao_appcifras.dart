@@ -79,6 +79,7 @@ class ComposicaoAppCifras {
        _repositorioVersoesEdicao = repositorioVersoes,
        _repositorioTomEdicao = repositorioTomExecucao,
        repositorioOrigensSincronizadas = repositorioOrigens,
+       repositorioEstadoBibliotecaOficial = repositorioEstadoOficial,
        _fonteBibliotecaOficial = fonteBibliotecaOficial,
        prepararAtualizacaoBibliotecaOficial =
            PrepararAtualizacaoBibliotecaOficial(
@@ -216,6 +217,7 @@ class ComposicaoAppCifras {
   final CriarVersaoMusica criarVersaoMusica;
   final AvaliarPoliticaEdicaoVersao avaliarPoliticaEdicaoVersao;
   final RepositorioOrigensSincronizadas repositorioOrigensSincronizadas;
+  final RepositorioEstadoBibliotecaOficial repositorioEstadoBibliotecaOficial;
   final FonteBibliotecaOficial _fonteBibliotecaOficial;
   final PrepararAtualizacaoBibliotecaOficial
   prepararAtualizacaoBibliotecaOficial;

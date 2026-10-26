@@ -7,20 +7,17 @@ import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:appcifras/aplicacao/biblioteca_oficial/atualizar_biblioteca_oficial.dart';
+import 'package:appcifras/aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import 'package:appcifras/aplicacao/entrada/preparar_entrada_musica.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_musica.dart';
 import 'package:appcifras/aplicacao/portas/obter_informacoes_app.dart';
-import 'package:appcifras/aplicacao/portas/pasta_curada_externa.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
-import 'package:appcifras/aplicacao/portas/repositorio_sincronizacao.dart';
-import 'package:appcifras/aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
-import 'package:appcifras/aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
-import 'package:appcifras/aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
+import 'package:appcifras/aplicacao/sincronizacao/resultado_sincronizacao.dart';
 import 'package:appcifras/apresentacao/biblioteca/tela_biblioteca.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
@@ -54,12 +51,33 @@ void main() {
         geradorId: _GeradorIdFake(IdMusica('musica-nova')),
       );
 
+  ResultadoAtualizacaoBibliotecaOficial resultadoAtualizacao({
+    String? geracao = 'geracao-1',
+    int adicionadas = 0,
+    int atualizadas = 0,
+    int inalteradas = 0,
+    int ausentes = 0,
+    bool geracaoRegistrada = true,
+    List<ErroAtualizacaoBibliotecaOficial> erros = const [],
+    List<AvisoSincronizacao> avisos = const [],
+  }) => ResultadoAtualizacaoBibliotecaOficial(
+    geracao: geracao,
+    adicionadas: adicionadas,
+    atualizadas: atualizadas,
+    inalteradas: inalteradas,
+    origensAusentes: ausentes,
+    geracaoRegistrada: geracaoRegistrada,
+    erros: erros,
+    avisos: avisos,
+  );
+
   Future<void> montar(
     WidgetTester tester,
     _RepositorioFake repositorio, {
     _RepositorioClassificacaoFake? classificacao,
-    GerenciarPastaCurada? gerenciarPastaCurada,
-    Future<ResultadoSincronizacao> Function()? sincronizarPastaCurada,
+    Future<ResultadoAtualizacaoBibliotecaOficial> Function()?
+    atualizarBibliotecaOficial,
+    Future<EstadoBibliotecaOficial?> Function()? obterEstadoBibliotecaOficial,
     ObterInformacoesApp? obterInformacoesApp,
   }) => tester.pumpWidget(
     MaterialApp(
@@ -92,8 +110,8 @@ void main() {
         salvarClassificacaoMusica: classificacao == null
             ? null
             : SalvarClassificacaoMusica(classificacao),
-        gerenciarPastaCurada: gerenciarPastaCurada,
-        sincronizarPastaCurada: sincronizarPastaCurada,
+        atualizarBibliotecaOficial: atualizarBibliotecaOficial,
+        obterEstadoBibliotecaOficial: obterEstadoBibliotecaOficial,
         obterInformacoesApp: obterInformacoesApp,
       ),
     ),
@@ -884,66 +902,283 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('retorno da sincronização recarrega Biblioteca e pesquisa', (
+  testWidgets('expõe Atualizar biblioteca e oculta o fluxo SAF', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      _RepositorioFake(),
+      atualizarBibliotecaOficial: () async => resultadoAtualizacao(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('atualizar-biblioteca')), findsOneWidget);
+    expect(find.text('Atualizar'), findsOneWidget);
+    expect(find.byKey(const ValueKey('abrir-pasta-curada')), findsNothing);
+    expect(find.byTooltip('Pasta da biblioteca'), findsNothing);
+  });
+
+  testWidgets('mostra loading e bloqueia execução simultânea', (tester) async {
+    final conclusao = Completer<ResultadoAtualizacaoBibliotecaOficial>();
+    var execucoes = 0;
+    await montar(
+      tester,
+      _RepositorioFake(),
+      atualizarBibliotecaOficial: () {
+        execucoes++;
+        return conclusao.future;
+      },
+    );
+    await tester.pumpAndSettle();
+
+    final botao = find.byKey(const ValueKey('atualizar-biblioteca'));
+    await tester.tap(botao);
+    await tester.tap(botao);
+    await tester.pump();
+
+    expect(execucoes, 1);
+    expect(find.text('Atualizando'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    conclusao.complete(resultadoAtualizacao());
+    await tester.pumpAndSettle();
+    expect(find.text('Biblioteca atualizada'), findsOneWidget);
+  });
+
+  testWidgets('sucesso sem mudanças mostra resumo, geração e data', (
+    tester,
+  ) async {
+    final estado = EstadoBibliotecaOficial(
+      ultimaGeracao: 'geracao-42',
+      ultimaAtualizacao: DateTime.now(),
+    );
+    await montar(
+      tester,
+      _RepositorioFake()..musicas.add(criarMusica('local', 'Local')),
+      atualizarBibliotecaOficial: () async =>
+          resultadoAtualizacao(geracao: 'geracao-42', inalteradas: 1),
+      obterEstadoBibliotecaOficial: () async => estado,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('ultima-atualizacao-biblioteca')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Biblioteca atualizada'), findsOneWidget);
+    expect(find.text('1 inalterada'), findsOneWidget);
+    expect(find.text('0 adicionadas'), findsOneWidget);
+    expect(find.text('0 atualizadas'), findsOneWidget);
+    expect(find.text('0 ausentes'), findsOneWidget);
+    expect(find.text('0 erros'), findsOneWidget);
+    expect(find.text('Geração: geracao-42'), findsOneWidget);
+    expect(find.textContaining('Última atualização:'), findsNWidgets(2));
+  });
+
+  testWidgets('primeira atualização preenche Biblioteca e mantém A-Z', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    await montar(
+      tester,
+      repositorio,
+      atualizarBibliotecaOficial: () async {
+        repositorio.musicas.addAll([
+          criarMusica('oficial-z', 'Zelo'),
+          criarMusica('oficial-a', 'Árvore'),
+        ]);
+        return resultadoAtualizacao(adicionadas: 2);
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Nenhuma música na biblioteca'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(titulosDaLista(tester), ['Árvore', 'Zelo']);
+  });
+
+  testWidgets('música atualizada aparece após o refresh', (tester) async {
+    final repositorio = _RepositorioFake()
+      ..musicas.add(criarMusica('oficial', 'Título antigo'));
+    await montar(
+      tester,
+      repositorio,
+      atualizarBibliotecaOficial: () async {
+        repositorio.musicas[0] = criarMusica('oficial', 'Título novo');
+        return resultadoAtualizacao(atualizadas: 1);
+      },
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+    expect(find.text('1 atualizada'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Título novo'), findsOneWidget);
+    expect(find.text('Título antigo'), findsNothing);
+  });
+
+  testWidgets('pesquisa e filtros permanecem ativos após atualização', (
     tester,
   ) async {
     final repositorio = _RepositorioFake()
       ..musicas.addAll([
-        criarMusica('local-z', 'Zelo'),
-        criarMusica('local-a', 'Árvore'),
+        criarMusica('calma-antiga', 'Graça antiga'),
+        criarMusica('animada', 'Graça animada'),
       ]);
-    final configuracao = _RepositorioConfiguracaoPastaFake()
-      ..configuracao = ConfiguracaoPastaSincronizada(
-        uriArvore: 'content://provider/tree/curada',
-        autorizacaoPersistente: true,
-        nomeLegivel: 'Cifras',
+    final classificacao = _RepositorioClassificacaoFake()
+      ..dados[IdMusica('calma-antiga')] = const ClassificacaoMusica(
+        energia: EnergiaMusica.calma,
+      )
+      ..dados[IdMusica('animada')] = const ClassificacaoMusica(
+        energia: EnergiaMusica.animada,
       );
     await montar(
       tester,
       repositorio,
-      gerenciarPastaCurada: GerenciarPastaCurada(
-        _PastaExternaBibliotecaFake(),
-        configuracao,
-      ),
-      sincronizarPastaCurada: () async {
-        repositorio.musicas.add(
-          Musica(
-            id: IdMusica('sincronizada'),
-            documento: parser.interpretar(
-              '{title: Nova sincronizada}\n'
-              '{artist: Curadoria}\n'
-              '{key: C}\n'
-              '[C]Graça sincronizada',
-            ),
-          ),
+      classificacao: classificacao,
+      atualizarBibliotecaOficial: () async {
+        repositorio.musicas.add(criarMusica('calma-nova', 'Graça nova'));
+        classificacao.dados[IdMusica('calma-nova')] = const ClassificacaoMusica(
+          energia: EnergiaMusica.calma,
         );
-        return ResultadoSincronizacao(
-          adicionadas: 1,
-          atualizadas: 0,
-          inalteradas: 0,
-          origensAusentes: 0,
-          erros: const [],
-          avisos: const [],
-          enumeracaoCompleta: true,
-        );
+        return resultadoAtualizacao(adicionadas: 1);
       },
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('sincronizada')), findsNothing);
-    expect(titulosDaLista(tester), ['Árvore', 'Zelo']);
-
-    await tester.tap(find.byKey(const ValueKey('abrir-pasta-curada')));
+    await tester.enterText(find.byType(TextField).first, 'graca');
+    await tester.tap(find.byKey(const ValueKey('abrir-filtros-biblioteca')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('sincronizar-pasta-curada')));
-    await tester.pumpAndSettle();
-    await tester.pageBack();
+    await tester.tap(find.byKey(const ValueKey('filtro-energia-calma')));
+    await tester.tap(find.byKey(const ValueKey('aplicar-filtros-biblioteca')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
-    expect(titulosDaLista(tester), ['Árvore', 'Nova sincronizada', 'Zelo']);
-    await tester.enterText(find.byType(TextField).first, 'graça sincronizada');
-    await tester.pump();
-    expect(find.byKey(const ValueKey('sincronizada')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('calma-antiga')), findsOneWidget);
+    expect(find.byKey(const ValueKey('calma-nova')), findsOneWidget);
+    expect(find.byKey(const ValueKey('animada')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('indicador-filtros-ativos')),
+      findsOneWidget,
+    );
+    expect(find.text('graca'), findsOneWidget);
+  });
+
+  testWidgets('ausências, erros isolados e avisos aparecem sem falso sucesso', (
+    tester,
+  ) async {
+    await montar(
+      tester,
+      _RepositorioFake()..musicas.add(criarMusica('local', 'Local')),
+      atualizarBibliotecaOficial: () async => resultadoAtualizacao(
+        geracao: 'geracao-parcial',
+        adicionadas: 1,
+        ausentes: 1,
+        geracaoRegistrada: false,
+        erros: const [
+          ErroAtualizacaoBibliotecaOficial(
+            etapa: EtapaErroAtualizacaoBibliotecaOficial.aplicacao,
+            mensagem: 'Versão usada em Lista não pôde ser sobrescrita.',
+            localizador: 'musicas/versao.cho',
+          ),
+        ],
+        avisos: const [
+          AvisoSincronizacao(
+            codigo: CodigoAvisoSincronizacao.alternativaUsadaEmLista,
+            mensagem: 'A versão antiga foi preservada.',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atualização incompleta'), findsOneWidget);
+    expect(find.text('1 adicionada'), findsOneWidget);
+    expect(find.text('1 ausente'), findsOneWidget);
+    expect(find.text('1 erro'), findsOneWidget);
+    expect(find.text('Erros'), findsOneWidget);
+    expect(find.textContaining('versao.cho'), findsOneWidget);
+    expect(find.text('Avisos'), findsOneWidget);
+    expect(
+      find.textContaining('A versão antiga foi preservada.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('falha offline preserva Biblioteca e não informa conclusão', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake()
+      ..musicas.add(criarMusica('local', 'Música local'));
+    await montar(
+      tester,
+      repositorio,
+      atualizarBibliotecaOficial: () async => resultadoAtualizacao(
+        geracao: null,
+        geracaoRegistrada: false,
+        erros: const [
+          ErroAtualizacaoBibliotecaOficial(
+            etapa: EtapaErroAtualizacaoBibliotecaOficial.preparacao,
+            mensagem: 'Sem conexão com a biblioteca oficial.',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    final listagensAntes = repositorio.listagens;
+
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atualização não concluída'), findsOneWidget);
+    expect(find.textContaining('Sem conexão'), findsOneWidget);
+    expect(find.text('Biblioteca atualizada'), findsNothing);
+    expect(repositorio.listagens, listagensAntes);
+    await tester.tap(find.widgetWithText(TextButton, 'Fechar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Música local'), findsOneWidget);
+  });
+
+  testWidgets('base URL ausente mostra erro claro sem crash', (tester) async {
+    await montar(
+      tester,
+      _RepositorioFake(),
+      atualizarBibliotecaOficial: () async => resultadoAtualizacao(
+        geracao: null,
+        geracaoRegistrada: false,
+        erros: const [
+          ErroAtualizacaoBibliotecaOficial(
+            etapa: EtapaErroAtualizacaoBibliotecaOficial.preparacao,
+            mensagem:
+                'APPCIFRAS_LIBRARY_BASE_URL não foi configurada no build.',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('atualizar-biblioteca')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atualização não concluída'), findsOneWidget);
+    expect(find.textContaining('não foi configurada'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -954,42 +1189,6 @@ class _ObterInformacoesAppFake implements ObterInformacoesApp {
 
   @override
   Future<InformacoesApp> executar() async => informacoes;
-}
-
-class _RepositorioConfiguracaoPastaFake
-    implements RepositorioConfiguracaoPastaSincronizada {
-  ConfiguracaoPastaSincronizada? configuracao;
-
-  @override
-  Future<void> limpar() async => configuracao = null;
-
-  @override
-  Future<ConfiguracaoPastaSincronizada?> obter() async => configuracao;
-
-  @override
-  Future<void> salvarConfiguracao(
-    ConfiguracaoPastaSincronizada configuracao,
-  ) async {
-    this.configuracao = configuracao;
-  }
-}
-
-class _PastaExternaBibliotecaFake implements PastaCuradaExterna {
-  @override
-  Future<Uint8List> lerBytes(DocumentoPastaCurada documento) async =>
-      Uint8List(0);
-
-  @override
-  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
-    String uriArvore,
-  ) async =>
-      ResultadoEnumeracaoPastaCurada(documentos: const [], completa: true);
-
-  @override
-  Future<PastaCuradaSelecionada?> selecionarPasta() async => null;
-
-  @override
-  Future<void> verificarAcesso(String uriArvore) async {}
 }
 
 class _RepositorioFake

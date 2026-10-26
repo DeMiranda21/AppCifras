@@ -88,8 +88,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       removerItemListaCulto: widget.composicao.removerItemListaCulto,
       trocarVersaoItemListaCulto: widget.composicao.trocarVersaoItemListaCulto,
       reordenarItensListaCulto: widget.composicao.reordenarItensListaCulto,
-      gerenciarPastaCurada: widget.composicao.gerenciarPastaCurada,
-      sincronizarPastaCurada: widget.composicao.sincronizarPastaCurada.executar,
+      atualizarBibliotecaOficial:
+          widget.composicao.atualizarBibliotecaOficial.executar,
+      obterEstadoBibliotecaOficial: widget
+          .composicao
+          .repositorioEstadoBibliotecaOficial
+          .obterEstadoBibliotecaOficial,
       obterInformacoesApp: const ObterInformacoesAppPlataforma(),
     ),
   );

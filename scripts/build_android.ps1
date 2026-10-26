@@ -1,6 +1,7 @@
 param(
     [ValidateSet('debug', 'profile', 'release')]
     [string]$Mode = 'debug',
+    [string]$LibraryBaseUrl = 'https://pub-7cef19f80f2849fd9474b90a55aadf2b.r2.dev',
     [string[]]$AdditionalArguments = @()
 )
 
@@ -17,5 +18,8 @@ if ($worktreeStatus) {
     $commit = "$commit-dirty"
 }
 
-& flutter build apk "--$Mode" "--dart-define=APP_GIT_COMMIT=$commit" @AdditionalArguments
+& flutter build apk "--$Mode" `
+    "--dart-define=APP_GIT_COMMIT=$commit" `
+    "--dart-define=APPCIFRAS_LIBRARY_BASE_URL=$LibraryBaseUrl" `
+    @AdditionalArguments
 exit $LASTEXITCODE
