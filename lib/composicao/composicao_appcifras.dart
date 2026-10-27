@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import '../aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
 import '../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../aplicacao/casos_de_uso/editar_versao_musica.dart';
@@ -14,19 +12,15 @@ import '../aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../aplicacao/portas/fonte_biblioteca_oficial.dart';
 import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
-import '../aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
+import '../aplicacao/portas/aplicador_grupo_sincronizacao.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
 import '../aplicacao/portas/gerador_id_versao_musica.dart';
-import '../aplicacao/portas/pasta_curada_externa.dart';
 import '../aplicacao/portas/repositorio_classificacao_musica.dart';
 import '../aplicacao/portas/repositorio_sincronizacao.dart';
 import '../aplicacao/portas/repositorio_tom_execucao.dart';
-import '../aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
 import '../aplicacao/sincronizacao/aplicar_grupo_sincronizacao.dart';
-import '../aplicacao/sincronizacao/gerenciar_pasta_curada.dart';
-import '../aplicacao/sincronizacao/sincronizar_pasta_curada.dart';
 import '../dominio/chordpro/validador_schema_appcifras.dart';
 import '../dominio/entidades/versao_musica.dart';
 import '../dominio/entidades/origem_sincronizada_versao.dart';
@@ -52,7 +46,6 @@ import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
 import '../infraestrutura/persistencia/repositorio_sincronizacao_local.dart';
 import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
-import '../infraestrutura/sincronizacao/pasta_curada_saf_android.dart';
 
 class ComposicaoAppCifras {
   ComposicaoAppCifras._({
@@ -64,11 +57,8 @@ class ComposicaoAppCifras {
     required RepositorioTomExecucao repositorioTomExecucao,
     required RepositorioClassificacaoMusica repositorioClassificacao,
     required RepositorioOrigensSincronizadas repositorioOrigens,
-    required RepositorioConfiguracaoPastaSincronizada
-    repositorioConfiguracaoPasta,
     required RepositorioEstadoBibliotecaOficial repositorioEstadoOficial,
-    required PastaCuradaExterna pastaCuradaExterna,
-    required AplicadorSincronizacaoPastaCurada aplicadorSincronizacao,
+    required AplicadorGrupoSincronizacao aplicadorSincronizacao,
     required GeradorIdMusica geradorId,
     required GeradorIdVersaoMusica geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -99,20 +89,6 @@ class ComposicaoAppCifras {
          ),
          repositorioOrigens: repositorioOrigens,
          repositorioEstado: repositorioEstadoOficial,
-       ),
-       repositorioConfiguracaoPastaSincronizada = repositorioConfiguracaoPasta,
-       gerenciarPastaCurada = GerenciarPastaCurada(
-         pastaCuradaExterna,
-         repositorioConfiguracaoPasta,
-       ),
-       sincronizarPastaCurada = SincronizarPastaCurada(
-         pastaExterna: pastaCuradaExterna,
-         repositorioConfiguracao: repositorioConfiguracaoPasta,
-         repositorioOrigens: repositorioOrigens,
-         repositorioMusicas: repositorio,
-         repositorioVersoes: repositorioVersoes,
-         aplicador: aplicadorSincronizacao,
-         parserDocumento: parserDocumento,
        ),
        salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
@@ -222,10 +198,6 @@ class ComposicaoAppCifras {
   final PrepararAtualizacaoBibliotecaOficial
   prepararAtualizacaoBibliotecaOficial;
   final AtualizarBibliotecaOficial atualizarBibliotecaOficial;
-  final RepositorioConfiguracaoPastaSincronizada
-  repositorioConfiguracaoPastaSincronizada;
-  final GerenciarPastaCurada gerenciarPastaCurada;
-  final SincronizarPastaCurada sincronizarPastaCurada;
   final RenomearVersaoMusica renomearVersaoMusica;
   final DefinirVersaoPrincipal definirVersaoPrincipal;
   final ArquivarVersaoMusica arquivarVersaoMusica;
@@ -275,10 +247,8 @@ class ComposicaoAppCifras {
     required RepositorioTomExecucao repositorioTomExecucao,
     RepositorioClassificacaoMusica? repositorioClassificacao,
     RepositorioOrigensSincronizadas? repositorioOrigens,
-    RepositorioConfiguracaoPastaSincronizada? repositorioConfiguracaoPasta,
     RepositorioEstadoBibliotecaOficial? repositorioEstadoOficial,
-    PastaCuradaExterna? pastaCuradaExterna,
-    AplicadorSincronizacaoPastaCurada? aplicadorSincronizacao,
+    AplicadorGrupoSincronizacao? aplicadorSincronizacao,
     required GeradorIdMusica geradorId,
     GeradorIdVersaoMusica? geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
@@ -298,12 +268,8 @@ class ComposicaoAppCifras {
         repositorioClassificacao ?? _RepositorioClassificacaoVazio(),
     repositorioOrigens:
         repositorioOrigens ?? const _RepositorioSincronizacaoVazio(),
-    repositorioConfiguracaoPasta:
-        repositorioConfiguracaoPasta ?? const _RepositorioSincronizacaoVazio(),
     repositorioEstadoOficial:
         repositorioEstadoOficial ?? const _RepositorioSincronizacaoVazio(),
-    pastaCuradaExterna:
-        pastaCuradaExterna ?? const _PastaCuradaExternaIndisponivel(),
     aplicadorSincronizacao:
         aplicadorSincronizacao ?? const _AplicadorSincronizacaoIndisponivel(),
     geradorId: geradorId,
@@ -360,9 +326,7 @@ class ComposicaoAppCifras {
         repositorioTomExecucao: repositorioTomExecucao,
         repositorioClassificacao: repositorioClassificacao,
         repositorioOrigens: repositorioSincronizacao,
-        repositorioConfiguracaoPasta: repositorioSincronizacao,
         repositorioEstadoOficial: repositorioSincronizacao,
-        pastaCuradaExterna: const PastaCuradaSafAndroid(),
         aplicadorSincronizacao: repositorio,
         geradorId: GeradorIdMusicaUuid(),
         geradorIdVersao: GeradorIdVersaoMusicaUuid(),
@@ -474,7 +438,6 @@ class _RepositorioClassificacaoVazio implements RepositorioClassificacaoMusica {
 class _RepositorioSincronizacaoVazio
     implements
         RepositorioOrigensSincronizadas,
-        RepositorioConfiguracaoPastaSincronizada,
         RepositorioEstadoBibliotecaOficial {
   const _RepositorioSincronizacaoVazio();
 
@@ -502,17 +465,6 @@ class _RepositorioSincronizacaoVazio
   Future<void> remover(IdVersaoMusica id) async {}
 
   @override
-  Future<ConfiguracaoPastaSincronizada?> obter() async => null;
-
-  @override
-  Future<void> salvarConfiguracao(
-    ConfiguracaoPastaSincronizada configuracao,
-  ) async {}
-
-  @override
-  Future<void> limpar() async {}
-
-  @override
   Future<EstadoBibliotecaOficial?> obterEstadoBibliotecaOficial() async => null;
 
   @override
@@ -521,31 +473,8 @@ class _RepositorioSincronizacaoVazio
   ) async {}
 }
 
-class _PastaCuradaExternaIndisponivel implements PastaCuradaExterna {
-  const _PastaCuradaExternaIndisponivel();
-
-  Never _indisponivel() => throw UnsupportedError(
-    'Acesso à pasta curada não está disponível nesta composição.',
-  );
-
-  @override
-  Future<PastaCuradaSelecionada?> selecionarPasta() async => _indisponivel();
-
-  @override
-  Future<void> verificarAcesso(String uriArvore) async => _indisponivel();
-
-  @override
-  Future<ResultadoEnumeracaoPastaCurada> listarFilhosDiretos(
-    String uriArvore,
-  ) async => _indisponivel();
-
-  @override
-  Future<Uint8List> lerBytes(DocumentoPastaCurada documento) async =>
-      _indisponivel();
-}
-
 class _AplicadorSincronizacaoIndisponivel
-    implements AplicadorSincronizacaoPastaCurada {
+    implements AplicadorGrupoSincronizacao {
   const _AplicadorSincronizacaoIndisponivel();
 
   @override

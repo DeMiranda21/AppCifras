@@ -4,7 +4,7 @@ import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../portas/repositorio_sincronizacao.dart';
 import '../sincronizacao/aplicar_grupo_sincronizacao.dart';
 import '../sincronizacao/modelos_sincronizacao.dart';
-import '../sincronizacao/montar_inventario_pasta_curada.dart';
+import '../sincronizacao/montar_inventario_sincronizacao.dart';
 import '../sincronizacao/resultado_sincronizacao.dart';
 import 'estado_biblioteca_oficial.dart';
 import 'falha_biblioteca_oficial.dart';
@@ -65,20 +65,20 @@ class AtualizarBibliotecaOficial {
     required AplicarGrupoSincronizacao aplicarGrupo,
     required RepositorioOrigensSincronizadas repositorioOrigens,
     required RepositorioEstadoBibliotecaOficial repositorioEstado,
-    MontarInventarioPastaCurada? montarInventario,
+    MontarInventarioSincronizacao? montarInventario,
     DateTime Function()? agora,
   }) : _preparar = preparar,
        _aplicarGrupo = aplicarGrupo,
        _repositorioOrigens = repositorioOrigens,
        _repositorioEstado = repositorioEstado,
-       _montarInventario = montarInventario ?? MontarInventarioPastaCurada(),
+       _montarInventario = montarInventario ?? MontarInventarioSincronizacao(),
        _agora = agora ?? DateTime.now;
 
   final PrepararAtualizacaoBibliotecaOficial _preparar;
   final AplicarGrupoSincronizacao _aplicarGrupo;
   final RepositorioOrigensSincronizadas _repositorioOrigens;
   final RepositorioEstadoBibliotecaOficial _repositorioEstado;
-  final MontarInventarioPastaCurada _montarInventario;
+  final MontarInventarioSincronizacao _montarInventario;
   final DateTime Function() _agora;
 
   Future<ResultadoAtualizacaoBibliotecaOficial> executar() async {

@@ -121,6 +121,7 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
   `docs/decisoes-mvp.md`; a notação atual usa fundamentais A–G.
 - Metadados associados ao ChordPro continuam sujeitos a esquema versionado.
 - Arquivos publicados usam o schema 2, com identidades explícitas de Musica e
-  VersaoMusica; arquivos locais antigos não exigem migração imediata. O Android
-  SAF permanece temporariamente no código legado, mas não é o protocolo alvo
-  da Biblioteca Oficial.
+  VersaoMusica; arquivos locais antigos não exigem migração imediata. O app
+  consome a Biblioteca Oficial exclusivamente pelo protocolo HTTPS. A tabela
+  física da antiga configuração SAF permanece apenas para compatibilidade de
+  schema com bancos existentes e não integra o produto nem o runtime.

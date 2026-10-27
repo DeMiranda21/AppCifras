@@ -220,7 +220,7 @@ void main() {
     expect(await marcador.readAsString(), 'preservar');
   });
 
-  test('não cria saída nem relatório dentro da pasta curada', () async {
+  test('não cria saída nem relatório dentro do diretório de entrada', () async {
     await criarCho(
       nomeArquivo: 'valida.cho',
       idMusica: 'musica-1',

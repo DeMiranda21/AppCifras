@@ -85,7 +85,10 @@ void main() {
     expect((await banco.obterEnergiaMusica(idMusica))?.energia, 'moderada');
     expect((await banco.listarTagsMusica(idMusica)).single.valor, 'Ceia');
     expect((await banco.listarItensListaCulto('lista-1')).single.id, 'item-1');
-    expect(await sincronizacao.obter(), isNull);
+    expect(
+      await banco.select(banco.configuracoesPastaSincronizada).get(),
+      isEmpty,
+    );
     expect(
       await sincronizacao.obterPorVersao(IdVersaoMusica(idVersao)),
       isNull,

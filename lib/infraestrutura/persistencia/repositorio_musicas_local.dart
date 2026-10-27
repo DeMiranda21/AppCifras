@@ -13,7 +13,7 @@ import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
-import '../../aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
+import '../../aplicacao/portas/aplicador_grupo_sincronizacao.dart';
 import '../arquivos/armazenamento_arquivos_chordpro.dart';
 import '../arquivos/codificador_chordpro_gerenciado.dart';
 import 'banco_biblioteca.dart';
@@ -28,7 +28,7 @@ class RepositorioMusicasLocal
     implements
         RepositorioMusicas,
         RepositorioVersoesMusicas,
-        AplicadorSincronizacaoPastaCurada {
+        AplicadorGrupoSincronizacao {
   RepositorioMusicasLocal({
     required this._banco,
     required this._armazenamentoArquivos,

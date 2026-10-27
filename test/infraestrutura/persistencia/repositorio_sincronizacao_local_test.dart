@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:appcifras/aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/entidades/origem_sincronizada_versao.dart';
 import 'package:appcifras/dominio/entidades/versao_musica.dart';
@@ -49,46 +48,6 @@ void main() {
   tearDown(() async {
     await banco.close();
     await diretorio.delete(recursive: true);
-  });
-
-  test('salva, recupera e substitui a configuração única da pasta', () async {
-    final primeiraData = DateTime.utc(2026, 10, 15, 12);
-    await sincronizacao.salvarConfiguracao(
-      ConfiguracaoPastaSincronizada(
-        uriArvore: 'content://provedor/tree/primaria%3Adocumentos',
-        autorizacaoPersistente: true,
-        nomeLegivel: '  Cifras  ',
-        ultimaSincronizacaoConcluida: primeiraData,
-      ),
-    );
-
-    final primeira = await sincronizacao.obter();
-    expect(
-      primeira?.uriArvore,
-      'content://provedor/tree/primaria%3Adocumentos',
-    );
-    expect(primeira?.autorizacaoPersistente, isTrue);
-    expect(primeira?.nomeLegivel, 'Cifras');
-    expect(
-      primeira?.ultimaSincronizacaoConcluida?.toUtc(),
-      primeiraData,
-    );
-
-    await sincronizacao.salvarConfiguracao(
-      ConfiguracaoPastaSincronizada(
-        uriArvore: 'document-id:opaco:sem/separador-confiavel',
-        autorizacaoPersistente: false,
-      ),
-    );
-
-    final substituida = await sincronizacao.obter();
-    expect(substituida?.uriArvore, 'document-id:opaco:sem/separador-confiavel');
-    expect(substituida?.autorizacaoPersistente, isFalse);
-    expect(substituida?.nomeLegivel, isNull);
-    expect(
-      await banco.select(banco.configuracoesPastaSincronizada).get(),
-      hasLength(1),
-    );
   });
 
   test('salva origem e distingue versão sincronizada de local', () async {

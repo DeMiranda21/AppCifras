@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../aplicacao/publicacao/manifesto_biblioteca_oficial.dart';
 import '../../aplicacao/sincronizacao/modelos_sincronizacao.dart';
-import '../../aplicacao/sincronizacao/montar_inventario_pasta_curada.dart';
+import '../../aplicacao/sincronizacao/montar_inventario_sincronizacao.dart';
 
 class ResultadoPublicacaoBiblioteca {
   ResultadoPublicacaoBiblioteca({
@@ -63,12 +63,12 @@ class ResultadoPublicacaoBiblioteca {
 
 class PublicadorBibliotecaLocal {
   PublicadorBibliotecaLocal({
-    MontarInventarioPastaCurada? montarInventario,
+    MontarInventarioSincronizacao? montarInventario,
     DateTime Function()? agora,
-  }) : _montarInventario = montarInventario ?? MontarInventarioPastaCurada(),
+  }) : _montarInventario = montarInventario ?? MontarInventarioSincronizacao(),
        _agora = agora ?? DateTime.now;
 
-  final MontarInventarioPastaCurada _montarInventario;
+  final MontarInventarioSincronizacao _montarInventario;
   final DateTime Function() _agora;
 
   Future<ResultadoPublicacaoBiblioteca> publicar({
@@ -87,16 +87,14 @@ class PublicadorBibliotecaLocal {
       erros.add('A pasta de entrada não existe: ${entrada.path}.');
     }
     if (_estaDentroDe(saida.absolute.path, entrada.absolute.path)) {
-      erros.add('A saída não pode ficar dentro da pasta curada de entrada.');
+      erros.add('A saída não pode ficar dentro do diretório de entrada.');
     }
     final relatorioSeguro = !_estaDentroDe(
       relatorio.absolute.path,
       entrada.absolute.path,
     );
     if (!relatorioSeguro) {
-      erros.add(
-        'O relatório não pode ficar dentro da pasta curada de entrada.',
-      );
+      erros.add('O relatório não pode ficar dentro do diretório de entrada.');
     }
     if (await saida.exists()) {
       erros.add(

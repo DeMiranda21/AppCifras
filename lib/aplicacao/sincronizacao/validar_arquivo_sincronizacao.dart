@@ -9,8 +9,8 @@ import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import 'modelos_sincronizacao.dart';
 
-class ValidarArquivoPastaCurada {
-  ValidarArquivoPastaCurada({ParserDocumentoChordPro? parser})
+class ValidarArquivoSincronizacao {
+  ValidarArquivoSincronizacao({ParserDocumentoChordPro? parser})
     : _parser = parser ?? ParserDocumentoChordPro();
 
   final ParserDocumentoChordPro _parser;

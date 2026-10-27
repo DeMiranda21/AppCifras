@@ -11,7 +11,7 @@ import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
-import 'package:appcifras/aplicacao/portas/aplicador_sincronizacao_pasta_curada.dart';
+import 'package:appcifras/aplicacao/portas/aplicador_grupo_sincronizacao.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
 import 'package:appcifras/infraestrutura/persistencia/consulta_detalhe_lista_culto_local.dart';

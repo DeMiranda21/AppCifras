@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:appcifras/aplicacao/entrada/classificador_linha_cifra_textual.dart';
 import 'package:appcifras/aplicacao/sincronizacao/modelos_sincronizacao.dart';
-import 'package:appcifras/aplicacao/sincronizacao/validar_arquivo_pasta_curada.dart';
+import 'package:appcifras/aplicacao/sincronizacao/validar_arquivo_sincronizacao.dart';
 import 'package:appcifras/dominio/servicos/parser_acorde.dart';
 import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
@@ -114,7 +114,7 @@ class CuradoriaBiblioteca {
   final ClassificadorLinhaCifraTextual _classificador =
       ClassificadorLinhaCifraTextual();
   final ParserAcorde _parserAcorde = ParserAcorde();
-  final ValidarArquivoPastaCurada _validador = ValidarArquivoPastaCurada();
+  final ValidarArquivoSincronizacao _validador = ValidarArquivoSincronizacao();
   final DetectorTonal _detectorTonal = DetectorTonal();
 
   static final RegExp _tom = RegExp(

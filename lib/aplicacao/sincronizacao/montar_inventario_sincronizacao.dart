@@ -1,15 +1,15 @@
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import 'modelos_sincronizacao.dart';
-import 'validar_arquivo_pasta_curada.dart';
+import 'validar_arquivo_sincronizacao.dart';
 
-class MontarInventarioPastaCurada {
-  MontarInventarioPastaCurada({ValidarArquivoPastaCurada? validador})
-    : _validador = validador ?? ValidarArquivoPastaCurada();
+class MontarInventarioSincronizacao {
+  MontarInventarioSincronizacao({ValidarArquivoSincronizacao? validador})
+    : _validador = validador ?? ValidarArquivoSincronizacao();
 
-  final ValidarArquivoPastaCurada _validador;
+  final ValidarArquivoSincronizacao _validador;
 
-  InventarioPastaCurada executar(
+  InventarioSincronizacao executar(
     Iterable<ArquivoSincronizacaoCandidato> candidatos,
   ) {
     final ordenados = candidatos.toList()
@@ -120,7 +120,7 @@ class MontarInventarioPastaCurada {
       );
     }
 
-    return InventarioPastaCurada(
+    return InventarioSincronizacao(
       arquivosValidos: validos,
       arquivosInvalidos: invalidos,
       gruposValidos: gruposValidos,

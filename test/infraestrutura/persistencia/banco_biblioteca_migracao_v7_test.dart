@@ -9,7 +9,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('migra fisicamente schema 6 e preserva origem e configuração SAF', () async {
+  test('migra schema 6 e preserva origem e tabela legada', () async {
     final diretorio = await Directory.systemTemp.createTemp(
       'appcifras_migracao_v7_',
     );
@@ -49,7 +49,10 @@ void main() {
           ?.localizadorExterno,
       'content://saf/v1.cho',
     );
-    expect((await repositorio.obter())?.uriArvore, 'content://saf');
+    final configuracaoLegada = await banco
+        .select(banco.configuracoesPastaSincronizada)
+        .getSingle();
+    expect(configuracaoLegada.uriArvore, 'content://saf');
     expect(await repositorio.obterEstadoBibliotecaOficial(), isNull);
 
     final data = DateTime.utc(2026, 10, 25, 15);

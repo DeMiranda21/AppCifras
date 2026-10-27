@@ -148,8 +148,8 @@ class GrupoMusicaSincronizacaoRejeitado {
   final List<ErroGrupoSincronizacao> erros;
 }
 
-class InventarioPastaCurada {
-  InventarioPastaCurada({
+class InventarioSincronizacao {
+  InventarioSincronizacao({
     required Iterable<ArquivoSincronizacaoValidado> arquivosValidos,
     required Iterable<ArquivoSincronizacaoInvalido> arquivosInvalidos,
     required Iterable<GrupoMusicaSincronizacaoValido> gruposValidos,

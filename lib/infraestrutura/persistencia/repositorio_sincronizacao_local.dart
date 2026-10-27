@@ -1,5 +1,4 @@
 import '../../aplicacao/portas/repositorio_sincronizacao.dart';
-import '../../aplicacao/sincronizacao/configuracao_pasta_sincronizada.dart';
 import '../../aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
 import '../../dominio/entidades/origem_sincronizada_versao.dart';
 import '../../dominio/erros/versao_musica_nao_encontrada.dart';
@@ -9,7 +8,6 @@ import 'banco_biblioteca.dart';
 class RepositorioSincronizacaoLocal
     implements
         RepositorioOrigensSincronizadas,
-        RepositorioConfiguracaoPastaSincronizada,
         RepositorioEstadoBibliotecaOficial {
   const RepositorioSincronizacaoLocal(this._banco);
 
@@ -85,30 +83,6 @@ class RepositorioSincronizacaoLocal
   @override
   Future<void> remover(IdVersaoMusica id) =>
       _banco.removerOrigemSincronizadaVersao(id.valor);
-
-  @override
-  Future<ConfiguracaoPastaSincronizada?> obter() async {
-    final registro = await _banco.obterConfiguracaoPasta();
-    if (registro == null) return null;
-    return ConfiguracaoPastaSincronizada(
-      uriArvore: registro.uriArvore,
-      autorizacaoPersistente: registro.autorizacaoPersistente,
-      nomeLegivel: registro.nomeLegivel,
-      ultimaSincronizacaoConcluida: registro.ultimaSincronizacaoConcluida,
-    );
-  }
-
-  @override
-  Future<void> salvarConfiguracao(ConfiguracaoPastaSincronizada configuracao) =>
-      _banco.salvarConfiguracaoPasta(
-        uriArvore: configuracao.uriArvore,
-        autorizacaoPersistente: configuracao.autorizacaoPersistente,
-        nomeLegivel: configuracao.nomeLegivel,
-        ultimaSincronizacaoConcluida: configuracao.ultimaSincronizacaoConcluida,
-      );
-
-  @override
-  Future<void> limpar() => _banco.limparConfiguracaoPasta();
 
   @override
   Future<EstadoBibliotecaOficial?> obterEstadoBibliotecaOficial() async {

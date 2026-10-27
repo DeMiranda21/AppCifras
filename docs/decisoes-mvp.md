@@ -41,9 +41,11 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - Depois de baixado e incorporado, o conteúdo oficial permanece local e
   utilizável offline. Versões exclusivamente locais coexistem na mesma
   Biblioteca visual.
-- A implementação SAF entregue em S3–S5 permanece temporariamente no código
-  até a migração HTTPS ser validada, mas deixa de ser o mecanismo alvo da
-  Biblioteca Oficial.
+- O aplicativo consome a Biblioteca Oficial exclusivamente por HTTPS. A antiga
+  implementação Android SAF foi removida depois da validação da migração; não
+  existe seleção de pasta nem configuração de provedor no produto. A tabela
+  física legada pode permanecer no schema local para abrir bancos existentes,
+  sem caso de uso ou acesso no runtime.
 
 ## Contrato musical da sincronização oficial
 

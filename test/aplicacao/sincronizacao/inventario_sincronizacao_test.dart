@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:appcifras/aplicacao/sincronizacao/modelos_sincronizacao.dart';
-import 'package:appcifras/aplicacao/sincronizacao/montar_inventario_pasta_curada.dart';
-import 'package:appcifras/aplicacao/sincronizacao/validar_arquivo_pasta_curada.dart';
+import 'package:appcifras/aplicacao/sincronizacao/montar_inventario_sincronizacao.dart';
+import 'package:appcifras/aplicacao/sincronizacao/validar_arquivo_sincronizacao.dart';
 import 'package:appcifras/dominio/chordpro/validador_schema_appcifras.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final validar = ValidarArquivoPastaCurada();
-  final montar = MontarInventarioPastaCurada(validador: validar);
+  final validar = ValidarArquivoSincronizacao();
+  final montar = MontarInventarioSincronizacao(validador: validar);
 
   ArquivoSincronizacaoCandidato candidato({
     String localizador = 'musicas/musica.cho',
@@ -246,7 +246,7 @@ void main() {
     );
   });
 
-  group('inventário da pasta curada', () {
+  group('inventário da sincronização', () {
     test('aceita duas versões da mesma Música com IDs diferentes', () {
       final inventario = montar.executar([
         candidato(idVersao: 'v-1', principal: true),

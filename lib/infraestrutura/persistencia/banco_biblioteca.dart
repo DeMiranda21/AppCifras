@@ -423,30 +423,6 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     )..where((tabela) => tabela.idVersaoMusica.equals(idVersaoMusica))).go();
   }
 
-  Future<ConfiguracaoPastaSincronizadaRegistro?> obterConfiguracaoPasta() =>
-      (select(
-        configuracoesPastaSincronizada,
-      )..where((tabela) => tabela.id.equals(1))).getSingleOrNull();
-
-  Future<void> salvarConfiguracaoPasta({
-    required String uriArvore,
-    required bool autorizacaoPersistente,
-    required String? nomeLegivel,
-    required DateTime? ultimaSincronizacaoConcluida,
-  }) => into(configuracoesPastaSincronizada).insertOnConflictUpdate(
-    ConfiguracoesPastaSincronizadaCompanion.insert(
-      id: const Value(1),
-      uriArvore: uriArvore,
-      autorizacaoPersistente: autorizacaoPersistente,
-      nomeLegivel: Value(nomeLegivel),
-      ultimaSincronizacaoConcluida: Value(ultimaSincronizacaoConcluida),
-    ),
-  );
-
-  Future<void> limparConfiguracaoPasta() async {
-    await delete(configuracoesPastaSincronizada).go();
-  }
-
   Future<EstadoBibliotecaOficialRegistro?> obterEstadoBibliotecaOficial() =>
       (select(
         estadosBibliotecaOficial,

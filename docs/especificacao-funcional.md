@@ -120,9 +120,10 @@ Ao fim, um relatório simples informa adicionadas, atualizadas, inalteradas,
 origens ausentes e ignoradas com erro, com arquivo e motivo breve para cada
 falha.
 
-A integração Android SAF implementada anteriormente permanece temporariamente
-até a migração para HTTPS ser validada, mas não é mais o mecanismo alvo da
-Biblioteca Oficial.
+A Biblioteca Oficial é atualizada exclusivamente pelo manifesto e pelos
+arquivos públicos via HTTPS. A integração Android SAF anterior foi removida e
+não há seleção de pasta ou configuração de provedor no produto. Apenas a
+tabela física legada pode permanecer no banco para compatibilidade de schema.
 
 ### Demais evoluções
 

@@ -1,7 +1,8 @@
 # Manifesto da Biblioteca Oficial
 
-Este documento define o protocolo de publicação local da Biblioteca Oficial.
-Hospedagem, cliente HTTP e migração do SAF pertencem às próximas fatias.
+Este documento define o protocolo de publicação e consumo da Biblioteca
+Oficial. A geração é hospedada e consumida por HTTPS pelo aplicativo; a antiga
+integração Android SAF não faz parte do protocolo nem do produto.
 
 ## Estrutura da geração
 

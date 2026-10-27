@@ -21,7 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('encaminha preferência de tom da composição até a visualização', (
+  testWidgets('composição sem SAF encaminha preferência de tom à visualização', (
     tester,
   ) async {
     final parser = ParserDocumentoChordPro();

@@ -54,6 +54,6 @@ class PlanoAplicacaoGrupoSincronizacao {
   final List<VersaoExistenteSincronizacao> versoesExistentes;
 }
 
-abstract interface class AplicadorSincronizacaoPastaCurada {
+abstract interface class AplicadorGrupoSincronizacao {
   Future<void> aplicar(PlanoAplicacaoGrupoSincronizacao plano);
 }

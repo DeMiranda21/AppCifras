@@ -2,7 +2,7 @@ import '../../dominio/repositorios/repositorio_musicas.dart';
 
 // ignore_for_file: prefer_initializing_formals
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
-import '../portas/aplicador_sincronizacao_pasta_curada.dart';
+import '../portas/aplicador_grupo_sincronizacao.dart';
 import '../portas/repositorio_sincronizacao.dart';
 import 'modelos_sincronizacao.dart';
 import 'resultado_sincronizacao.dart';
@@ -25,13 +25,13 @@ class ResultadoAplicacaoGrupoSincronizacao {
   bool get concluida => erros.isEmpty;
 }
 
-/// Núcleo comum de aplicação usado tanto pelo SAF quanto pela biblioteca HTTPS.
+/// Núcleo comum que aplica um grupo validado da Biblioteca Oficial.
 class AplicarGrupoSincronizacao {
   const AplicarGrupoSincronizacao({
     required RepositorioOrigensSincronizadas repositorioOrigens,
     required RepositorioMusicas repositorioMusicas,
     required RepositorioVersoesMusicas repositorioVersoes,
-    required AplicadorSincronizacaoPastaCurada aplicador,
+    required AplicadorGrupoSincronizacao aplicador,
   }) : _repositorioOrigens = repositorioOrigens,
        _repositorioMusicas = repositorioMusicas,
        _repositorioVersoes = repositorioVersoes,
@@ -40,7 +40,7 @@ class AplicarGrupoSincronizacao {
   final RepositorioOrigensSincronizadas _repositorioOrigens;
   final RepositorioMusicas _repositorioMusicas;
   final RepositorioVersoesMusicas _repositorioVersoes;
-  final AplicadorSincronizacaoPastaCurada _aplicador;
+  final AplicadorGrupoSincronizacao _aplicador;
 
   Future<ResultadoAplicacaoGrupoSincronizacao> executar(
     GrupoMusicaSincronizacaoValido grupo,

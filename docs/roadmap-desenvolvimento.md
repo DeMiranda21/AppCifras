@@ -39,6 +39,8 @@ no caminho principal interrompem a sequência.
   edição explícita da VersaoMusica aberta.
 - Energia, tags, pesquisa combinada e arquivos ChordPro com SQLite local para
   índices, relações e preferências.
+- Biblioteca Oficial pública por manifesto e arquivos `.cho` via HTTPS, com
+  atualização incremental, relatório, uso offline e migração validada no A72.
 
 ## Prioridade 0 — Estabilizar a jornada já entregue
 
@@ -47,13 +49,13 @@ e da visualização. Não ampliar o editor nem iniciar refinamentos gerais antes
 sincronização. Regressões de integridade, leitura, navegação ou desempenho no
 caminho principal continuam bloqueadoras.
 
-## Prioridade 1 — Biblioteca Oficial por manifesto e HTTPS
+## Prioridade 1 concluída — Biblioteca Oficial por manifesto e HTTPS
 
-O contrato do MVP está fechado em `decisoes-mvp.md`. A implementação S1–S5
-permanece como fundação de validação, identidade, persistência, aplicação e
-relatório. O SAF de S3 continua temporariamente até a migração ser validada,
-mas o protocolo alvo passa a ser manifesto público versionado e arquivos `.cho`
-por HTTPS, sem login e sem escolha de pasta remota.
+O contrato do MVP está fechado em `decisoes-mvp.md`. A fundação S1–S5 de
+validação, identidade, persistência, aplicação e relatório foi migrada para um
+manifesto público versionado e arquivos `.cho` por HTTPS, sem login e sem
+escolha de pasta remota. A validação no A72 foi concluída e a integração SAF
+foi removida do runtime e da interface.
 
 ### M1 — Contrato do manifesto e publicador local
 
@@ -66,19 +68,18 @@ por HTTPS, sem login e sem escolha de pasta remota.
   IdVersaoMusica;
 - gerar em diretório temporário, verificar SHA-256/tamanho e somente então
   finalizar a geração local;
-- produzir relatório sem alterar a pasta curada original.
+- produzir relatório sem alterar o diretório privado de entrada do curador.
 
-### Próximas fatias da migração
+### Fatias M1–M6 concluídas
 
-1. escolher hospedagem HTTPS e publicar uma geração de teste;
-2. implementar cliente do manifesto e download verificado, sem alterar ainda a
-   aplicação S4;
-3. adaptar S4 para comparação incremental e ausência por geração completa;
-4. trocar a UX para “Atualizar biblioteca” e validar no A72;
-5. somente depois remover configuração, canais Android e implementação SAF que
-   ficarem sem uso.
+1. contrato do manifesto e publicador local;
+2. hospedagem HTTPS e geração real publicada;
+3. cliente do manifesto e download verificado;
+4. aplicação incremental e ausência por geração completa;
+5. UX “Atualizar biblioteca” validada no A72;
+6. remoção da configuração, canais Android e implementação SAF sem uso.
 
-## Fundação entregue — S1–S5 com pasta curada/SAF
+## Histórico da fundação — S1–S5
 
 ### S1 — Schema 2 e validação pura
 
@@ -155,7 +156,7 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 
 | Tema | Estado para a produção pessoal | Próximo critério |
 | --- | --- | --- |
-| Biblioteca Oficial por HTTPS | Bloqueador imediato | Implementar M1 e migrar S4/S5 incrementalmente |
+| Biblioteca Oficial por HTTPS | Entregue e validada | Observar o uso real e corrigir apenas regressões |
 | Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
 | Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
 | C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
@@ -189,9 +190,6 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 - **Múltiplas bibliotecas públicas ou assináveis:** distribuição, equipe,
   atualização remota e conflitos entre origens são possibilidades distantes e
   não orientam o desenho da primeira sincronização.
-- **Recursividade da pasta curada:** avaliar subpastas apenas se a organização
-  real do acervo demonstrar necessidade; o primeiro MVP lê somente filhos
-  diretos.
 
 ## Última etapa — IA
 
@@ -202,10 +200,8 @@ transições.
 
 ## Dependências principais
 
-    S1–S5 entregues → manifesto + publicador local
-    Manifesto → hospedagem HTTPS → cliente e download verificado
-    Cliente HTTPS + S4 → sincronização incremental → nova UX → validação A72
-    Migração validada → remoção segura do SAF transitório
+    S1–S5 → manifesto + publicador → hospedagem e cliente HTTPS
+    Cliente HTTPS + aplicação incremental → nova UX → validação A72 → remoção SAF
     Uso real do editor → recorte do rework e diagnóstico da transposição
     Versões/arranjos entregues → C3 e tom por item, se o uso justificar
     Contexto da Lista → consultas e estatísticas derivadas
