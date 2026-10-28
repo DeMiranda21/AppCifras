@@ -19,7 +19,9 @@ implementação.
 - **Poucos toques e uso real.** Em ensaios e cultos, rapidez, legibilidade,
   estabilidade e baixa distração superam efeitos visuais. A menor jornada
   completa e confiável de uso pessoal vem antes de refinamentos amplos; o uso
-  real orienta quais melhorias recebem prioridade depois dela.
+  real orienta quais melhorias recebem prioridade depois dela. Qualidade das
+  cifras, acesso rápido à Biblioteca e relevância da pesquisa prevalecem sobre
+  a ampliação do conjunto de funcionalidades.
 - **Domínio independente.** Regras musicais não dependem de Flutter, banco,
   arquivos ou APIs.
 - **Simplicidade responsável.** Complexidade, abstrações e entidades só entram

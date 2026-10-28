@@ -15,6 +15,10 @@ culto e continuar consultando todo o conteúdo já local sem acesso à origem.
 Melhorias amplas de edição e conveniência serão priorizadas depois de observar
 esse uso real.
 
+Antes de novas funcionalidades e da preparação da primeira release, a
+experiência básica deve ser confiável com a Biblioteca real: entrada e retorno
+rápidos, localização relevante da música e cifras corretas e legíveis.
+
 ## Capacidades atuais
 
 ### Biblioteca Musical
@@ -26,12 +30,27 @@ por título, artista ou conteúdo visível da letra. Resultados encontrados na
 letra podem exibir uma linha correspondente. A pesquisa pode ser combinada com
 filtros locais de energia e tags.
 
+Quando há texto de pesquisa, os resultados devem priorizar, nesta ordem:
+título exatamente igual ao termo, título iniciado pelo termo, título contendo
+o termo e correspondência encontrada somente na letra. A comparação preserva
+a normalização atual de caixa e acentos; dentro de cada grupo, a apresentação
+permanece alfabética e determinística. Artista continua pesquisável, mas sua
+posição definitiva nessa hierarquia depende de decisão específica antes da
+implementação.
+
 ### Conteúdo e leitura
 
 ChordPro é o formato canônico. A cifra mostra título, artista, tom de execução
 e letra com acordes em layout responsivo. Conteúdo ou acordes não reconhecidos
 são preservados; acordes não interpretáveis ficam visíveis e bloqueiam
 transposição insegura.
+
+As cifras publicadas não devem conter tablaturas. A retirada é feita no
+conteúdo ChordPro que alimenta a publicação, e não por ocultação na leitura.
+Trechos instrumentais úteis que não sejam tablaturas permanecem. A curadoria
+pode corrigir progressivamente cifras e retirar manualmente músicas
+inadequadas do catálogo; uma geração posterior não deve restaurar conteúdo
+que tenha sido corrigido ou removido na fonte curada.
 
 ### Tom de execução
 

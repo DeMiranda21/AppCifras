@@ -44,10 +44,26 @@ no caminho principal interrompem a sequência.
 
 ## Prioridade 0 — Estabilizar a jornada já entregue
 
-Concluir somente correções concretas encontradas na validação atual da entrada
-e da visualização. Não ampliar o editor nem iniciar refinamentos gerais antes da
-sincronização. Regressões de integridade, leitura, navegação ou desempenho no
-caminho principal continuam bloqueadoras.
+O uso da Biblioteca real, agora com mais de 2.000 músicas, tornou prioritários
+três problemas de experiência antes de novas funcionalidades ou da preparação
+da primeira release:
+
+1. **QX-01 — qualidade das cifras:** retirar definitivamente tablaturas do
+   conteúdo publicado, revisar gradualmente cifras e permitir que a curadoria
+   retire músicas inadequadas sem que gerações futuras as restaurem;
+2. **QX-02 — desempenho da Biblioteca:** medir abertura, retorno, consulta,
+   leitura e processamento antes de escolher entre carregamento seletivo,
+   paginação ou outra solução; implementar a alternativa mais simples com
+   ganho real no A72 e na Biblioteca completa;
+3. **QX-03 — relevância da pesquisa:** ordenar correspondências por igualdade,
+   prefixo e ocorrência no título, deixando resultados somente da letra por
+   último e mantendo ordem alfabética dentro dos grupos.
+
+QX-01 e QX-03 podem avançar independentemente. QX-02 começa por diagnóstico e
+medição, sem presumir paginação. A posição de Artista na relevância da pesquisa
+e o mecanismo futuro para impedir novas tablaturas precisam de decisão antes
+das respectivas implementações. Regressões de integridade, leitura, navegação
+ou desempenho no caminho principal continuam bloqueadoras.
 
 ## Prioridade 1 concluída — Biblioteca Oficial por manifesto e HTTPS
 

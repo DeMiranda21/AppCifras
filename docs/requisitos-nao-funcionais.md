@@ -21,6 +21,10 @@
 
 - Abrir música, pesquisar, navegar entre itens e transpor deve ter resposta
   percebida como imediata no aparelho de referência.
+- Entrar na Biblioteca e retornar a ela deve permanecer responsivo com a
+  Biblioteca Oficial completa, inclusive acima de 2.000 músicas. A solução
+  deve ser escolhida a partir de medição que separe consulta SQLite, leitura e
+  parsing de ChordPro, criação do índice de pesquisa e construção de widgets.
 - Rolagem é fluida, com consumo moderado de memória e bateria.
 - A cifra cabe na largura útil sem truncamento, ellipsis ou rolagem horizontal
   no modo normal; o reflow preserva acorde e trecho associado.

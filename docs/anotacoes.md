@@ -2,6 +2,24 @@
 
 Este arquivo guarda apenas dúvidas ou hipóteses ainda não consolidadas.
 
+## Qualidade, desempenho e pesquisa da Biblioteca
+
+Permanecem abertas, para decisão ou medição antes da implementação:
+
+- em qual grupo de relevância entra uma correspondência somente em Artista;
+- se Artista deve ficar antes ou depois de resultados encontrados apenas na
+  letra;
+- qual etapa domina a lentidão da Biblioteca real: SQLite, leitura dos
+  arquivos, parsing, construção do índice, ordenação/filtro ou widgets;
+- se o ganho necessário exige consulta seletiva, carregamento incremental,
+  paginação ou somente evitar reconstruções integrais;
+- como impedir futuramente a entrada de novas tablaturas no catálogo sem
+  remover trechos instrumentais legítimos.
+
+A retirada atual de tablaturas é decisão de curadoria do conteúdo publicado.
+Não está aprovada uma validação automática de tablatura, nem uma solução de
+paginação para a Biblioteca.
+
 ## Reavaliação do editor após uso real
 
 Observar em ensaios, cultos e manutenção cotidiana quais operações ainda tornam

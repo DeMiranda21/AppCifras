@@ -189,7 +189,11 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   da conversão. Fora desses casos, o conteúdo entre colchetes é tratado como
   cifra e, se não for suportado, permanece não interpretável.
 - Cifras desconhecidas, diretivas desconhecidas, comentários, tablaturas,
-  linhas vazias e conteúdo malformado permanecem preservados.
+  linhas vazias e conteúdo malformado permanecem preservados ao abrir,
+  importar ou editar conteúdo fornecido pelo usuário. Essa preservação
+  conservadora não autoriza tablaturas na Biblioteca Oficial: a curadoria as
+  remove definitivamente dos arquivos que alimentam a publicação, preservando
+  trechos instrumentais úteis que não sejam tablaturas.
 - Edição preserva IdMusica e altera explicitamente só diretivas funcionais.
   appcifras_schema e appcifras_id são internos, ocultos do editor e
   reaplicados/validados pela aplicação.
