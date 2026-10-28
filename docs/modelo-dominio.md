@@ -187,36 +187,78 @@ Itens são independentes: o domínio suporta ocorrências repetidas da mesma
 música. A interface pode aplicar restrições de conveniência sem alterar essa
 capacidade. Remover item ou Lista não remove Música.
 
-## Evolução aprovada — contexto de ministração nas Listas
+## Evolução aprovada — contexto de ministração e histórico
 
-Uma Lista de Culto será normalmente criada para uma ministração e funcionará
-como memória operacional desse repertório; não haverá, por enquanto, entidade
-separada de execução nem estados planejada, executada ou cancelada. A Lista
-terá futuramente data e ministrante opcional, aplicável à Lista inteira, sem
-ministrante por música, múltiplos ministrantes ou override por item.
+Uma Lista de Culto é criada para uma ministração e funciona como memória
+operacional desse repertório. Ao ser salva, passa a compor o histórico; não há
+distinção inicial entre Lista planejada e efetivamente executada, nem entidade
+separada de Execução ou Histórico. Consultas históricas são projeções derivadas
+das próprias Listas.
+
+ListaCulto possuirá DataCulto e um Ministrante associado, ambos opcionais e
+aplicáveis à Lista inteira. A data ordena o histórico, identifica utilizações
+anteriores e permite consultas por período. `criadaEm` é metadado técnico
+imutável, preenchido automaticamente nas novas Listas com o instante de sua
+criação no aplicativo. Não substitui DataCulto nem representa a data do culto;
+serve somente para desempatar Listas com a mesma DataCulto e para ordenação
+técnica ou de apresentação entre Listas sem data. Ministrante é entidade local
+simples, identificada por IdMinistrante e com nome para seleção consistente.
+Seu cadastro não representa Usuário, conta, autenticação, permissão ou
+sincronização. Nesta evolução não há ministrante por música, múltiplos
+ministrantes ou override por item.
+
+Listas legadas, anteriores a essa evolução, mantêm DataCulto, IdMinistrante e
+`criadaEm` nulos. Permanecem válidas e utilizáveis; a migração não inventa
+nenhum desses valores. Seus itens mantêm tom histórico nulo, sem inferi-lo da
+preferência atual da VersaoMusica nem do tom original. Essas nulabilidades são
+compatibilidade histórica, não uma segunda origem para os dados.
+
+IdMinistrante é identidade estável e independente do nome. O nome pode ser
+alterado sem trocar a identidade ou romper referências de Listas. Ministrante
+associado a Lista histórica não é excluído fisicamente: pode ser arquivado ou
+inativado, deixando de aparecer normalmente em novas seleções, enquanto as
+referências existentes continuam válidas. Não há snapshot do nome na Lista;
+Listas antigas exibem o nome atual do Ministrante referenciado. Um Ministrante
+arquivado pode ser restaurado. Nomes iguais não tornam dois Ministrantes a
+mesma entidade: o cadastro admite duplicidade porque a identidade é o ID.
 
 Cada ItemListaCulto registra a Música, a versão escolhida e a posição. O detalhe
 da Lista permite trocar a versão desse item por outra versão ativa da mesma
 Música, sem alterar a principal nem outros itens. Uma referência existente a uma
 versão arquivada continua válida e abrível, embora arquivadas não sejam oferecidas
-para nova escolha. Em evolução posterior, o item também registrará o tom daquela
-ocasião. Esse tom será snapshot operacional: mudanças posteriores no último tom,
-na versão principal ou em outras Listas não alterarão uma Lista anterior.
-Pesquisa histórica e estatísticas futuras serão consultas derivadas das próprias
-Listas, não dados persistidos separadamente.
+para nova escolha. O item também registrará o tom daquela ocasião. Esse tom é
+snapshot operacional e fonte de verdade ao abrir a música pela Lista: mudanças
+posteriores no último tom da VersaoMusica, na versão principal ou em outras
+Listas não alteram uma Lista anterior. Alterar o tom dentro do contexto da Lista
+atualiza somente o ItemListaCulto correspondente e não altera a preferência
+global da VersaoMusica. Trocar a versão concreta do item preserva seu tom; se o
+tom era nulo, permanece nulo e nenhum histórico é consultado para preenchê-lo.
+Trocar o Ministrante da Lista também preserva todos os tons já registrados;
+somente novas inclusões passam a usar o novo Ministrante no fallback.
 
 ## Preferência de tom de execução
 
 O último tom é preferência local associada a IdVersaoMusica, separada de Música
-e ChordPro. Não é histórico, tom original nem tom da Lista. A regra exata para
-usá-lo como sugestão inicial de um novo ItemListaCulto permanece aberta; depois
-da inclusão, o tom snapshot do item será independente.
+e ChordPro. Não é histórico, tom original nem tom da Lista. Fora de uma Lista,
+a leitura usa essa preferência. Ao adicionar uma música a uma Lista com
+Ministrante definido, o tom inicial segue esta precedência: último tom usado
+por esse Ministrante na mesma Música e VersaoMusica; na ausência, último tom
+geral da VersaoMusica; na ausência, tom original. Depois da inclusão, o tom do
+ItemListaCulto é independente dessas preferências.
+
+O último tom histórico considera somente itens com tom não nulo em Listas cuja
+DataCulto seja conhecida. A ordem é DataCulto decrescente e, apenas quando ela
+for igual, `criadaEm` decrescente. Nenhum ID, UUID, `rowid`, posição ou outro
+identificador funciona como critério temporal. Listas sem DataCulto continuam
+historicamente válidas e podem ser ordenadas entre si por `criadaEm` para
+apresentação, mas não participam da determinação da última utilização.
 
 ## Limites atuais
 
 Biblioteca Musical é escopo organizacional, não Aggregate Root formal no MVP.
-Não existem ainda entidades implementadas de Coleção, Usuário, Equipe ou
-Ministrante. OrigemSincronizada é somente o vínculo mínimo descrito acima, sem
+Não existem ainda entidades implementadas de Coleção, Usuário ou Equipe.
+Ministrante é uma evolução aprovada como cadastro exclusivamente local.
+OrigemSincronizada é somente o vínculo mínimo descrito acima, sem
 hierarquia genérica de fontes. A Biblioteca atual é única, principal e oficial;
 múltiplas bibliotecas públicas, assináveis ou comunitárias são possibilidade
 distante e não orientam a arquitetura atual.

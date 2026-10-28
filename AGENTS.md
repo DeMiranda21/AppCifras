@@ -48,7 +48,8 @@ Inclui:
 - visualização de cifras, ajuste de fonte e transposição;
 - visualização por cifras, graus ou ambas;
 - Listas de Culto com criação, inclusão, reordenação, navegação e versão
-  concreta por item; tom por item permanece evolução aprovada;
+  concreta por item; contexto histórico por data, Ministrante e tom por item é
+  evolução aprovada antes da preparação final de release;
 - atualização a partir de uma única Biblioteca Oficial pública, sem login nem
   escolha de pasta remota, com falhas isoladas por arquivo e uso local
   posterior;
@@ -61,7 +62,8 @@ automática, estatísticas, Bluetooth, MIDI, IA e colaboração. Contexto de
 ministração em Listas e importação em lote são evoluções aprovadas.
 Versões/arranjos têm fundação, seleção, criação, edição da versão concreta e
 ciclo de vida entregues até a Fatia C2. Novas expansões e o rework amplo do
-editor serão reavaliados depois de uso real em ensaios e cultos.
+editor serão reavaliados depois de uso real em ensaios e cultos. Histórico
+derivado das Listas não é subsistema autônomo.
 
 ## Regras de domínio do MVP
 
@@ -69,8 +71,9 @@ editor serão reavaliados depois de uso real em ensaios e cultos.
   localmente.
 - Biblioteca Musical é um escopo organizacional, não um Aggregate Root formal
   no MVP.
-- Lista de Culto tem identidade própria e seus itens referenciam músicas e a
-  versão escolhida por ID. O tom da ocasião permanece evolução futura.
+- Lista de Culto tem identidade própria, data e Ministrante associado na
+  evolução aprovada; seus itens referenciam músicas e a versão escolhida por ID
+  e guardarão o tom histórico da ocorrência.
 - Registro de Tom e Tag não são entidades completas no MVP. Origem sincronizada
   é um vínculo leve de uma VersaoMusica com a única Biblioteca Oficial; não
   criar uma abstração genérica de fontes ou bibliotecas. Não criar subsistema

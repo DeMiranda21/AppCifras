@@ -110,9 +110,12 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 - A persistência é segura por Música e reutiliza transações e gravação
   `.tmp`/`.bak`. A Biblioteca deve permanecer utilizável depois de falha ou
   interrupção, sem estado parcial observável.
-- A seleção Android por Storage Access Framework é implementação transitória
-  já entregue. Não deve ser removida antes da migração HTTPS validada, nem deve
-  orientar novas decisões do protocolo oficial.
+- **Decisão histórica superada:** a seleção Android por Storage Access Framework
+  serviu à fundação S1–S5, mas foi removida do runtime após a migração M1–M6.
+  A Biblioteca Oficial por manifesto e arquivos HTTPS é o único mecanismo
+  vigente. Estruturas físicas legadas do banco podem permanecer somente para
+  compatibilidade com bancos existentes, sem caso de uso, acesso no runtime ou
+  orientação futura para restaurar ou preservar o fluxo SAF executável.
 - O resultado informa quantidades adicionadas, atualizadas, inalteradas, com
   origem ausente e ignoradas com erro. Cada erro mostra arquivo e motivo breve;
   não há dashboard de sincronização no MVP.
@@ -295,19 +298,63 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   arquivamento de Música permanece evolução futura.
 - Remoção de item exige confirmação. Visualização aberta pela Lista navega na
   ordem capturada sem criar rota por música.
-- Uma Lista será normalmente criada para uma ministração e servirá como sua
-  memória operacional. Não haverá entidade separada de histórico de execução,
-  estados planejada/executada/cancelada, marcação de execução ou confirmação
-  música a música nesta fase.
-- A evolução aprovada dará à Lista data e ministrante opcional, aplicado à
-  Lista inteira; não haverá ministrante por música, múltiplos ministrantes ou
-  override por item.
-- Em evolução posterior, ItemListaCulto também registrará o tom da ocasião. O
-  tom será snapshot operacional e não mudará quando a preferência de último tom,
-  a versão principal ou outra Lista for alterada. O Item referencia a versão
+- Uma Lista salva representa informação histórica válida e servirá como memória
+  operacional da ministração. Não haverá entidade separada de Histórico ou
+  Execução, distinção inicial entre Lista planejada e executada, marcação de
+  execução ou confirmação música a música. A futura tela Histórico consultará
+  dados derivados das Listas e não será fonte independente.
+- A evolução aprovada dará à Lista DataCulto e Ministrante opcionais, aplicados
+  à Lista inteira. Ministrante será cadastro local simples e selecionável, sem
+  texto livre por Lista, conta, autenticação, permissão ou sincronização. Não
+  haverá ministrante por música, múltiplos ministrantes ou override por item.
+- DataCulto e Ministrante são opcionais. Toda Lista nova recebe `criadaEm`
+  automaticamente, como instante técnico e imutável de criação no aplicativo.
+  Ele não substitui DataCulto, não representa a data do culto e não precisa ser
+  exibido normalmente.
+- Listas legadas mantêm DataCulto, Ministrante e `criadaEm` nulos e continuam
+  válidas e utilizáveis. Seus itens mantêm tom histórico nulo. A migração não
+  inventará nenhum desses valores nem usará preferência atual ou tom original
+  como fato histórico. A apresentação usará “Data não informada”, “Ministrante
+  não informado” e “Tom não registrado”, ou textos equivalentes.
+- Ministrante possui identidade estável própria, independente do nome. Pode ser
+  renomeado sem romper referências. Se estiver associado a Listas históricas,
+  não será excluído fisicamente: poderá ser arquivado ou inativado, ficando fora
+  das novas seleções usuais e preservando as referências existentes. Não haverá
+  snapshot histórico do nome; a Lista exibirá o nome atual cadastrado. O ciclo
+  de vida da H1 usa arquivamento e restauração, sem exclusão física.
+- Nomes de Ministrantes não são únicos. Dois IDs podem possuir o mesmo nome e
+  não haverá restrição `UNIQUE(nome)`. Ao cadastrar nome equivalente ao de um
+  Ministrante ativo, a futura interface alertará sobre possível duplicação e
+  exigirá confirmação explícita, mas permitirá concluir. A comparação do alerta
+  ignorará diferenças triviais de espaços e caixa e reutilizará a normalização
+  vigente quando apropriado.
+- ItemListaCulto registrará o tom da ocasião. Ao abrir pela Lista, esse tom é a
+  fonte de verdade; alterá-lo nesse contexto atualiza somente o Item. O valor é
+  snapshot histórico e não muda quando a preferência de último tom, a versão
+  principal ou outra Lista for alterada. O Item referencia a versão
   concreta e não armazena snapshot completo de ChordPro. A Lista preserva a
   memória operacional de repertório e da versão escolhida; não congela o arranjo.
   Por isso, atualizar a principal também atualiza sua leitura em Listas antigas.
-- A regra de sugestão inicial entre último tom e tom original da versão ao
-  incluir uma música em uma Lista permanece aberta. Pesquisa histórica e
-  estatísticas futuras serão derivadas das Listas.
+- Ao incluir uma música em Lista com Ministrante definido, o tom inicial segue:
+  último tom desse Ministrante na mesma Música e VersaoMusica; depois, último
+  tom geral da VersaoMusica; por fim, tom original. Depois de salvo, o tom do
+  Item não acompanha mudanças dessas preferências.
+- O último tom do Ministrante considera somente itens com tom não nulo e Listas
+  com DataCulto conhecida. Ordena por DataCulto decrescente e, em caso de
+  igualdade, exclusivamente por `criadaEm` decrescente. ID, UUID, `rowid`,
+  posição e outros identificadores não são critérios temporais. Lista sem
+  DataCulto não participa dessa determinação, ainda que possa ser ordenada com
+  outras Listas sem data por `criadaEm` para apresentação.
+- Alterar o Ministrante de uma Lista preserva os tons existentes; apenas novas
+  músicas usam o novo Ministrante no fallback. Alterar o tom dentro da Lista
+  atualiza somente o ItemListaCulto e não atualiza a preferência global da
+  VersaoMusica. Item legado nulo pode usar preferência global e depois tom
+  original apenas durante a execução; somente alteração explícita persiste tom.
+- Trocar a VersaoMusica de um ItemListaCulto preserva o tom já definido, sem
+  recalcular nem consultar outro histórico. Se o tom era nulo, permanece nulo e
+  o fallback temporário passa a considerar a nova versão.
+- Consultas históricas considerarão o Ministrante e permitirão recuperar, por
+  Música e VersaoMusica, última utilização, último tom e ocorrências anteriores.
+  Energia e tempo desde a última utilização apoiarão filtros de repertório;
+  nunca usada, mais de 30 dias e mais de 60 dias são evoluções previstas. Não
+  está aprovado algoritmo automático de montagem ou sugestão de repertório.

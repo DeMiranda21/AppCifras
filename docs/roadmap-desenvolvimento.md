@@ -128,15 +128,45 @@ foi removida do runtime e da interface.
 - executar a jornada completa de Biblioteca, pesquisa, música, transposição,
   Lista, versão, ensaio e culto no Samsung Galaxy A72.
 
-## Prioridade 2 — Iniciar uso real e fechar bloqueios observados
+## Prioridade 2 — Histórico derivado das Listas
 
-Com a sincronização validada, iniciar uso pessoal real. Corrigir primeiro apenas
-problemas que impeçam ou tornem insegura a jornada principal. O tom snapshot por
-ItemListaCulto é o candidato funcional mais próximo, mas só passa à frente se o
-uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, o
-último tom por versão mantém o fluxo utilizável.
+O histórico será desenvolvido antes da preparação final de release. As Listas
+de Culto são sua fonte de verdade; não será criado subsistema autônomo de
+Histórico ou Execução. A sequência aprovada é:
 
-## Depois do uso real
+### H1 — Base histórica
+
+- criar entidade e cadastro local simples de Ministrante;
+- acrescentar DataCulto opcional, `criadaEm` técnico e Ministrante opcional à
+  ListaCulto;
+- acrescentar o tom opcional da ocorrência ao ItemListaCulto;
+- migrar a persistência preservando as Listas existentes;
+- aplicar o fallback de tom: último usado pelo mesmo Ministrante na mesma
+  Música e VersaoMusica, último geral da VersaoMusica e tom original.
+
+### H2 — Uso do histórico na Lista
+
+- selecionar o Ministrante da Lista;
+- sugerir o último tom daquele Ministrante;
+- alterar e persistir o tom específico do ItemListaCulto;
+- mostrar resumo histórico ao adicionar músicas.
+
+### H3 — Tela Histórico
+
+- consultar por cultos/Listas;
+- consultar por músicas;
+- filtrar por Ministrante;
+- apresentar datas, versões e tons anteriores.
+
+### H4 — Apoio à escolha de repertório
+
+- combinar Energia, Ministrante e tempo desde a última utilização;
+- filtrar músicas nunca usadas, não usadas há mais de 30 dias ou há mais de
+  60 dias;
+- acrescentar outros apoios somente quando o uso real justificar, sem algoritmo
+  automático de montagem de repertório aprovado.
+
+## Depois da base histórica e do uso real
 
 1. **Rework do editor comum:** reavaliar quais operações realmente causam
    atrito. Adaptar reconhecimento estrutural, blocos e transformações puras para
@@ -146,9 +176,8 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
    da entrada para localizar, em linguagem simples, cada trecho que bloqueia a
    transposição, quando essa limitação se mostrar frequente.
 3. **Listas e versões:** ordenar pela evidência de uso a escolha de versão na
-   inclusão inicial (C3), o tom da ocasião por item, data e ministrante opcional
-   e consultas de Listas anteriores. A Lista continua sendo a memória
-   operacional, sem entidade autônoma de histórico.
+   inclusão inicial (C3) e outras conveniências. A Lista continua sendo a
+   memória operacional do histórico.
 4. **Desempenho:** corrigir gargalos medidos ou regressões perceptíveis. Não abrir
    uma rodada de micro-otimizações sem evidência no A72 ou em bibliotecas reais.
 
@@ -160,9 +189,8 @@ uso mostrar que perder o tom da ocasião prejudica ensaios ou cultos; até lá, 
 | Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
 | Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
 | C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
-| Tom por ItemListaCulto | Primeiro candidato pós-sincronização | Perda recorrente do tom da ocasião |
-| Data e ministrante da Lista | Adiável | Necessidade de consulta por contexto |
-| Histórico e estatísticas | Adiáveis | Derivar das Listas quando houver volume real |
+| Histórico H1–H4 | Aprovado antes da preparação final de release | Executar na sequência definida |
+| Estatísticas adicionais | Adiáveis | Derivar das Listas quando houver volume real |
 | Otimizações gerais | Adiáveis | Perfil ou regressão perceptível no A72 |
 | Importação em lote | Adiável e separada da sincronização | Necessidade de fontes não curadas |
 | Múltiplas bibliotecas | Distante | Não orienta a arquitetura atual |
@@ -203,6 +231,6 @@ transições.
     S1–S5 → manifesto + publicador → hospedagem e cliente HTTPS
     Cliente HTTPS + aplicação incremental → nova UX → validação A72 → remoção SAF
     Uso real do editor → recorte do rework e diagnóstico da transposição
-    Versões/arranjos entregues → C3 e tom por item, se o uso justificar
+    Versões/arranjos entregues → H1 → H2 → H3 → H4 → preparação final de release
     Contexto da Lista → consultas e estatísticas derivadas
     Biblioteca Oficial validada → backup e fontes remotas futuras

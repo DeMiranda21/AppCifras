@@ -24,13 +24,6 @@ continua sendo a notação aceita nesta etapa, rótulos conhecidos permanecem
 texto e a dúvida não vira acorde automaticamente. Permanecem abertos apenas os
 limites heurísticos necessários para manter baixa a taxa de falsos positivos.
 
-## Último tom e novo Item de Lista
-
-Definir a regra exata para sugerir o tom inicial quando uma música for incluída
-em uma Lista de Culto: usar o último tom salvo para a versão, o tom original da
-versão escolhida ou outra regra explícita. Depois de criado, o tom snapshot do
-ItemListaCulto será independente da preferência de último tom.
-
 ## Importação em lote
 
 Continuam abertas:
@@ -41,14 +34,6 @@ Continuam abertas:
   revisão obrigatória, rascunho, ignorar com relatório ou outra alternativa;
 - necessidade de preservar permanentemente o texto original `.txt` depois da
   conversão para ChordPro.
-
-## Consultas e estatísticas derivadas das Listas
-
-Definir futuramente se consultas e estatísticas usarão todas as Listas ou algum
-filtro explícito. A Lista é memória operacional do repertório; caso o uso real
-revele necessidade de distinguir planejamento de repertório efetivamente
-tocado, reavaliar essa simplificação antes de introduzir estados ou registros
-de execução.
 
 ## Múltiplas bibliotecas e compartilhamento
 

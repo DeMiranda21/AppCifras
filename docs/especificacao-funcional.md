@@ -128,12 +128,70 @@ tabela física legada pode permanecer no banco para compatibilidade de schema.
 ### Demais evoluções
 
 Versões e arranjos estão entregues até a edição da versão concreta. A escolha
-de versão na inclusão inicial em Lista, o tom da ocasião por item, data,
-ministrante, consulta de repertórios anteriores, importação múltipla, BPM,
-backup e estatísticas permanecem evoluções. Elas serão ordenadas por problemas
-observados no uso real; consultas históricas e estatísticas continuarão
-derivadas das próprias Listas, sem subsistema independente de execução nesta
-fase.
+de versão na inclusão inicial em Lista, importação múltipla, BPM, backup e
+estatísticas permanecem evoluções.
+
+### Contexto da Lista e histórico
+
+ListaCulto terá DataCulto opcional e um Ministrante opcional de cadastro local
+simples. Toda Lista nova recebe também `criadaEm`, instante técnico imutável de
+criação no aplicativo que não substitui nem representa a data do culto. Ao ser
+salva, a Lista compõe o histórico sem exigir confirmação de execução e sem
+distinguir planejamento de repertório efetivamente tocado. Não haverá entidade
+autônoma de Histórico ou Execução.
+
+Listas anteriores à H1 mantêm DataCulto, Ministrante e `criadaEm` nulos; seus
+itens mantêm tom histórico nulo. Continuam válidas, utilizáveis e abrindo com a
+mesma Música, VersaoMusica, posição, ordem e referências. A interface
+apresentará “Data não informada”, “Ministrante não informado” e “Tom não
+registrado”, ou textos equivalentes, sem preencher esses valores
+automaticamente.
+
+O cadastro permitirá renomear Ministrante preservando as Listas associadas.
+Ministrantes arquivados ou inativos deixarão de aparecer normalmente na seleção
+de novas Listas, mas continuarão visíveis nas Listas antigas. Como não haverá
+snapshot do nome nesta etapa, essas Listas exibirão o nome atual do cadastro.
+Eles poderão ser restaurados. Nomes iguais serão permitidos porque a identidade
+é o IdMinistrante; ao detectar nome equivalente ao de cadastro ativo, a futura
+interface alertará sobre possível duplicação e permitirá confirmação explícita.
+
+Cada ItemListaCulto guardará o tom daquela ocorrência. Abrir pela Biblioteca
+continua usando o último tom geral da VersaoMusica; abrir pela Lista usa o tom
+do Item. Alterar o tom nesse contexto persiste no Item, sem modificar Listas
+anteriores, sem acompanhar mudanças posteriores e sem atualizar a preferência
+global. Item legado sem tom usa preferência global e depois tom original apenas
+temporariamente; esse fallback só passa a ser persistido quando o usuário
+altera explicitamente o tom.
+
+Trocar o Ministrante de uma Lista preserva todos os tons existentes e afeta
+somente o fallback de músicas adicionadas depois. Trocar a versão de um item
+também preserva seu tom; item com tom nulo continua nulo e usa o fallback
+temporário correspondente à nova versão.
+
+Ao adicionar uma música a uma Lista com Ministrante definido, o aplicativo
+sugere, nesta ordem, o último tom usado por esse Ministrante na mesma Música e
+VersaoMusica, o último tom geral da VersaoMusica e o tom original. A seleção de
+músicas poderá mostrar Energia, última utilização e último tom desse
+Ministrante. Filtros previstos incluem Ministrante, Energia, nunca usada, não
+usada há mais de 30 dias e não usada há mais de 60 dias. Outros intervalos
+dependem do uso real; não há algoritmo automático aprovado para montar ou
+sugerir repertórios.
+
+“Último tom” considera somente itens com tom registrado e Listas com DataCulto
+conhecida. A consulta ordena por DataCulto decrescente e usa `criadaEm`
+decrescente exclusivamente para desempatar o mesmo dia. Listas sem DataCulto
+podem ser ordenadas entre si por `criadaEm` para apresentação, mas não
+participam da determinação da última utilização.
+
+Uma futura tela Histórico consultará dados derivados das Listas em dois modos:
+
+- por cultos/Listas, exibindo data, Ministrante, músicas, versões e tons;
+- por músicas, com pesquisa, seleção de Ministrante, última utilização, último
+  tom e ocorrências anteriores.
+
+A intenção atual é que a futura tela inicial funcione como menu principal com
+Biblioteca, Listas e Histórico. A posição definitiva e os detalhes visuais não
+estão aprovados.
 
 Sincronização e importação são fluxos distintos. Importação genérica e em lote
 permanece uma evolução própria. Colaboração e múltiplas bibliotecas não fazem
