@@ -1,11 +1,22 @@
+import '../objetos_de_valor/data_culto.dart';
 import '../objetos_de_valor/id_lista_culto.dart';
+import '../objetos_de_valor/id_ministrante.dart';
 
 class ListaCulto {
-  ListaCulto({required this.id, required String nome})
-    : nome = _validarNome(nome);
+  ListaCulto({
+    required this.id,
+    required String nome,
+    this.data,
+    this.idMinistrante,
+    DateTime? criadaEm,
+  }) : nome = _validarNome(nome),
+       criadaEm = criadaEm?.toUtc();
 
   final IdListaCulto id;
   final String nome;
+  final DataCulto? data;
+  final IdMinistrante? idMinistrante;
+  final DateTime? criadaEm;
 
   static String _validarNome(String nome) {
     final nomeNormalizado = nome.trim();

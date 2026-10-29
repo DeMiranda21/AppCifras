@@ -153,6 +153,7 @@ class TrocarVersaoItemListaCulto {
       idMusica: item.idMusica,
       idVersaoMusica: versao.id,
       posicao: item.posicao,
+      tom: item.tom,
     );
   }
 }

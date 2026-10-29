@@ -2,6 +2,7 @@ import '../objetos_de_valor/id_item_lista_culto.dart';
 import '../objetos_de_valor/id_lista_culto.dart';
 import '../objetos_de_valor/id_musica.dart';
 import '../objetos_de_valor/id_versao_musica.dart';
+import '../objetos_de_valor/tom.dart';
 
 class ItemListaCulto {
   ItemListaCulto({
@@ -10,6 +11,7 @@ class ItemListaCulto {
     required this.idMusica,
     IdVersaoMusica? idVersaoMusica,
     required this.posicao,
+    this.tom,
   }) : idVersaoMusica = idVersaoMusica ?? IdVersaoMusica(idMusica.valor) {
     if (posicao < 0) {
       throw ArgumentError.value(
@@ -25,6 +27,7 @@ class ItemListaCulto {
   final IdMusica idMusica;
   final IdVersaoMusica idVersaoMusica;
   final int posicao;
+  final Tom? tom;
 
   @override
   bool operator ==(Object other) => other is ItemListaCulto && id == other.id;
