@@ -119,6 +119,18 @@ class IndicePesquisaMusicas<T> {
                   entrada.classificacao.energia == consulta.energia) &&
               consulta.tags.every(entrada.classificacao.tags.contains),
         )
+        .toList();
+    if (texto.isNotEmpty) {
+      entradas.sort((primeira, segunda) {
+        final prioridade = primeira
+            .prioridadePara(texto)
+            .compareTo(segunda.prioridadePara(texto));
+        return prioridade != 0
+            ? prioridade
+            : _compararPorTitulo(primeira, segunda);
+      });
+    }
+    return entradas
         .map(
           (entrada) => ResultadoPesquisaMusica(
             musica: entrada.musica,
@@ -173,6 +185,14 @@ class TextoPesquisaMusica<T> {
   final String tituloNormalizado;
   final String artistaNormalizado;
   final String textoNormalizado;
+
+  int prioridadePara(String consultaNormalizada) {
+    if (tituloNormalizado == consultaNormalizada) return 0;
+    if (tituloNormalizado.startsWith(consultaNormalizada)) return 1;
+    if (tituloNormalizado.contains(consultaNormalizada)) return 2;
+    if (artistaNormalizado.contains(consultaNormalizada)) return 3;
+    return 4;
+  }
 
   String? primeiraLinhaCorrespondente(String textoNormalizado) {
     for (final linha in ExtratorConteudoVisivelChordPro.extrairLinhas(

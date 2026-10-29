@@ -41,6 +41,94 @@ void main() {
     ]);
   });
 
+  test('prioriza título exato, inicial, parcial, artista e somente letra', () {
+    final somenteLetra = musica(
+      'letra',
+      'A Alvorada',
+      'Outro',
+      '[C]Cantamos graça',
+    );
+    final artista = musica(
+      'artista',
+      'B Canção',
+      'Ministério Graça Viva',
+      '[C]Outra letra',
+    );
+    final tituloContem = musica(
+      'contem',
+      'Canto da Graça',
+      'Outro',
+      '[C]Outra letra',
+    );
+    final tituloInicia = musica(
+      'inicia',
+      'Graça Infinita',
+      'Outro',
+      '[C]Outra letra',
+    );
+    final tituloExato = musica('exato', 'Graça', 'Outro', '[C]Outra letra');
+    final indice = servico.criarIndice([
+      somenteLetra,
+      artista,
+      tituloContem,
+      tituloInicia,
+      tituloExato,
+    ]);
+
+    expect(indice.filtrar(ConsultaPesquisaMusicas(texto: 'graca')), [
+      tituloExato,
+      tituloInicia,
+      tituloContem,
+      artista,
+      somenteLetra,
+    ]);
+  });
+
+  test('ordena alfabeticamente e desempata por ID dentro da relevância', () {
+    final tituloB = musica('b', 'Graça B', 'Outro', '[C]Letra');
+    final tituloA2 = musica('2', 'Graça A', 'Outro', '[C]Letra');
+    final tituloA1 = musica('1', 'Graça A', 'Outro', '[C]Letra');
+    final indice = servico.criarIndice([tituloB, tituloA2, tituloA1]);
+
+    expect(indice.filtrar(ConsultaPesquisaMusicas(texto: 'graca')), [
+      tituloA1,
+      tituloA2,
+      tituloB,
+    ]);
+  });
+
+  test('relevância preserva filtros e trecho correspondente da letra', () {
+    final porTitulo = musica('titulo', 'Graça Maior', 'Outro', '[C]Sem alvo');
+    final porLetra = musica('letra', 'Alvorada', 'Outro', '[C]Primeira graça');
+    final indice = servico.criarIndice(
+      [porLetra, porTitulo],
+      classificacoes: {
+        porTitulo.id: ClassificacaoMusica(
+          energia: EnergiaMusica.calma,
+          tags: [TagMusica('Culto')],
+        ),
+        porLetra.id: ClassificacaoMusica(
+          energia: EnergiaMusica.calma,
+          tags: [TagMusica('Culto')],
+        ),
+      },
+    );
+
+    final resultados = indice.pesquisar(
+      ConsultaPesquisaMusicas(
+        texto: 'graca',
+        energia: EnergiaMusica.calma,
+        tags: [TagMusica('culto')],
+      ),
+    );
+
+    expect(resultados.map((resultado) => resultado.musica), [
+      porTitulo,
+      porLetra,
+    ]);
+    expect(resultados.last.trechoLetra, 'Primeira graça');
+  });
+
   test('normaliza caixa, acentos, espaços e expressão completa', () {
     final musicaComLetra = musica(
       'musica-1',
