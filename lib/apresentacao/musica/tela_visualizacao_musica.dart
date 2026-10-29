@@ -7,6 +7,7 @@ import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
 import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
 import '../../aplicacao/visualizacao/alterar_tom_execucao.dart';
 import '../../aplicacao/visualizacao/projetar_musica_para_visualizacao.dart';
 import '../../dominio/chordpro/documento_chordpro.dart';
@@ -42,7 +43,9 @@ class TelaVisualizacaoMusica extends StatefulWidget {
     this.removerUltimoTomExecucao,
     this.obterClassificacaoMusica,
     this.salvarClassificacaoMusica,
+    this.aoAlterarBiblioteca,
     this.contextoListaCulto,
+    this.medicaoDesempenho,
     this.controleTelaAtiva = const ControleTelaAtivaWakelockPlus(),
   });
 
@@ -56,6 +59,7 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final AtualizarMusica atualizarMusica;
   final ObterClassificacaoMusica? obterClassificacaoMusica;
   final SalvarClassificacaoMusica? salvarClassificacaoMusica;
+  final VoidCallback? aoAlterarBiblioteca;
   final ExcluirMusica excluirMusica;
   final ProjetarMusicaParaVisualizacao? projetarMusicaParaVisualizacao;
   final AlterarTomExecucao? alterarTomExecucao;
@@ -63,6 +67,7 @@ class TelaVisualizacaoMusica extends StatefulWidget {
   final SalvarUltimoTomExecucao? salvarUltimoTomExecucao;
   final RemoverUltimoTomExecucao? removerUltimoTomExecucao;
   final ContextoNavegacaoListaCulto? contextoListaCulto;
+  final MedicaoDesempenhoVisualizacao? medicaoDesempenho;
   final ControleTelaAtiva controleTelaAtiva;
 
   @override
@@ -94,6 +99,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
   var _gestoPossuiMultiplosPonteiros = false;
   var _excluindo = false;
   String? _erroExclusao;
+  var _conclusaoMedicaoAgendada = false;
 
   @override
   void initState() {
@@ -159,6 +165,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
       unawaited(_ativarTelaAtiva());
     }
     if (alterada == true && mounted) {
+      widget.aoAlterarBiblioteca?.call();
       setState(() {
         if (_contextoListaCulto == null && idSalvo != null) {
           _idVersaoMusicaAtual = idSalvo!;
@@ -507,7 +514,7 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         builder: (context, resultado) {
           final dadosVisualizacao = resultado.data;
           final musica = dadosVisualizacao?.musica;
-          return Scaffold(
+          Widget construirTela() => Scaffold(
             appBar: AppBar(
               title: const Text('Cifra'),
               actions: [
@@ -611,18 +618,54 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
                 ? null
                 : _BarraNavegacaoListaCulto(contexto: _contextoListaCulto!),
           );
+          final medicao = widget.medicaoDesempenho;
+          final tela = medicao == null
+              ? construirTela()
+              : medicao.medirConstrucaoInterface(construirTela);
+          if (resultado.connectionState == ConnectionState.done) {
+            _agendarConclusaoMedicao(
+              sucesso: !resultado.hasError && musica != null,
+            );
+          }
+          return tela;
         },
       );
 
-  Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() async {
-    final catalogo = await widget.obterMusicaPorId.executar(_idMusicaAtual);
+  void _agendarConclusaoMedicao({required bool sucesso}) {
+    if (_conclusaoMedicaoAgendada || widget.medicaoDesempenho == null) return;
+    _conclusaoMedicaoAgendada = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.medicaoDesempenho?.concluirApresentacao(sucesso: sucesso);
+    });
+  }
+
+  Future<_DadosVisualizacaoMusica?> _carregarDadosVisualizacao() {
+    final medicao = widget.medicaoDesempenho;
+    return medicao == null
+        ? _executarCarregamentoDadosVisualizacao()
+        : medicao.executarNoContexto(_executarCarregamentoDadosVisualizacao);
+  }
+
+  Future<_DadosVisualizacaoMusica?>
+  _executarCarregamentoDadosVisualizacao() async {
+    final medicao = widget.medicaoDesempenho;
+    final catalogo = medicao == null
+        ? await widget.obterMusicaPorId.executar(_idMusicaAtual)
+        : await medicao.medirCarregamentoCatalogo(
+            () => widget.obterMusicaPorId.executar(_idMusicaAtual),
+          );
     if (catalogo == null) {
+      medicao?.marcarDadosProntos();
       return null;
     }
-    final versao =
+    Future<VersaoMusica> carregarVersao() async =>
         await widget.obterVersaoMusicaPorId?.executar(_idVersaoMusicaAtual) ??
         catalogo.versaoPrincipal;
+    final versao = medicao == null
+        ? await carregarVersao()
+        : await medicao.medirCarregamentoVersao(carregarVersao);
     if (versao.idMusica != catalogo.id) {
+      medicao?.marcarDadosProntos();
       return null;
     }
     final versaoParaProjecao = versao.principal
@@ -642,11 +685,13 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
       versaoPrincipal: versaoParaProjecao,
     );
     final ultimoTom = await widget.obterUltimoTomExecucao?.executar(versao.id);
-    return _DadosVisualizacaoMusica(
+    final dados = _DadosVisualizacaoMusica(
       musica: musica,
       versao: versao,
       tomInicial: ultimoTom ?? musica.tomOriginal,
     );
+    medicao?.marcarDadosProntos();
+    return dados;
   }
 
   ProjecaoMusicaVisualizacao _projecaoAtual(Musica musica, Tom tomInicial) {
@@ -657,7 +702,12 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         _tomDaProjecaoEmCache == tomExecucao) {
       return projecaoEmCache;
     }
-    final resultado = _projetarMusica.executar(musica, tomExecucao);
+    final medicao = widget.medicaoDesempenho;
+    final resultado = medicao == null
+        ? _projetarMusica.executar(musica, tomExecucao)
+        : medicao.medirProcessamentoMusical(
+            () => _projetarMusica.executar(musica, tomExecucao),
+          );
     final projecao = resultado is ProjecaoMusicaVisualizacao
         ? resultado
         : (resultado as TransposicaoVisualizacaoIndisponivel)
@@ -676,7 +726,12 @@ class _TelaVisualizacaoMusicaState extends State<TelaVisualizacaoMusica> {
         _idVersaoDaProjecaoEmCache == _idVersaoMusicaAtual) {
       return problemasEmCache;
     }
-    final problemas = _projetarMusica.problemasDeTransposicao(musica);
+    final medicao = widget.medicaoDesempenho;
+    final problemas = medicao == null
+        ? _projetarMusica.problemasDeTransposicao(musica)
+        : medicao.medirProcessamentoMusical(
+            () => _projetarMusica.problemasDeTransposicao(musica),
+          );
     _problemasEmCache = problemas;
     return problemas;
   }

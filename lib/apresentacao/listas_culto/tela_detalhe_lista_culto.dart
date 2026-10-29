@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
+
 import '../../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../../aplicacao/casos_de_uso/listas_culto.dart';
 import '../../aplicacao/casos_de_uso/musicas.dart';
@@ -245,6 +247,10 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
     List<ItemDetalheListaCulto> itens,
     int indiceAtual,
   ) async {
+    final medicao = MedicaoDesempenhoVisualizacao.iniciar(
+      origem: OrigemAberturaVisualizacao.listaCulto,
+      registrar: debugPrint,
+    );
     final contexto = ContextoNavegacaoListaCulto(
       idLista: widget.lista.id,
       itens: [for (final item in itens) item.item],
@@ -264,6 +270,7 @@ class _TelaDetalheListaCultoState extends State<TelaDetalheListaCulto> {
           salvarUltimoTomExecucao: widget.salvarUltimoTomExecucao,
           removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
           contextoListaCulto: contexto,
+          medicaoDesempenho: medicao,
         ),
       ),
     );

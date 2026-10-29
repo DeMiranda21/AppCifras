@@ -5,19 +5,33 @@ import '../../dominio/erros/lista_culto_nao_encontrada.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
+import '../../dominio/objetos_de_valor/id_ministrante.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_listas_culto.dart';
 import 'banco_biblioteca.dart';
+import 'codec_data_culto_persistencia.dart';
+import 'codec_tom_persistencia.dart';
 
 class RepositorioListasCultoLocal implements RepositorioListasCulto {
-  const RepositorioListasCultoLocal(this._banco);
+  const RepositorioListasCultoLocal(
+    this._banco, {
+    this._codecData = const CodecDataCultoPersistencia(),
+    this._codecTom = const CodecTomPersistencia(),
+  });
 
   final BancoBiblioteca _banco;
+  final CodecDataCultoPersistencia _codecData;
+  final CodecTomPersistencia _codecTom;
 
   @override
-  Future<void> salvar(ListaCulto lista) =>
-      _banco.inserirListaCulto(id: lista.id.valor, nome: lista.nome);
+  Future<void> salvar(ListaCulto lista) => _banco.inserirListaCulto(
+    id: lista.id.valor,
+    nome: lista.nome,
+    data: lista.data == null ? null : _codecData.codificar(lista.data!),
+    idMinistrante: lista.idMinistrante?.valor,
+    criadaEm: lista.criadaEm,
+  );
 
   @override
   Future<ListaCulto?> obterPorId(IdListaCulto id) async {
@@ -25,17 +39,13 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
     if (lista == null) {
       return null;
     }
-    return ListaCulto(id: IdListaCulto(lista.id), nome: lista.nome);
+    return _mapearLista(lista);
   }
 
   @override
   Future<List<ListaCulto>> listar() async {
     final listas = await _banco.listarListasCulto();
-    return listas
-        .map(
-          (lista) => ListaCulto(id: IdListaCulto(lista.id), nome: lista.nome),
-        )
-        .toList(growable: false);
+    return listas.map(_mapearLista).toList(growable: false);
   }
 
   @override
@@ -70,6 +80,7 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
             idMusica: IdMusica(item.idMusica),
             idVersaoMusica: IdVersaoMusica(item.idVersaoMusica),
             posicao: item.posicao,
+            tom: item.tom == null ? null : _codecTom.decodificar(item.tom!),
           ),
         )
         .toList(growable: false);
@@ -95,6 +106,7 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
       idMusica: item.idMusica.valor,
       idVersaoMusica: item.idVersaoMusica.valor,
       posicao: item.posicao,
+      tom: item.tom == null ? null : _codecTom.codificar(item.tom!),
     );
   }
 
@@ -158,4 +170,14 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
       throw ListaCultoNaoEncontrada(id);
     }
   }
+
+  ListaCulto _mapearLista(ListasCultoData lista) => ListaCulto(
+    id: IdListaCulto(lista.id),
+    nome: lista.nome,
+    data: lista.data == null ? null : _codecData.decodificar(lista.data!),
+    idMinistrante: lista.idMinistrante == null
+        ? null
+        : IdMinistrante(lista.idMinistrante!),
+    criadaEm: lista.criadaEm,
+  );
 }

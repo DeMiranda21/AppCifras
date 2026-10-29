@@ -9,6 +9,7 @@ import '../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../aplicacao/biblioteca_oficial/preparar_atualizacao_biblioteca_oficial.dart';
 import '../aplicacao/biblioteca_oficial/atualizar_biblioteca_oficial.dart';
 import '../aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
+import '../aplicacao/biblioteca/item_biblioteca.dart';
 import '../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../aplicacao/portas/fonte_biblioteca_oficial.dart';
 import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
@@ -51,6 +52,7 @@ class ComposicaoAppCifras {
   ComposicaoAppCifras._({
     required this._banco,
     required RepositorioMusicas repositorio,
+    required RepositorioConsultaBiblioteca repositorioConsultaBiblioteca,
     required RepositorioVersoesMusicas repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
     required ConsultaDetalheListaCulto consultaDetalheListaCulto,
@@ -93,6 +95,9 @@ class ComposicaoAppCifras {
        salvarMusica = SalvarMusica(repositorio),
        obterMusicaPorId = ObterMusicaPorId(repositorio),
        listarMusicas = ListarMusicas(repositorio),
+       listarItensBiblioteca = ListarItensBiblioteca(
+         repositorioConsultaBiblioteca,
+       ),
        obterVersaoPrincipalMusica = ObterVersaoPrincipalMusica(
          repositorioVersoes,
        ),
@@ -187,6 +192,7 @@ class ComposicaoAppCifras {
   final SalvarMusica salvarMusica;
   final ObterMusicaPorId obterMusicaPorId;
   final ListarMusicas listarMusicas;
+  final ListarItensBiblioteca listarItensBiblioteca;
   final ObterVersaoPrincipalMusica obterVersaoPrincipalMusica;
   final ObterVersaoMusicaPorId obterVersaoMusicaPorId;
   final ListarVersoesMusica listarVersoesMusica;
@@ -241,6 +247,7 @@ class ComposicaoAppCifras {
   factory ComposicaoAppCifras.paraTeste({
     required BancoBiblioteca banco,
     required RepositorioMusicas repositorio,
+    RepositorioConsultaBiblioteca? repositorioConsultaBiblioteca,
     RepositorioVersoesMusicas? repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
     ConsultaDetalheListaCulto? consultaDetalheListaCulto,
@@ -258,6 +265,9 @@ class ComposicaoAppCifras {
   }) => ComposicaoAppCifras._(
     banco: banco,
     repositorio: repositorio,
+    repositorioConsultaBiblioteca:
+        repositorioConsultaBiblioteca ??
+        RepositorioConsultaBibliotecaLegada(repositorio.listar),
     repositorioVersoes:
         repositorioVersoes ?? _RepositorioVersoesVazio(repositorio),
     repositorioListasCulto: repositorioListasCulto,
@@ -320,6 +330,7 @@ class ComposicaoAppCifras {
       return ComposicaoAppCifras._(
         banco: banco,
         repositorio: repositorio,
+        repositorioConsultaBiblioteca: repositorio,
         repositorioVersoes: repositorio,
         repositorioListasCulto: repositorioListasCulto,
         consultaDetalheListaCulto: consultaDetalheListaCulto,

@@ -4,17 +4,23 @@ import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
+import 'package:appcifras/dominio/entidades/ministrante.dart';
 import 'package:appcifras/dominio/erros/item_lista_culto_nao_encontrado.dart';
 import 'package:appcifras/dominio/erros/lista_culto_nao_encontrada.dart';
 import 'package:appcifras/dominio/erros/musica_em_uso_em_lista.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
+import 'package:appcifras/dominio/objetos_de_valor/data_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_ministrante.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:appcifras/infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_listas_culto_local.dart';
+import 'package:appcifras/infraestrutura/persistencia/repositorio_ministrantes_local.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_musicas_local.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -90,6 +96,55 @@ void main() {
       expect(await banco.obterPorId('musica-1'), isNotNull);
     },
   );
+
+  test('persiste contexto histórico da lista e tom opcional do item', () async {
+    final idMinistrante = IdMinistrante('ministrante-1');
+    await RepositorioMinistrantesLocal(banco).salvar(
+      Ministrante(
+        id: idMinistrante,
+        nome: 'Ministrante',
+        arquivado: false,
+      ),
+    );
+    final lista = ListaCulto(
+      id: IdListaCulto('lista-contextual'),
+      nome: 'Culto',
+      data: DataCulto(ano: 2026, mes: 10, dia: 27),
+      idMinistrante: idMinistrante,
+      criadaEm: DateTime.utc(2026, 10, 1, 15, 30),
+    );
+    await repositorio.salvar(lista);
+    await inserirMusicaIndice('musica-1');
+    const tom = Tom(
+      notaFundamental: Nota(
+        nome: NomeNota.f,
+        alteracao: AlteracaoNota.sustenido,
+      ),
+      modo: ModoTom.menor,
+    );
+    await repositorio.adicionarItem(
+      ItemListaCulto(
+        id: IdItemListaCulto('item-contextual'),
+        idLista: lista.id,
+        idMusica: IdMusica('musica-1'),
+        posicao: 0,
+        tom: tom,
+      ),
+    );
+
+    final recarregada = await repositorio.obterPorId(lista.id);
+    final itemRecarregado = (await repositorio.listarItens(lista.id)).single;
+    expect(recarregada?.data, lista.data);
+    expect(recarregada?.idMinistrante, idMinistrante);
+    expect(recarregada?.criadaEm, lista.criadaEm);
+    expect(itemRecarregado.tom, tom);
+
+    await repositorio.renomear(lista.id, 'Renomeada');
+    final renomeada = await repositorio.obterPorId(lista.id);
+    expect(renomeada?.data, lista.data);
+    expect(renomeada?.idMinistrante, idMinistrante);
+    expect(renomeada?.criadaEm, lista.criadaEm);
+  });
 
   test(
     'permite repetir música, preserva ordem e normaliza após remoção',

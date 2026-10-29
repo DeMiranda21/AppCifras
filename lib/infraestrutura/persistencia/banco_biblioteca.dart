@@ -19,6 +19,59 @@ class IndiceMusicas extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class IndicesPesquisaMusicas extends Table {
+  TextColumn get idMusica =>
+      text().references(IndiceMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get idVersaoMusica =>
+      text().references(VersoesMusicas, #id, onDelete: KeyAction.cascade)();
+
+  TextColumn get conteudoVisivel => text()();
+
+  TextColumn get tituloNormalizado => text().nullable()();
+
+  TextColumn get textoNormalizado => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {idMusica};
+}
+
+class RegistroItemBiblioteca {
+  const RegistroItemBiblioteca({
+    required this.idMusica,
+    required this.idVersaoPrincipal,
+    required this.titulo,
+    required this.artista,
+    required this.conteudoVisivel,
+    required this.tituloNormalizado,
+    required this.textoNormalizado,
+  });
+
+  final String idMusica;
+  final String? idVersaoPrincipal;
+  final String titulo;
+  final String artista;
+  final String? conteudoVisivel;
+  final String? tituloNormalizado;
+  final String? textoNormalizado;
+}
+
+class RegistroIndicePesquisaMusica {
+  const RegistroIndicePesquisaMusica({
+    required this.idMusica,
+    required this.idVersaoMusica,
+    required this.conteudoVisivel,
+    required this.tituloNormalizado,
+    required this.textoNormalizado,
+  });
+
+  final String idMusica;
+  final String idVersaoMusica;
+  final String conteudoVisivel;
+  final String tituloNormalizado;
+  final String textoNormalizado;
+}
+
 class VersoesMusicas extends Table {
   TextColumn get id => text()();
 
@@ -116,10 +169,32 @@ class TagsMusicas extends Table {
   Set<Column> get primaryKey => {idMusica, chave};
 }
 
+@DataClassName('MinistranteRegistro')
+class Ministrantes extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get nome => text()();
+
+  BoolColumn get arquivado => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class ListasCulto extends Table {
   TextColumn get id => text()();
 
   TextColumn get nome => text()();
+
+  IntColumn get data => integer().nullable()();
+
+  TextColumn get idMinistrante => text().nullable().references(
+    Ministrantes,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
+
+  DateTimeColumn get criadaEm => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -136,6 +211,8 @@ class ItensListaCulto extends Table {
 
   IntColumn get posicao => integer()();
 
+  TextColumn get tom => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -144,12 +221,14 @@ class ItensListaCulto extends Table {
   tables: [
     IndiceMusicas,
     VersoesMusicas,
+    IndicesPesquisaMusicas,
     OrigensSincronizadasVersoes,
     ConfiguracoesPastaSincronizada,
     EstadosBibliotecaOficial,
     PreferenciasTomExecucao,
     EnergiasMusicas,
     TagsMusicas,
+    Ministrantes,
     ListasCulto,
     ItensListaCulto,
   ],
@@ -160,15 +239,18 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   factory BancoBiblioteca.local() => BancoBiblioteca(_abrirLocalmente());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await migrator.createAll();
       await _criarIndiceItensListaCulto();
+      await _criarIndiceItensListaCultoVersaoLista();
       await _criarIndiceTagsMusicas();
       await _criarIndicesVersoesMusicas();
+      await _criarIndiceMinistrantesArquivadaNome();
+      await _criarIndiceListasCultoMinistranteData();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -224,6 +306,33 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       if (from < 7) {
         await migrator.createTable(estadosBibliotecaOficial);
       }
+      if (from < 8) {
+        await migrator.createTable(ministrantes);
+        if (from >= 3) {
+          await migrator.addColumn(listasCulto, listasCulto.data);
+          await migrator.addColumn(listasCulto, listasCulto.idMinistrante);
+          await migrator.addColumn(listasCulto, listasCulto.criadaEm);
+        }
+        if (from >= 5) {
+          await migrator.addColumn(itensListaCulto, itensListaCulto.tom);
+        }
+        await _criarIndiceItensListaCultoVersaoLista();
+        await _criarIndiceMinistrantesArquivadaNome();
+        await _criarIndiceListasCultoMinistranteData();
+      }
+      if (from < 9) {
+        await migrator.createTable(indicesPesquisaMusicas);
+      }
+      if (from >= 9 && from < 10) {
+        await migrator.addColumn(
+          indicesPesquisaMusicas,
+          indicesPesquisaMusicas.tituloNormalizado,
+        );
+        await migrator.addColumn(
+          indicesPesquisaMusicas,
+          indicesPesquisaMusicas.textoNormalizado,
+        );
+      }
     },
   );
 
@@ -236,6 +345,62 @@ class BancoBiblioteca extends _$BancoBiblioteca {
   )..where((tabela) => tabela.id.equals(id))).getSingleOrNull();
 
   Future<List<IndiceMusica>> listar() => select(indiceMusicas).get();
+
+  Future<List<RegistroItemBiblioteca>> listarItensBiblioteca() async {
+    final linhas = await customSelect(
+      'SELECT m.id, m.titulo, m.artista, v.id AS id_versao_principal, '
+      'p.conteudo_visivel, p.titulo_normalizado, p.texto_normalizado '
+      'FROM indice_musicas m '
+      'LEFT JOIN versoes_musicas v '
+      'ON v.id_musica = m.id AND v.principal = 1 '
+      'LEFT JOIN indices_pesquisa_musicas p '
+      'ON p.id_musica = m.id AND p.id_versao_musica = v.id',
+      readsFrom: {indiceMusicas, versoesMusicas, indicesPesquisaMusicas},
+    ).get();
+    return [
+      for (final linha in linhas)
+        RegistroItemBiblioteca(
+          idMusica: linha.read<String>('id'),
+          idVersaoPrincipal: linha.readNullable<String>('id_versao_principal'),
+          titulo: linha.read<String>('titulo'),
+          artista: linha.read<String>('artista'),
+          conteudoVisivel: linha.readNullable<String>('conteudo_visivel'),
+          tituloNormalizado: linha.readNullable<String>('titulo_normalizado'),
+          textoNormalizado: linha.readNullable<String>('texto_normalizado'),
+        ),
+    ];
+  }
+
+  Future<void> salvarIndicePesquisaMusica({
+    required String idMusica,
+    required String idVersaoMusica,
+    required String conteudoVisivel,
+    required String tituloNormalizado,
+    required String textoNormalizado,
+  }) => into(indicesPesquisaMusicas).insertOnConflictUpdate(
+    IndicesPesquisaMusicasCompanion.insert(
+      idMusica: idMusica,
+      idVersaoMusica: idVersaoMusica,
+      conteudoVisivel: conteudoVisivel,
+      tituloNormalizado: Value(tituloNormalizado),
+      textoNormalizado: Value(textoNormalizado),
+    ),
+  );
+
+  Future<void> salvarIndicesPesquisaMusicas(
+    Iterable<RegistroIndicePesquisaMusica> registros,
+  ) => batch((lote) {
+    lote.insertAllOnConflictUpdate(indicesPesquisaMusicas, [
+      for (final registro in registros)
+        IndicesPesquisaMusicasCompanion.insert(
+          idMusica: registro.idMusica,
+          idVersaoMusica: registro.idVersaoMusica,
+          conteudoVisivel: registro.conteudoVisivel,
+          tituloNormalizado: Value(registro.tituloNormalizado),
+          textoNormalizado: Value(registro.textoNormalizado),
+        ),
+    ]);
+  });
 
   Future<List<IndiceMusica>> listarMusicasPorIds(Iterable<String> ids) {
     final idsUnicos = ids.toSet();
@@ -535,8 +700,64 @@ class BancoBiblioteca extends _$BancoBiblioteca {
         )..where((tabela) => tabela.idMusica.equals(idMusica))).go();
       });
 
-  Future<void> inserirListaCulto({required String id, required String nome}) =>
-      into(listasCulto).insert(ListasCultoCompanion.insert(id: id, nome: nome));
+  Future<void> inserirMinistrante({
+    required String id,
+    required String nome,
+    required bool arquivado,
+  }) => into(ministrantes).insert(
+    MinistrantesCompanion.insert(
+      id: id,
+      nome: nome,
+      arquivado: Value(arquivado),
+    ),
+  );
+
+  Future<MinistranteRegistro?> obterMinistrantePorId(String id) => (select(
+    ministrantes,
+  )..where((tabela) => tabela.id.equals(id))).getSingleOrNull();
+
+  Future<List<MinistranteRegistro>> listarMinistrantes({
+    required bool incluirArquivados,
+  }) {
+    final consulta = select(ministrantes)
+      ..orderBy([
+        (tabela) => OrderingTerm.asc(tabela.arquivado),
+        (tabela) => OrderingTerm.asc(tabela.nome),
+        (tabela) => OrderingTerm.asc(tabela.id),
+      ]);
+    if (!incluirArquivados) {
+      consulta.where((tabela) => tabela.arquivado.equals(false));
+    }
+    return consulta.get();
+  }
+
+  Future<int> renomearMinistrante({required String id, required String nome}) =>
+      (update(ministrantes)..where((tabela) => tabela.id.equals(id))).write(
+        MinistrantesCompanion(nome: Value(nome)),
+      );
+
+  Future<int> definirMinistranteArquivado({
+    required String id,
+    required bool arquivado,
+  }) => (update(ministrantes)..where((tabela) => tabela.id.equals(id))).write(
+    MinistrantesCompanion(arquivado: Value(arquivado)),
+  );
+
+  Future<void> inserirListaCulto({
+    required String id,
+    required String nome,
+    int? data,
+    String? idMinistrante,
+    DateTime? criadaEm,
+  }) => into(listasCulto).insert(
+    ListasCultoCompanion.insert(
+      id: id,
+      nome: nome,
+      data: Value(data),
+      idMinistrante: Value(idMinistrante),
+      criadaEm: Value(criadaEm),
+    ),
+  );
 
   Future<ListasCultoData?> obterListaCultoPorId(String id) => (select(
     listasCulto,
@@ -577,6 +798,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     required String idMusica,
     required String idVersaoMusica,
     required int posicao,
+    String? tom,
   }) => into(itensListaCulto).insert(
     ItensListaCultoCompanion.insert(
       id: id,
@@ -584,6 +806,7 @@ class BancoBiblioteca extends _$BancoBiblioteca {
       idMusica: idMusica,
       idVersaoMusica: idVersaoMusica,
       posicao: posicao,
+      tom: Value(tom),
     ),
   );
 
@@ -644,8 +867,23 @@ class BancoBiblioteca extends _$BancoBiblioteca {
     'ON itens_lista_culto (id_lista, posicao)',
   );
 
+  Future<void> _criarIndiceItensListaCultoVersaoLista() => customStatement(
+    'CREATE INDEX IF NOT EXISTS idx_itens_lista_culto_versao_lista '
+    'ON itens_lista_culto (id_versao_musica, id_lista)',
+  );
+
   Future<void> _criarIndiceTagsMusicas() => customStatement(
     'CREATE INDEX IF NOT EXISTS idx_tags_musicas_chave ON tags_musicas (chave)',
+  );
+
+  Future<void> _criarIndiceMinistrantesArquivadaNome() => customStatement(
+    'CREATE INDEX IF NOT EXISTS idx_ministrantes_arquivado_nome '
+    'ON ministrantes (arquivado, nome)',
+  );
+
+  Future<void> _criarIndiceListasCultoMinistranteData() => customStatement(
+    'CREATE INDEX IF NOT EXISTS idx_listas_culto_ministrante_data '
+    'ON listas_culto (id_ministrante, data)',
   );
 
   Future<void> _criarIndicesVersoesMusicas() async {

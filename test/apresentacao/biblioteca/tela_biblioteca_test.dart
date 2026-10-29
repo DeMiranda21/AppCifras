@@ -10,6 +10,7 @@ import 'dart:async';
 
 import 'package:appcifras/aplicacao/biblioteca_oficial/atualizar_biblioteca_oficial.dart';
 import 'package:appcifras/aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
+import 'package:appcifras/aplicacao/biblioteca/item_biblioteca.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/classificacao_musica.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
@@ -79,10 +80,12 @@ void main() {
     atualizarBibliotecaOficial,
     Future<EstadoBibliotecaOficial?> Function()? obterEstadoBibliotecaOficial,
     ObterInformacoesApp? obterInformacoesApp,
+    ListarItensBiblioteca? listarItensBiblioteca,
   }) => tester.pumpWidget(
     MaterialApp(
       home: TelaBiblioteca(
         listarMusicas: ListarMusicas(repositorio),
+        listarItensBiblioteca: listarItensBiblioteca,
         prepararEntradaMusica: PrepararEntradaMusica(),
         salvarRascunhoChordPro: salvador(repositorio),
         obterMusicaPorId: ObterMusicaPorId(repositorio),
@@ -199,6 +202,34 @@ void main() {
       expect(titulosDaLista(tester), ['âncora', 'Árvore', 'BETA', 'zulu']);
     },
   );
+
+  testWidgets('Biblioteca usa projeção leve sem listar entidades completas', (
+    tester,
+  ) async {
+    final repositorio = _RepositorioFake();
+    final consulta = _ConsultaBibliotecaFake([
+      ItemBiblioteca(
+        idMusica: IdMusica('musica-1'),
+        idVersaoPrincipal: IdVersaoMusica('versao-1'),
+        titulo: 'Música leve',
+        artista: 'Artista',
+        conteudoVisivel: 'Letra pesquisável',
+        tituloNormalizado: 'musica leve',
+        textoNormalizado: 'musica leve artista letra pesquisavel',
+      ),
+    ]);
+
+    await montar(
+      tester,
+      repositorio,
+      listarItensBiblioteca: ListarItensBiblioteca(consulta),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Música leve'), findsOneWidget);
+    expect(repositorio.listagens, 0);
+    expect(consulta.listagens, 1);
+  });
 
   testWidgets('não analisa texto vazio', (tester) async {
     await abrirEntrada(tester, _RepositorioFake());
@@ -716,7 +747,17 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('musica-1')));
     await tester.pumpAndSettle();
-    await classificacao.substituirTags(musica.id, []);
+    await tester.tap(find.byTooltip('Editar música'));
+    await tester.pumpAndSettle();
+    final chip = tester.widget<InputChip>(
+      find.widgetWithText(InputChip, 'Ceia'),
+    );
+    chip.onDeleted!();
+    await tester.pump();
+    final salvar = find.widgetWithText(FilledButton, 'Salvar alterações');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -779,6 +820,7 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       final leiturasAposNavegacao = repositorio.listagens;
+      expect(leiturasAposNavegacao, leiturasIniciais);
 
       await tester.enterText(pesquisa, 'inexistente');
       await tester.pump();
@@ -1298,6 +1340,19 @@ class _RepositorioClassificacaoFake implements RepositorioClassificacaoMusica {
       energia: atual.energia,
       tags: tags.toList(),
     );
+  }
+}
+
+class _ConsultaBibliotecaFake implements RepositorioConsultaBiblioteca {
+  _ConsultaBibliotecaFake(this.itens);
+
+  final List<ItemBiblioteca> itens;
+  var listagens = 0;
+
+  @override
+  Future<List<ItemBiblioteca>> listarItensBiblioteca() async {
+    listagens++;
+    return List.of(itens);
   }
 }
 

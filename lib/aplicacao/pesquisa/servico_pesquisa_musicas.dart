@@ -1,86 +1,93 @@
-import '../../dominio/chordpro/documento_chordpro.dart';
 import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tag_musica.dart';
 import '../portas/repositorio_classificacao_musica.dart';
+import '../biblioteca/item_biblioteca.dart';
 import 'normalizacao_pesquisa.dart';
 
 class ServicoPesquisaMusicas {
   const ServicoPesquisaMusicas();
 
-  IndicePesquisaMusicas criarIndice(
+  IndicePesquisaMusicas<Musica> criarIndice(
     Iterable<Musica> musicas, {
     Map<IdMusica, ClassificacaoMusica> classificacoes = const {},
   }) => IndicePesquisaMusicas(
-    musicas.map(
-      (musica) => TextoPesquisaMusica(
+    musicas.map((musica) {
+      final conteudoVisivel = ExtratorConteudoVisivelChordPro.extrair(
+        musica.documento,
+      );
+      return TextoPesquisaMusica(
         musica: musica,
+        idMusica: musica.id,
+        titulo: musica.titulo,
         classificacao: classificacoes[musica.id] ?? const ClassificacaoMusica(),
-        linhasVisiveis: _extrairLinhasVisiveis(musica.documento),
+        conteudoVisivel: conteudoVisivel,
         tituloNormalizado: normalizarPesquisa(musica.titulo),
+        artistaNormalizado: normalizarPesquisa(musica.artista),
         textoNormalizado: normalizarPesquisa(
-          '${musica.titulo}\n${musica.artista}\n'
-          '${_extrairConteudoVisivel(musica.documento)}',
+          '${musica.titulo}\n${musica.artista}\n$conteudoVisivel',
         ),
+      );
+    }),
+  );
+
+  IndicePesquisaMusicas<ItemBiblioteca> criarIndiceBiblioteca(
+    Iterable<ItemBiblioteca> itens, {
+    Map<IdMusica, ClassificacaoMusica> classificacoes = const {},
+  }) => IndicePesquisaMusicas(
+    itens.map(
+      (item) => TextoPesquisaMusica(
+        musica: item,
+        idMusica: item.idMusica,
+        titulo: item.titulo,
+        classificacao:
+            classificacoes[item.idMusica] ?? const ClassificacaoMusica(),
+        conteudoVisivel: item.conteudoVisivel,
+        tituloNormalizado: item.tituloNormalizado,
+        artistaNormalizado: normalizarPesquisa(item.artista),
+        textoNormalizado: item.textoNormalizado,
       ),
     ),
   );
-
-  String _extrairConteudoVisivel(DocumentoChordPro documento) =>
-      documento.elementos.map(_textoVisivel).join('\n');
-
-  List<LinhaPesquisaMusica> _extrairLinhasVisiveis(
-    DocumentoChordPro documento,
-  ) {
-    final linhas = <LinhaPesquisaMusica>[];
-    for (final elemento in documento.elementos) {
-      final texto = _textoVisivel(elemento);
-      if (texto.isNotEmpty) {
-        linhas.add(LinhaPesquisaMusica(texto));
-      }
-    }
-    return linhas;
-  }
-
-  String _textoVisivel(ElementoDocumentoChordPro elemento) =>
-      switch (elemento) {
-        LinhaChordPro linha =>
-          linha.elementos
-              .whereType<TextoLinhaChordPro>()
-              .map((texto) => texto.conteudoOriginal)
-              .join(),
-        LinhaNaoInterpretadaChordPro linha => linha.conteudoOriginal,
-        _ => '',
-      };
 }
 
-class IndicePesquisaMusicas {
-  IndicePesquisaMusicas(Iterable<TextoPesquisaMusica> entradas)
+class IndicePesquisaMusicas<T> {
+  IndicePesquisaMusicas(Iterable<TextoPesquisaMusica<T>> entradas)
     : _entradas = List.unmodifiable(
-        List<TextoPesquisaMusica>.of(entradas)..sort(_compararPorTitulo),
-      );
+        List<TextoPesquisaMusica<T>>.of(entradas)..sort(_compararPorTitulo),
+      ) {
+    _tagsDisponiveis = _coletarTags();
+    _resultadosSemConsulta = List.unmodifiable([
+      for (final entrada in _entradas)
+        ResultadoPesquisaMusica(musica: entrada.musica, trechoLetra: null),
+    ]);
+  }
 
-  final List<TextoPesquisaMusica> _entradas;
+  final List<TextoPesquisaMusica<T>> _entradas;
+  late final List<TagMusica> _tagsDisponiveis;
+  late final List<ResultadoPesquisaMusica<T>> _resultadosSemConsulta;
+
+  bool get isEmpty => _entradas.isEmpty;
 
   static int _compararPorTitulo(
-    TextoPesquisaMusica primeira,
-    TextoPesquisaMusica segunda,
+    TextoPesquisaMusica<dynamic> primeira,
+    TextoPesquisaMusica<dynamic> segunda,
   ) {
     final tituloNormalizado = primeira.tituloNormalizado.compareTo(
       segunda.tituloNormalizado,
     );
     if (tituloNormalizado != 0) return tituloNormalizado;
 
-    final tituloOriginal = primeira.musica.titulo.compareTo(
-      segunda.musica.titulo,
-    );
+    final tituloOriginal = primeira.titulo.compareTo(segunda.titulo);
     if (tituloOriginal != 0) return tituloOriginal;
 
-    return primeira.musica.id.valor.compareTo(segunda.musica.id.valor);
+    return primeira.idMusica.valor.compareTo(segunda.idMusica.valor);
   }
 
-  List<TagMusica> get tagsDisponiveis {
+  List<TagMusica> get tagsDisponiveis => _tagsDisponiveis;
+
+  List<TagMusica> _coletarTags() {
     final tags = <String, TagMusica>{};
     for (final entrada in _entradas) {
       for (final tag in entrada.classificacao.tags) {
@@ -95,13 +102,16 @@ class IndicePesquisaMusicas {
     return List.unmodifiable(resultado);
   }
 
-  List<Musica> filtrar(ConsultaPesquisaMusicas consulta) {
+  List<T> filtrar(ConsultaPesquisaMusicas consulta) {
     return pesquisar(consulta).map((resultado) => resultado.musica).toList();
   }
 
-  List<ResultadoPesquisaMusica> pesquisar(ConsultaPesquisaMusicas consulta) {
+  List<ResultadoPesquisaMusica<T>> pesquisar(ConsultaPesquisaMusicas consulta) {
     final texto = normalizarPesquisa(consulta.texto);
-    return _entradas
+    if (texto.isEmpty && consulta.energia == null && consulta.tags.isEmpty) {
+      return _resultadosSemConsulta;
+    }
+    final entradas = _entradas
         .where(
           (entrada) =>
               (texto.isEmpty || entrada.textoNormalizado.contains(texto)) &&
@@ -121,13 +131,13 @@ class IndicePesquisaMusicas {
   }
 }
 
-class ResultadoPesquisaMusica {
+class ResultadoPesquisaMusica<T> {
   const ResultadoPesquisaMusica({
     required this.musica,
     required this.trechoLetra,
   });
 
-  final Musica musica;
+  final T musica;
   final String? trechoLetra;
 }
 
@@ -143,35 +153,35 @@ class ConsultaPesquisaMusicas {
   final Set<TagMusica> tags;
 }
 
-class TextoPesquisaMusica {
+class TextoPesquisaMusica<T> {
   const TextoPesquisaMusica({
     required this.musica,
+    required this.idMusica,
+    required this.titulo,
     required this.classificacao,
-    required this.linhasVisiveis,
+    required this.conteudoVisivel,
     required this.tituloNormalizado,
+    required this.artistaNormalizado,
     required this.textoNormalizado,
   });
 
-  final Musica musica;
+  final T musica;
+  final IdMusica idMusica;
+  final String titulo;
   final ClassificacaoMusica classificacao;
-  final List<LinhaPesquisaMusica> linhasVisiveis;
+  final String conteudoVisivel;
   final String tituloNormalizado;
+  final String artistaNormalizado;
   final String textoNormalizado;
 
   String? primeiraLinhaCorrespondente(String textoNormalizado) {
-    for (final linha in linhasVisiveis) {
-      if (linha.textoNormalizado.contains(textoNormalizado)) {
-        return linha.original;
+    for (final linha in ExtratorConteudoVisivelChordPro.extrairLinhas(
+      conteudoVisivel,
+    )) {
+      if (normalizarPesquisa(linha).contains(textoNormalizado)) {
+        return linha;
       }
     }
     return null;
   }
-}
-
-class LinhaPesquisaMusica {
-  LinhaPesquisaMusica(this.original)
-    : textoNormalizado = normalizarPesquisa(original);
-
-  final String original;
-  final String textoNormalizado;
 }

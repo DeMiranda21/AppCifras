@@ -1,8 +1,10 @@
 import 'package:appcifras/aplicacao/pesquisa/servico_pesquisa_musicas.dart';
+import 'package:appcifras/aplicacao/biblioteca/item_biblioteca.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_classificacao_musica.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/energia_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tag_musica.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,6 +66,24 @@ void main() {
       indice.filtrar(ConsultaPesquisaMusicas(texto: 'inexistente')),
       isEmpty,
     );
+  });
+
+  test('reutiliza resultados e tags preparados em consultas vazias', () {
+    final primeira = musica('1', 'Primeira', 'Artista', '[C]Letra');
+    final indice = servico.criarIndice(
+      [primeira],
+      classificacoes: {
+        primeira.id: ClassificacaoMusica(tags: [TagMusica('Culto')]),
+      },
+    );
+
+    final resultados = indice.pesquisar(ConsultaPesquisaMusicas());
+
+    expect(
+      identical(resultados, indice.pesquisar(ConsultaPesquisaMusicas())),
+      isTrue,
+    );
+    expect(identical(indice.tagsDisponiveis, indice.tagsDisponiveis), isTrue);
   });
 
   test('ordena por título ignorando caixa e acentos', () {
@@ -321,6 +341,54 @@ void main() {
           .single
           .trechoLetra,
       isNull,
+    );
+  });
+
+  test('projeção leve pesquisa título, artista e letra com filtros e ordem estável', () {
+    final itemB = ItemBiblioteca(
+      idMusica: IdMusica('b'),
+      idVersaoPrincipal: IdVersaoMusica('vb'),
+      titulo: 'Bênção',
+      artista: 'Outro',
+      conteudoVisivel: 'Linha sem alvo',
+      tituloNormalizado: 'bencao',
+      textoNormalizado: 'bencao outro linha sem alvo',
+    );
+    final itemA = ItemBiblioteca(
+      idMusica: IdMusica('a'),
+      idVersaoPrincipal: IdVersaoMusica('va'),
+      titulo: 'Árvore',
+      artista: 'Ministério da Graça',
+      conteudoVisivel: 'O Espírito Santo está aqui',
+      tituloNormalizado: 'arvore',
+      textoNormalizado: 'arvore ministerio da graca o espirito santo esta aqui',
+    );
+    final indice = servico.criarIndiceBiblioteca(
+      [itemB, itemA],
+      classificacoes: {
+        itemA.idMusica: ClassificacaoMusica(
+          energia: EnergiaMusica.calma,
+          tags: [TagMusica('Ceia')],
+        ),
+      },
+    );
+
+    expect(indice.filtrar(ConsultaPesquisaMusicas()), [itemA, itemB]);
+    expect(
+      indice.filtrar(ConsultaPesquisaMusicas(texto: 'ministerio da graca')),
+      [itemA],
+    );
+    expect(indice.filtrar(ConsultaPesquisaMusicas(texto: 'espirito santo')), [
+      itemA,
+    ]);
+    expect(
+      indice.filtrar(
+        ConsultaPesquisaMusicas(
+          energia: EnergiaMusica.calma,
+          tags: [TagMusica('ceia')],
+        ),
+      ),
+      [itemA],
     );
   });
 }

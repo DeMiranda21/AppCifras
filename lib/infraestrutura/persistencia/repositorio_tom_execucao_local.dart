@@ -1,4 +1,5 @@
 import '../../aplicacao/portas/repositorio_tom_execucao.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/objetos_de_valor/nota.dart';
 import '../../dominio/objetos_de_valor/tom.dart';
@@ -11,9 +12,12 @@ class RepositorioTomExecucaoLocal implements RepositorioTomExecucao {
 
   @override
   Future<Tom?> obterUltimoTom(IdVersaoMusica idVersaoMusica) async {
-    final preferencia = await _banco.obterTomExecucaoPorVersao(
-      idVersaoMusica.valor,
-    );
+    final medicao = MedicaoDesempenhoVisualizacao.atual;
+    final preferencia = medicao == null
+        ? await _banco.obterTomExecucaoPorVersao(idVersaoMusica.valor)
+        : await medicao.medirSqlite(
+            () => _banco.obterTomExecucaoPorVersao(idVersaoMusica.valor),
+          );
     if (preferencia == null) {
       return null;
     }

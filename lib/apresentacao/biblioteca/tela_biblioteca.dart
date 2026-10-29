@@ -9,11 +9,13 @@ import '../../aplicacao/casos_de_uso/tom_execucao.dart';
 import '../../aplicacao/casos_de_uso/versoes_musicas.dart';
 import '../../aplicacao/biblioteca_oficial/atualizar_biblioteca_oficial.dart';
 import '../../aplicacao/biblioteca_oficial/estado_biblioteca_oficial.dart';
+import '../../aplicacao/biblioteca/item_biblioteca.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_biblioteca.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
 import '../../aplicacao/entrada/preparar_entrada_musica.dart';
 import '../../aplicacao/pesquisa/servico_pesquisa_musicas.dart';
 import '../../aplicacao/portas/obter_informacoes_app.dart';
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
-import '../../dominio/entidades/musica.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tag_musica.dart';
@@ -25,6 +27,7 @@ class TelaBiblioteca extends StatefulWidget {
   const TelaBiblioteca({
     super.key,
     required this.listarMusicas,
+    this.listarItensBiblioteca,
     required this.prepararEntradaMusica,
     required this.salvarRascunhoChordPro,
     required this.obterMusicaPorId,
@@ -55,6 +58,7 @@ class TelaBiblioteca extends StatefulWidget {
   });
 
   final ListarMusicas listarMusicas;
+  final ListarItensBiblioteca? listarItensBiblioteca;
   final PrepararEntradaMusica prepararEntradaMusica;
   final SalvarRascunhoChordPro salvarRascunhoChordPro;
   final ObterMusicaPorId obterMusicaPorId;
@@ -91,7 +95,7 @@ class TelaBiblioteca extends StatefulWidget {
 
 class _TelaBibliotecaState extends State<TelaBiblioteca> {
   static const _pesquisaMusicas = ServicoPesquisaMusicas();
-  late Future<IndicePesquisaMusicas> _indiceMusicas;
+  late Future<_ResultadoCarregamentoBiblioteca> _indiceMusicas;
   final _pesquisa = TextEditingController();
   EnergiaMusica? _energia;
   Set<TagMusica> _tagsSelecionadas = {};
@@ -101,7 +105,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   @override
   void initState() {
     super.initState();
-    _recarregarMusicas();
+    _recarregarMusicas(MotivoCarregamentoBiblioteca.primeiraAbertura);
     _carregarEstadoBibliotecaOficial();
     _pesquisa.addListener(_atualizarPesquisa);
   }
@@ -121,9 +125,10 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   void didUpdateWidget(covariant TelaBiblioteca oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.listarMusicas != oldWidget.listarMusicas ||
+        widget.listarItensBiblioteca != oldWidget.listarItensBiblioteca ||
         widget.listarClassificacoesMusicas !=
             oldWidget.listarClassificacoesMusicas) {
-      _recarregarMusicas();
+      _recarregarMusicas(MotivoCarregamentoBiblioteca.dependenciasAtualizadas);
     }
   }
 
@@ -137,16 +142,23 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       ),
     );
     if (cadastrada == true && mounted) {
-      setState(_recarregarMusicas);
+      setState(
+        () => _recarregarMusicas(MotivoCarregamentoBiblioteca.retornoCadastro),
+      );
     }
   }
 
-  Future<void> _abrirMusica(Musica musica) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+  Future<void> _abrirMusica(ItemBiblioteca musica) async {
+    var alterada = false;
+    final medicao = MedicaoDesempenhoVisualizacao.iniciar(
+      origem: OrigemAberturaVisualizacao.biblioteca,
+      registrar: debugPrint,
+    );
+    final excluida = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (context) => TelaVisualizacaoMusica(
-          idMusica: musica.id,
-          idVersaoMusica: musica.versaoPrincipal.id,
+          idMusica: musica.idMusica,
+          idVersaoMusica: musica.idVersaoPrincipal,
           obterVersaoMusicaPorId: widget.obterVersaoMusicaPorId,
           listarVersoesMusica: widget.listarVersoesMusica,
           criarVersaoMusica: widget.criarVersaoMusica,
@@ -159,11 +171,15 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
           removerUltimoTomExecucao: widget.removerUltimoTomExecucao,
           obterClassificacaoMusica: widget.obterClassificacaoMusica,
           salvarClassificacaoMusica: widget.salvarClassificacaoMusica,
+          aoAlterarBiblioteca: () => alterada = true,
+          medicaoDesempenho: medicao,
         ),
       ),
     );
-    if (mounted) {
-      setState(_recarregarMusicas);
+    if (mounted && (alterada || excluida == true)) {
+      setState(
+        () => _recarregarMusicas(MotivoCarregamentoBiblioteca.retornoMusica),
+      );
     }
   }
 
@@ -216,7 +232,10 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
       ),
     );
     if (mounted) {
-      setState(_recarregarMusicas);
+      setState(
+        () =>
+            _recarregarMusicas(MotivoCarregamentoBiblioteca.retornoListasCulto),
+      );
     }
   }
 
@@ -265,7 +284,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         resultado.atualizadas > 0 ||
         resultado.origensAusentes > 0;
     if (houveMudancas) {
-      _recarregarMusicas();
+      _recarregarMusicas(MotivoCarregamentoBiblioteca.atualizacaoBiblioteca);
     }
     await _carregarEstadoBibliotecaOficial();
     if (!mounted) return;
@@ -371,7 +390,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
         if (_estadoBibliotecaOficial != null)
           _EstadoAtualizacaoBiblioteca(estado: _estadoBibliotecaOficial!),
         Expanded(
-          child: FutureBuilder<IndicePesquisaMusicas>(
+          child: FutureBuilder<_ResultadoCarregamentoBiblioteca>(
             future: _indiceMusicas,
             builder: (context, resultado) {
               if (resultado.connectionState != ConnectionState.done) {
@@ -380,11 +399,12 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
               if (resultado.hasError) {
                 return const _EstadoErroBiblioteca();
               }
-              final indice = resultado.requireData;
-              final resultadosSemFiltros = indice.pesquisar(
-                ConsultaPesquisaMusicas(),
+              final carregamento = resultado.requireData;
+              final indice = carregamento.indice;
+              WidgetsBinding.instance.addPostFrameCallback(
+                (_) => carregamento.medicao?.concluirApresentacao(),
               );
-              if (resultadosSemFiltros.isEmpty) {
+              if (indice.isEmpty) {
                 return const _EstadoBibliotecaVazia();
               }
               final resultados = indice.pesquisar(
@@ -433,7 +453,7 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
                               final resultadoPesquisa = resultados[indice];
                               final musica = resultadoPesquisa.musica;
                               return ListTile(
-                                key: ValueKey(musica.id.valor),
+                                key: ValueKey(musica.idMusica.valor),
                                 onTap: () => _abrirMusica(musica),
                                 title: Text(musica.titulo),
                                 subtitle: _SubtituloResultadoPesquisa(
@@ -458,7 +478,9 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
   int get _quantidadeFiltrosAtivos =>
       (_energia == null ? 0 : 1) + _tagsSelecionadas.length;
 
-  Future<void> _abrirFiltros(IndicePesquisaMusicas indice) async {
+  Future<void> _abrirFiltros(
+    IndicePesquisaMusicas<ItemBiblioteca> indice,
+  ) async {
     final consulta = await showModalBottomSheet<ConsultaPesquisaMusicas>(
       context: context,
       isScrollControlled: true,
@@ -476,27 +498,68 @@ class _TelaBibliotecaState extends State<TelaBiblioteca> {
     }
   }
 
-  void _recarregarMusicas() {
-    _indiceMusicas = _carregarIndice().then((indice) {
+  void _recarregarMusicas(MotivoCarregamentoBiblioteca motivo) {
+    final medicao = MedicaoDesempenhoBiblioteca.iniciar(
+      motivo: motivo,
+      registrar: debugPrint,
+    );
+    _indiceMusicas = _carregarIndice(medicao).then((carregamento) {
+      final indice = carregamento.indice;
       _tagsSelecionadas = _tagsSelecionadas
           .where(indice.tagsDisponiveis.contains)
           .toSet();
-      return indice;
+      return carregamento;
     });
   }
 
-  Future<IndicePesquisaMusicas> _carregarIndice() async {
-    final musicas = await widget.listarMusicas.executar();
-    final listarClassificacoes = widget.listarClassificacoesMusicas;
-    final Map<IdMusica, ClassificacaoMusica> classificacoes =
-        listarClassificacoes == null
-        ? const {}
-        : await listarClassificacoes.executar();
-    return _pesquisaMusicas.criarIndice(
-      musicas,
-      classificacoes: classificacoes,
-    );
+  Future<_ResultadoCarregamentoBiblioteca> _carregarIndice(
+    MedicaoDesempenhoBiblioteca? medicao,
+  ) async {
+    Future<IndicePesquisaMusicas<ItemBiblioteca>> carregar() async {
+      final itens =
+          await (widget.listarItensBiblioteca?.executar() ??
+              RepositorioConsultaBibliotecaLegada(widget.listarMusicas.executar)
+                  .listarItensBiblioteca());
+      final listarClassificacoes = widget.listarClassificacoesMusicas;
+      final Map<IdMusica, ClassificacaoMusica> classificacoes =
+          listarClassificacoes == null
+          ? const {}
+          : await listarClassificacoes.executar();
+      return medicao == null
+          ? _pesquisaMusicas.criarIndiceBiblioteca(
+              itens,
+              classificacoes: classificacoes,
+            )
+          : medicao.medirCriacaoIndice(
+              () => _pesquisaMusicas.criarIndiceBiblioteca(
+                itens,
+                classificacoes: classificacoes,
+              ),
+            );
+    }
+
+    try {
+      final indice = medicao == null
+          ? await carregar()
+          : await medicao.executarNoContexto(carregar);
+      medicao?.concluirCarregamento();
+      return _ResultadoCarregamentoBiblioteca(indice: indice, medicao: medicao);
+    } catch (_) {
+      medicao?.concluirCarregamento();
+      medicao?.concluirApresentacao(sucesso: false);
+      rethrow;
+    }
   }
+}
+
+class _ResultadoCarregamentoBiblioteca {
+  const _ResultadoCarregamentoBiblioteca({
+    required this.indice,
+    required this.medicao,
+  });
+
+  final IndicePesquisaMusicas<ItemBiblioteca> indice;
+  final MedicaoDesempenhoBiblioteca? medicao;
 }
 
 class _EstadoAtualizacaoBiblioteca extends StatelessWidget {

@@ -140,6 +140,14 @@ void main() {
           .localizadorExterno,
       nova.caminho,
     );
+    expect(
+      (await musicas.listarItensBiblioteca()).single.conteudoVisivel,
+      contains('Nova'),
+    );
+    expect(
+      (await musicas.listarItensBiblioteca()).single.textoNormalizado,
+      contains('nova'),
+    );
   });
 
   test(
@@ -320,6 +328,11 @@ void main() {
       );
       expect((await banco.obterEnergiaMusica('m1'))?.energia, 'animada');
       expect((await banco.listarTagsMusica('m1')).single.valor, 'Culto');
+      final itemBiblioteca = (await musicas.listarItensBiblioteca()).single;
+      expect(itemBiblioteca.titulo, 'Título novo');
+      expect(itemBiblioteca.artista, 'Artista novo');
+      expect(itemBiblioteca.tituloNormalizado, 'titulo novo');
+      expect(itemBiblioteca.textoNormalizado, contains('artista novo'));
     },
   );
 }

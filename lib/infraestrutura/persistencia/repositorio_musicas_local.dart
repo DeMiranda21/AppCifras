@@ -13,7 +13,11 @@ import '../../dominio/repositorios/repositorio_musicas.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../../dominio/servicos/parser_documento_chordpro.dart';
 import '../../aplicacao/entrada/rascunho_documento_chordpro.dart';
+import '../../aplicacao/biblioteca/item_biblioteca.dart';
 import '../../aplicacao/portas/aplicador_grupo_sincronizacao.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_biblioteca.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
+import '../../aplicacao/pesquisa/normalizacao_pesquisa.dart';
 import '../arquivos/armazenamento_arquivos_chordpro.dart';
 import '../arquivos/codificador_chordpro_gerenciado.dart';
 import 'banco_biblioteca.dart';
@@ -28,6 +32,7 @@ class RepositorioMusicasLocal
     implements
         RepositorioMusicas,
         RepositorioVersoesMusicas,
+        RepositorioConsultaBiblioteca,
         AplicadorGrupoSincronizacao {
   RepositorioMusicasLocal({
     required this._banco,
@@ -93,6 +98,27 @@ class RepositorioMusicasLocal
             artista: plano.artista,
           );
     }
+    final conteudoPrincipalParaIndice = plano.criarMusica
+        ? plano.versoesNovas
+              .singleWhere((versao) => versao.principal)
+              .conteudoChordPro
+        : desejados[IdVersaoMusica(
+            registrosExistentes.singleWhere((versao) => versao.principal).id,
+          )];
+    final idVersaoPrincipal = plano.criarMusica
+        ? plano.versoesNovas.singleWhere((versao) => versao.principal).id.valor
+        : registrosExistentes.singleWhere((versao) => versao.principal).id;
+    final indicePesquisaAtualizado = conteudoPrincipalParaIndice == null
+        ? null
+        : _criarRegistroIndicePesquisa(
+            idMusica: plano.idMusica.valor,
+            idVersaoMusica: idVersaoPrincipal,
+            titulo: plano.titulo,
+            artista: plano.artista,
+            conteudoVisivel: ExtratorConteudoVisivelChordPro.extrair(
+              _parserDocumento.interpretar(conteudoPrincipalParaIndice),
+            ),
+          );
 
     final criadas = <IdVersaoMusica>[];
     final substituidas = <IdVersaoMusica>[];
@@ -152,6 +178,15 @@ class RepositorioMusicasLocal
             presente: true,
           );
         }
+        if (indicePesquisaAtualizado != null) {
+          await _banco.salvarIndicePesquisaMusica(
+            idMusica: indicePesquisaAtualizado.idMusica,
+            idVersaoMusica: indicePesquisaAtualizado.idVersaoMusica,
+            conteudoVisivel: indicePesquisaAtualizado.conteudoVisivel,
+            tituloNormalizado: indicePesquisaAtualizado.tituloNormalizado,
+            textoNormalizado: indicePesquisaAtualizado.textoNormalizado,
+          );
+        }
       });
     } catch (erro, pilha) {
       try {
@@ -194,6 +229,11 @@ class RepositorioMusicasLocal
         arquivo: _armazenamentoArquivos.nomeArquivo(versao.id),
         principal: true,
         arquivada: false,
+      );
+      await _salvarIndicePesquisa(
+        musica.versaoPrincipal,
+        titulo: musica.titulo,
+        artista: musica.artista,
       );
     } catch (erro, pilha) {
       try {
@@ -254,14 +294,21 @@ class RepositorioMusicasLocal
       Error.throwWithStackTrace(erro, pilha);
     }
     try {
-      final linhasAtualizadas = await _banco.atualizar(
-        id: musica.id.valor,
-        titulo: musica.titulo,
-        artista: musica.artista,
-      );
-      if (linhasAtualizadas != 1) {
-        throw MusicaNaoEncontrada(musica.id);
-      }
+      await _banco.executarEmTransacao(() async {
+        final linhasAtualizadas = await _banco.atualizar(
+          id: musica.id.valor,
+          titulo: musica.titulo,
+          artista: musica.artista,
+        );
+        if (linhasAtualizadas != 1) {
+          throw MusicaNaoEncontrada(musica.id);
+        }
+        await _salvarIndicePesquisa(
+          musica.versaoPrincipal,
+          titulo: musica.titulo,
+          artista: musica.artista,
+        );
+      });
     } catch (erro, pilha) {
       await _restaurarArquivos(musica.id, conteudosAnteriores);
       Error.throwWithStackTrace(erro, pilha);
@@ -270,7 +317,9 @@ class RepositorioMusicasLocal
 
   @override
   Future<Musica?> obterPorId(IdMusica id) async {
-    final indice = await _banco.obterPorId(id.valor);
+    final indice = await _medirSqliteVisualizacao(
+      () => _banco.obterPorId(id.valor),
+    );
     if (indice == null) {
       return null;
     }
@@ -279,10 +328,112 @@ class RepositorioMusicasLocal
 
   @override
   Future<List<Musica>> listar() async {
-    final indices = await _banco.listar();
+    final medicao = MedicaoDesempenhoBiblioteca.atual;
+    final indices = medicao == null
+        ? await _banco.listar()
+        : await medicao.medirSqlite(_banco.listar);
+    medicao?.registrarQuantidadeMusicas(indices.length);
     return Future.wait(
-      indices.map((indice) => _reconstruir(IdMusica(indice.id), indice)),
+      indices.map(
+        (indice) => _reconstruir(IdMusica(indice.id), indice, medicao: medicao),
+      ),
     );
+  }
+
+  @override
+  Future<List<ItemBiblioteca>> listarItensBiblioteca() async {
+    final medicao = MedicaoDesempenhoBiblioteca.atual;
+    final registros = medicao == null
+        ? await _banco.listarItensBiblioteca()
+        : await medicao.medirSqlite(_banco.listarItensBiblioteca);
+    medicao?.registrarQuantidadeMusicas(registros.length);
+    final idsEncontrados = <String>{};
+    for (final registro in registros) {
+      if (registro.idVersaoPrincipal == null ||
+          !idsEncontrados.add(registro.idMusica)) {
+        throw EstadoPersistenciaMusicaInconsistente(
+          IdMusica(registro.idMusica),
+        );
+      }
+    }
+    final conteudosGerados = <String, String>{};
+    final registrosSemConteudo = registros
+        .where((registro) => registro.conteudoVisivel == null)
+        .toList();
+    final versoesSemIndice = registrosSemConteudo.isEmpty
+        ? const <VersoesMusica>[]
+        : medicao == null
+        ? await _banco.listarVersoesPorIds(
+            registrosSemConteudo.map((registro) => registro.idVersaoPrincipal!),
+          )
+        : await medicao.medirSqlite(
+            () => _banco.listarVersoesPorIds(
+              registrosSemConteudo.map(
+                (registro) => registro.idVersaoPrincipal!,
+              ),
+            ),
+          );
+    final versoesPorId = {
+      for (final versao in versoesSemIndice) versao.id: versao,
+    };
+    await Future.wait(
+      registrosSemConteudo.map((registro) async {
+        final versao = versoesPorId[registro.idVersaoPrincipal];
+        if (versao == null) {
+          throw EstadoPersistenciaMusicaInconsistente(
+            IdMusica(registro.idMusica),
+          );
+        }
+        final reconstruida = await _reconstruirVersao(versao, medicao: medicao);
+        final conteudo = ExtratorConteudoVisivelChordPro.extrair(
+          reconstruida.documento,
+        );
+        conteudosGerados[registro.idMusica] = conteudo;
+      }),
+    );
+    final indicesGerados = [
+      for (final registro in registros)
+        if (registro.conteudoVisivel == null ||
+            registro.tituloNormalizado == null ||
+            registro.textoNormalizado == null)
+          _criarRegistroIndicePesquisa(
+            idMusica: registro.idMusica,
+            idVersaoMusica: registro.idVersaoPrincipal!,
+            titulo: registro.titulo,
+            artista: registro.artista,
+            conteudoVisivel:
+                registro.conteudoVisivel ??
+                conteudosGerados[registro.idMusica]!,
+          ),
+    ];
+    if (indicesGerados.isNotEmpty) {
+      if (medicao == null) {
+        await _banco.salvarIndicesPesquisaMusicas(indicesGerados);
+      } else {
+        await medicao.medirSqlite(
+          () => _banco.salvarIndicesPesquisaMusicas(indicesGerados),
+        );
+      }
+    }
+    return [
+      for (final registro in registros)
+        ItemBiblioteca(
+          idMusica: IdMusica(registro.idMusica),
+          idVersaoPrincipal: IdVersaoMusica(registro.idVersaoPrincipal!),
+          titulo: registro.titulo,
+          artista: registro.artista,
+          conteudoVisivel:
+              registro.conteudoVisivel ?? conteudosGerados[registro.idMusica]!,
+          tituloNormalizado:
+              registro.tituloNormalizado ?? normalizarPesquisa(registro.titulo),
+          textoNormalizado:
+              registro.textoNormalizado ??
+              normalizarPesquisa(
+                '${registro.titulo}\n${registro.artista}\n'
+                '${registro.conteudoVisivel ?? conteudosGerados[registro.idMusica]!}',
+              ),
+        ),
+    ];
   }
 
   @override
@@ -321,13 +472,17 @@ class RepositorioMusicasLocal
 
   @override
   Future<VersaoMusica?> obterPrincipalPorMusica(IdMusica idMusica) async {
-    final indice = await _banco.obterVersaoPrincipalPorMusica(idMusica.valor);
+    final indice = await _medirSqliteVisualizacao(
+      () => _banco.obterVersaoPrincipalPorMusica(idMusica.valor),
+    );
     return indice == null ? null : _reconstruirVersao(indice);
   }
 
   @override
   Future<VersaoMusica?> obterVersaoPorId(IdVersaoMusica id) async {
-    final indice = await _banco.obterVersaoPorId(id.valor);
+    final indice = await _medirSqliteVisualizacao(
+      () => _banco.obterVersaoPorId(id.valor),
+    );
     return indice == null ? null : _reconstruirVersao(indice);
   }
 
@@ -365,7 +520,27 @@ class RepositorioMusicasLocal
           ),
         )
         .produzirConteudoFinal();
+    final conteudoAnterior = atual.documento.conteudoOriginal;
     await _armazenamentoArquivos.substituir(atual.id, conteudo);
+    if (atual.principal) {
+      try {
+        await _salvarIndicePesquisa(
+          VersaoMusica(
+            id: versao.id,
+            idMusica: versao.idMusica,
+            nome: versao.nome,
+            documento: _parserDocumento.interpretar(conteudo),
+            principal: true,
+            arquivada: false,
+          ),
+          titulo: musica.titulo,
+          artista: musica.artista,
+        );
+      } catch (erro, pilha) {
+        await _armazenamentoArquivos.substituir(atual.id, conteudoAnterior);
+        Error.throwWithStackTrace(erro, pilha);
+      }
+    }
   }
 
   @override
@@ -428,7 +603,18 @@ class RepositorioMusicasLocal
       throw ArgumentError('A versão arquivada não pode ser principal.');
     }
     if (!versao.principal) {
-      await _banco.definirVersaoPrincipal(versao.idMusica.valor, id.valor);
+      final musica = await _banco.obterPorId(versao.idMusica.valor);
+      if (musica == null) {
+        throw MusicaNaoEncontrada(versao.idMusica);
+      }
+      await _banco.executarEmTransacao(() async {
+        await _banco.definirVersaoPrincipal(versao.idMusica.valor, id.valor);
+        await _salvarIndicePesquisa(
+          versao,
+          titulo: musica.titulo,
+          artista: musica.artista,
+        );
+      });
     }
   }
 
@@ -467,11 +653,19 @@ class RepositorioMusicasLocal
     }
   }
 
-  Future<Musica> _reconstruir(IdMusica id, IndiceMusica indice) async {
-    final versao = await obterPrincipalPorMusica(id);
-    if (versao == null) {
+  Future<Musica> _reconstruir(
+    IdMusica id,
+    IndiceMusica indice, {
+    MedicaoDesempenhoBiblioteca? medicao,
+  }) async {
+    final registroVersao = await _medirSqlite(
+      () => _banco.obterVersaoPrincipalPorMusica(id.valor),
+      medicaoBiblioteca: medicao,
+    );
+    if (registroVersao == null) {
       throw EstadoPersistenciaMusicaInconsistente(id);
     }
+    final versao = await _reconstruirVersao(registroVersao, medicao: medicao);
     return Musica(
       id: id,
       titulo: indice.titulo,
@@ -480,13 +674,22 @@ class RepositorioMusicasLocal
     );
   }
 
-  Future<VersaoMusica> _reconstruirVersao(VersoesMusica indice) async {
+  Future<VersaoMusica> _reconstruirVersao(
+    VersoesMusica indice, {
+    MedicaoDesempenhoBiblioteca? medicao,
+  }) async {
     final id = IdVersaoMusica(indice.id);
     _validarNomeArquivo(id, indice.arquivo, IdMusica(indice.idMusica));
     try {
-      final conteudo = await _armazenamentoArquivos.obter(id);
-      final documento = _parserDocumento.interpretar(conteudo);
-      await _validarSchemaVersao(id, documento);
+      final conteudo = await _medirLeituraArquivo(
+        () => _armazenamentoArquivos.obter(id),
+        medicaoBiblioteca: medicao,
+      );
+      final documento = _medirInterpretacaoChordPro(
+        () => _parserDocumento.interpretar(conteudo),
+        medicaoBiblioteca: medicao,
+      );
+      await _validarSchemaVersao(id, documento, medicao: medicao);
       return VersaoMusica(
         id: id,
         idMusica: IdMusica(indice.idMusica),
@@ -502,12 +705,16 @@ class RepositorioMusicasLocal
 
   Future<void> _validarSchemaVersao(
     IdVersaoMusica id,
-    DocumentoChordPro documento,
-  ) async {
+    DocumentoChordPro documento, {
+    MedicaoDesempenhoBiblioteca? medicao,
+  }) async {
     final schemas = documento.elementos.whereType<DiretivaSchemaAppCifras>();
     final schema2 = schemas.length == 1 && schemas.single.versao == 2;
     if (schema2) {
-      final origem = await _banco.obterOrigemSincronizadaVersao(id.valor);
+      final origem = await _medirSqlite(
+        () => _banco.obterOrigemSincronizadaVersao(id.valor),
+        medicaoBiblioteca: medicao,
+      );
       if (origem == null) throw const SchemaAppCifrasNaoSuportado();
       _validadorSchema.validarParaVersaoSincronizada(documento);
     } else {
@@ -523,6 +730,50 @@ class RepositorioMusicasLocal
     if (nomeArquivo != _armazenamentoArquivos.nomeArquivo(id)) {
       throw EstadoPersistenciaMusicaInconsistente(idMusica);
     }
+  }
+
+  Future<T> _medirSqliteVisualizacao<T>(Future<T> Function() operacao) {
+    final medicao = MedicaoDesempenhoVisualizacao.atual;
+    return medicao == null ? operacao() : medicao.medirSqlite(operacao);
+  }
+
+  Future<T> _medirSqlite<T>(
+    Future<T> Function() operacao, {
+    MedicaoDesempenhoBiblioteca? medicaoBiblioteca,
+  }) {
+    final medicaoVisualizacao = MedicaoDesempenhoVisualizacao.atual;
+    if (medicaoVisualizacao != null) {
+      return medicaoVisualizacao.medirSqlite(operacao);
+    }
+    return medicaoBiblioteca == null
+        ? operacao()
+        : medicaoBiblioteca.medirSqlite(operacao);
+  }
+
+  Future<T> _medirLeituraArquivo<T>(
+    Future<T> Function() operacao, {
+    MedicaoDesempenhoBiblioteca? medicaoBiblioteca,
+  }) {
+    final medicaoVisualizacao = MedicaoDesempenhoVisualizacao.atual;
+    if (medicaoVisualizacao != null) {
+      return medicaoVisualizacao.medirLeituraArquivo(operacao);
+    }
+    return medicaoBiblioteca == null
+        ? operacao()
+        : medicaoBiblioteca.medirLeituraArquivo(operacao);
+  }
+
+  T _medirInterpretacaoChordPro<T>(
+    T Function() operacao, {
+    MedicaoDesempenhoBiblioteca? medicaoBiblioteca,
+  }) {
+    final medicaoVisualizacao = MedicaoDesempenhoVisualizacao.atual;
+    if (medicaoVisualizacao != null) {
+      return medicaoVisualizacao.medirInterpretacaoChordPro(operacao);
+    }
+    return medicaoBiblioteca == null
+        ? operacao()
+        : medicaoBiblioteca.medirInterpretacaoChordPro(operacao);
   }
 
   String _revisarMetadadosCatalogo(
@@ -551,4 +802,41 @@ class RepositorioMusicasLocal
       throw EstadoPersistenciaMusicaInconsistente(idMusica);
     }
   }
+
+  Future<void> _salvarIndicePesquisa(
+    VersaoMusica versao, {
+    required String titulo,
+    required String artista,
+  }) {
+    final registro = _criarRegistroIndicePesquisa(
+      idMusica: versao.idMusica.valor,
+      idVersaoMusica: versao.id.valor,
+      titulo: titulo,
+      artista: artista,
+      conteudoVisivel: ExtratorConteudoVisivelChordPro.extrair(
+        versao.documento,
+      ),
+    );
+    return _banco.salvarIndicePesquisaMusica(
+      idMusica: registro.idMusica,
+      idVersaoMusica: registro.idVersaoMusica,
+      conteudoVisivel: registro.conteudoVisivel,
+      tituloNormalizado: registro.tituloNormalizado,
+      textoNormalizado: registro.textoNormalizado,
+    );
+  }
+
+  RegistroIndicePesquisaMusica _criarRegistroIndicePesquisa({
+    required String idMusica,
+    required String idVersaoMusica,
+    required String titulo,
+    required String artista,
+    required String conteudoVisivel,
+  }) => RegistroIndicePesquisaMusica(
+    idMusica: idMusica,
+    idVersaoMusica: idVersaoMusica,
+    conteudoVisivel: conteudoVisivel,
+    tituloNormalizado: normalizarPesquisa(titulo),
+    textoNormalizado: normalizarPesquisa('$titulo\n$artista\n$conteudoVisivel'),
+  );
 }

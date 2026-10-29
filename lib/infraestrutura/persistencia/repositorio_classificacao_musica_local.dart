@@ -1,4 +1,5 @@
 import '../../aplicacao/portas/repositorio_classificacao_musica.dart';
+import '../../aplicacao/diagnostico/medicao_desempenho_biblioteca.dart';
 import '../../dominio/objetos_de_valor/energia_musica.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
 import '../../dominio/objetos_de_valor/tag_musica.dart';
@@ -23,9 +24,14 @@ class RepositorioClassificacaoMusicaLocal
 
   @override
   Future<Map<IdMusica, ClassificacaoMusica>> listar() async {
+    final medicao = MedicaoDesempenhoBiblioteca.atual;
     final resultados = await Future.wait([
-      _banco.listarEnergiasMusicas(),
-      _banco.listarTodasTagsMusicas(),
+      medicao == null
+          ? _banco.listarEnergiasMusicas()
+          : medicao.medirSqlite(_banco.listarEnergiasMusicas),
+      medicao == null
+          ? _banco.listarTodasTagsMusicas()
+          : medicao.medirSqlite(_banco.listarTodasTagsMusicas),
     ]);
     final energias = resultados[0] as List<EnergiasMusica>;
     final tags = resultados[1] as List<TagsMusica>;

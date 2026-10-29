@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/tom_execucao.dart';
 import 'package:appcifras/aplicacao/casos_de_uso/versoes_musicas.dart';
+import 'package:appcifras/aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_versao_musica.dart';
 import 'package:appcifras/aplicacao/portas/repositorio_tom_execucao.dart';
 import 'package:appcifras/apresentacao/musica/contexto_navegacao_lista_culto.dart';
@@ -112,6 +113,7 @@ void main() {
     GeradorIdVersaoMusica? geradorIdVersao,
     ContextoNavegacaoListaCulto? contextoListaCulto,
     ControleTelaAtiva? controleTelaAtiva,
+    MedicaoDesempenhoVisualizacao? medicaoDesempenho,
   }) {
     final versoesEdicao =
         repositorioVersoes ??
@@ -165,6 +167,7 @@ void main() {
                 ? null
                 : RemoverUltimoTomExecucao(repositorioTomExecucao),
             contextoListaCulto: contextoListaCulto,
+            medicaoDesempenho: medicaoDesempenho,
             controleTelaAtiva: controleTelaAtiva ?? _ControleTelaAtivaFake(),
           ),
         ),
@@ -184,6 +187,29 @@ void main() {
       textScaler: textScaler,
     );
   }
+
+  testWidgets('mede abertura até o primeiro frame da cifra', (tester) async {
+    final mensagens = <String>[];
+    final original = musica('[C]Letra');
+    final medicao = MedicaoDesempenhoVisualizacao.iniciar(
+      origem: OrigemAberturaVisualizacao.biblioteca,
+      registrar: mensagens.add,
+    )!;
+
+    await montarTelaComRepositorio(
+      tester,
+      _RepositorioMemoria(original),
+      medicaoDesempenho: medicao,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('conteudo-cifra')), findsOneWidget);
+    expect(mensagens, hasLength(1));
+    expect(mensagens.single, startsWith('[QX-02][Visualizacao]'));
+    expect(mensagens.single, contains('origem=biblioteca'));
+    expect(mensagens.single, contains('processamento_musical_ms='));
+    expect(mensagens.single, contains('construcao_interface_ms='));
+  });
 
   Future<void> aplicarPinca(
     WidgetTester tester, {

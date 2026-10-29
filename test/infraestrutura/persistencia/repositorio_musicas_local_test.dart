@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:appcifras/dominio/chordpro/validador_schema_appcifras.dart';
+import 'package:appcifras/aplicacao/diagnostico/medicao_desempenho_visualizacao.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/erros/id_musica_ja_existente.dart';
@@ -18,6 +19,7 @@ import 'package:appcifras/infraestrutura/persistencia/banco_biblioteca.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_musicas_local.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
 import 'package:appcifras/infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,7 +27,7 @@ void main() {
   final parser = ParserDocumentoChordPro();
   late Directory diretorioTemporario;
   late BancoBiblioteca banco;
-  late ArmazenamentoArquivosChordPro arquivos;
+  late _ArmazenamentoContado arquivos;
   late RepositorioMusicasLocal repositorio;
 
   Musica musica(String id, {String? conteudo}) => Musica(
@@ -40,7 +42,7 @@ void main() {
       'appcifras_repositorio_',
     );
     banco = BancoBiblioteca(NativeDatabase.memory());
-    arquivos = ArmazenamentoArquivosChordPro(diretorioTemporario);
+    arquivos = _ArmazenamentoContado(diretorioTemporario);
     repositorio = RepositorioMusicasLocal(
       banco: banco,
       armazenamentoArquivos: arquivos,
@@ -71,6 +73,164 @@ void main() {
     expect(principal.idMusica, original.id);
     expect(await repositorio.obterVersaoPorId(principal.id), principal);
   });
+
+  test(
+    'listagem leve reutiliza índice textual sem reler ou interpretar arquivos',
+    () async {
+      final original = musica(
+        'musica-1',
+        conteudo:
+            '{title: Graça}\n{artist: Ministério}\n{key: C}\n'
+            '[C]Tua graça me alcançou',
+      );
+      await repositorio.salvar(original);
+      arquivos.leituras = 0;
+
+      final primeira = await repositorio.listarItensBiblioteca();
+      final segunda = await repositorio.listarItensBiblioteca();
+
+      expect(primeira, hasLength(1));
+      expect(primeira.single.titulo, 'Graça');
+      expect(primeira.single.artista, 'Ministério');
+      expect(
+        primeira.single.conteudoVisivel,
+        contains('Tua graça me alcançou'),
+      );
+      expect(primeira.single.tituloNormalizado, 'graca');
+      expect(
+        primeira.single.textoNormalizado,
+        contains('ministerio tua graca me alcancou'),
+      );
+      expect(segunda.single.idMusica, original.id);
+      expect(arquivos.leituras, 0);
+
+      expect(await repositorio.obterPorId(original.id), isNotNull);
+      expect(arquivos.leituras, 1);
+    },
+  );
+
+  test('instrumenta consultas, arquivos e parsing da abertura atual', () async {
+    final original = musica('musica-1');
+    await repositorio.salvar(original);
+    final mensagens = <String>[];
+    final medicao = MedicaoDesempenhoVisualizacao.iniciar(
+      origem: OrigemAberturaVisualizacao.biblioteca,
+      registrar: mensagens.add,
+    )!;
+
+    await medicao.executarNoContexto(() async {
+      await repositorio.obterPorId(original.id);
+      await repositorio.obterVersaoPorId(original.versaoPrincipal.id);
+    });
+    medicao.concluirApresentacao();
+
+    expect(mensagens.single, contains('consultas_sqlite=3'));
+    expect(mensagens.single, contains('arquivos_lidos=2'));
+    expect(mensagens.single, contains('documentos_interpretados=2'));
+  });
+
+  test(
+    'listagem leve suporta milhares de músicas sem arquivos ChordPro',
+    () async {
+      const quantidade = 2306;
+      await banco.batch((lote) {
+        lote.insertAll(banco.indiceMusicas, [
+          for (var i = 0; i < quantidade; i++)
+            IndiceMusicasCompanion.insert(
+              id: 'm$i',
+              titulo: 'Título $i',
+              artista: 'Artista $i',
+              arquivo: 'm$i.cho',
+            ),
+        ]);
+        lote.insertAll(banco.versoesMusicas, [
+          for (var i = 0; i < quantidade; i++)
+            VersoesMusicasCompanion.insert(
+              id: 'v$i',
+              idMusica: 'm$i',
+              nome: 'Principal',
+              arquivo: 'v$i.cho',
+              principal: true,
+              arquivada: false,
+            ),
+        ]);
+        lote.insertAll(banco.indicesPesquisaMusicas, [
+          for (var i = 0; i < quantidade; i++)
+            IndicesPesquisaMusicasCompanion.insert(
+              idMusica: 'm$i',
+              idVersaoMusica: 'v$i',
+              conteudoVisivel: 'Letra pesquisável $i',
+              tituloNormalizado: Value('titulo $i'),
+              textoNormalizado: Value(
+                'titulo $i artista $i letra pesquisavel $i',
+              ),
+            ),
+        ]);
+      });
+
+      final itens = await repositorio.listarItensBiblioteca();
+
+      expect(itens, hasLength(quantidade));
+      expect(arquivos.leituras, 0);
+      expect(
+        itens
+            .singleWhere((item) => item.idMusica == IdMusica('m2305'))
+            .conteudoVisivel,
+        'Letra pesquisável 2305',
+      );
+    },
+  );
+
+  test('edição e exclusão mantêm o índice leve consistente', () async {
+    final original = musica('musica-1');
+    await repositorio.salvar(original);
+    final atualizada = musica(
+      'musica-1',
+      conteudo:
+          '{title: Título novo}\n{artist: Artista novo}\n{key: G}\n'
+          '[G]Conteúdo novo pesquisável',
+    );
+
+    await repositorio.atualizar(atualizada);
+    final item = (await repositorio.listarItensBiblioteca()).single;
+    expect(item.titulo, 'Título novo');
+    expect(item.artista, 'Artista novo');
+    expect(item.conteudoVisivel, contains('Conteúdo novo pesquisável'));
+    expect(item.tituloNormalizado, 'titulo novo');
+    expect(
+      item.textoNormalizado,
+      contains('artista novo conteudo novo pesquisavel'),
+    );
+
+    await repositorio.excluir(original.id);
+    expect(await repositorio.listarItensBiblioteca(), isEmpty);
+  });
+
+  test(
+    'troca da principal atualiza somente a projeção da Biblioteca',
+    () async {
+      final original = musica('musica-1');
+      await repositorio.salvar(original);
+      final alternativa = VersaoMusica(
+        id: IdVersaoMusica('alternativa'),
+        idMusica: original.id,
+        nome: 'Alternativa',
+        documento: parser.interpretar(
+          '{title: Título}\n{artist: Artista}\n{key: D}\n[D]Letra alternativa',
+        ),
+        principal: false,
+        arquivada: false,
+      );
+      await repositorio.salvarVersao(alternativa);
+
+      await repositorio.definirComoPrincipal(alternativa.id);
+
+      final item = (await repositorio.listarItensBiblioteca()).single;
+      expect(item.idVersaoPrincipal, alternativa.id);
+      expect(item.conteudoVisivel, contains('Letra alternativa'));
+      expect(await repositorio.listarPorMusica(original.id), hasLength(2));
+    },
+  );
 
   test('gera arquivo gerenciado com schema e ID sem alterar o documento original', () async {
     final original = musica('musica-1');
@@ -387,4 +547,16 @@ void main() {
     expect(await arquivos.existe(usada.id), isTrue);
     expect(await tons.obterUltimoTom(usada.id), tomE);
   });
+}
+
+class _ArmazenamentoContado extends ArmazenamentoArquivosChordPro {
+  _ArmazenamentoContado(super.diretorioMusicas);
+
+  var leituras = 0;
+
+  @override
+  Future<String> obter(IdVersaoMusica id) {
+    leituras++;
+    return super.obter(id);
+  }
 }

@@ -63,6 +63,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
     home: TelaBiblioteca(
       listarMusicas: widget.composicao.listarMusicas,
+      listarItensBiblioteca: widget.composicao.listarItensBiblioteca,
       prepararEntradaMusica: widget.composicao.prepararEntradaMusica,
       salvarRascunhoChordPro: widget.composicao.salvarRascunhoChordPro,
       obterMusicaPorId: widget.composicao.obterMusicaPorId,
