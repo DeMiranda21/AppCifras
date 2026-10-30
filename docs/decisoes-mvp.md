@@ -293,8 +293,10 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
 
 ## Lista de Culto v1 e evolução aprovada
 
-- Atualmente, Lista guarda IdListaCulto e nome. Item guarda IdItemListaCulto,
-  IdMusica, IdVersaoMusica e posição; não guarda ChordPro nem tom próprio.
+- Atualmente, Lista já modela e persiste IdListaCulto, nome, DataCulto opcional,
+  IdMinistrante opcional e `criadaEm` opcional. Item guarda IdItemListaCulto,
+  IdMusica, IdVersaoMusica, posição e tom histórico opcional; não guarda
+  ChordPro. Essa fundação entrou no schema 8 e permanece no schema atual 10.
 - Domínio aceita ocorrências repetidas; UI v1 impede nova inclusão de música já
   presente, sem alterar dados preexistentes.
 - Excluir item ou Lista não exclui Música. A exclusão física de Música é
@@ -362,3 +364,8 @@ divergências de escopo; modelo-dominio.md define conceitos permanentes.
   Energia e tempo desde a última utilização apoiarão filtros de repertório;
   nunca usada, mais de 30 dias e mais de 60 dias são evoluções previstas. Não
   está aprovado algoritmo automático de montagem ou sugestão de repertório.
+- A integração atual ainda é transitória: a visualização pela Lista não usa o
+  campo de tom do Item e continua lendo e gravando a preferência global da
+  VersaoMusica. H1b/H1c corrigirão essa lacuna sem transformar o comportamento
+  transitório em regra de produto. `criadaEm` também já está persistível, mas
+  ainda precisa ser preenchido automaticamente pelo caso de uso de criação.

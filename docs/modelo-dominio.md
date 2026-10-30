@@ -178,10 +178,12 @@ contrato.
 
 ## Modelo atual — Lista de Culto
 
-ListaCulto é entidade identificada por IdListaCulto e nome. ItemListaCulto é
-identificado por IdItemListaCulto, referencia Música por IdMusica e sua versão
-concreta por IdVersaoMusica, além de posição persistente. A Lista não contém
-ChordPro nem duplica conteúdo da Música.
+ListaCulto é entidade identificada por IdListaCulto e nome. O modelo atual já
+possui DataCulto opcional, IdMinistrante opcional e `criadaEm` técnico opcional.
+ItemListaCulto é identificado por IdItemListaCulto, referencia Música por
+IdMusica e sua versão concreta por IdVersaoMusica, além de posição persistente
+e tom histórico opcional. A Lista não contém ChordPro nem duplica conteúdo da
+Música.
 
 Itens são independentes: o domínio suporta ocorrências repetidas da mesma
 música. A interface pode aplicar restrições de conveniência sem alterar essa
@@ -195,9 +197,10 @@ distinção inicial entre Lista planejada e efetivamente executada, nem entidade
 separada de Execução ou Histórico. Consultas históricas são projeções derivadas
 das próprias Listas.
 
-ListaCulto possuirá DataCulto e um Ministrante associado, ambos opcionais e
-aplicáveis à Lista inteira. A data ordena o histórico, identifica utilizações
-anteriores e permite consultas por período. `criadaEm` é metadado técnico
+ListaCulto possui DataCulto e um Ministrante associado, ambos opcionais e
+aplicáveis à Lista inteira no domínio e na persistência. A integração funcional
+desses campos ainda será concluída. A data ordena o histórico, identifica
+utilizações anteriores e permite consultas por período. `criadaEm` é metadado técnico
 imutável, preenchido automaticamente nas novas Listas com o instante de sua
 criação no aplicativo. Não substitui DataCulto nem representa a data do culto;
 serve somente para desempatar Listas com a mesma DataCulto e para ordenação
@@ -225,9 +228,10 @@ mesma entidade: o cadastro admite duplicidade porque a identidade é o ID.
 Cada ItemListaCulto registra a Música, a versão escolhida e a posição. O detalhe
 da Lista permite trocar a versão desse item por outra versão ativa da mesma
 Música, sem alterar a principal nem outros itens. Uma referência existente a uma
-versão arquivada continua válida e abrível, embora arquivadas não sejam oferecidas
-para nova escolha. O item também registrará o tom daquela ocasião. Esse tom é
-snapshot operacional e fonte de verdade ao abrir a música pela Lista: mudanças
+versão arquivada continua válida e abrível, embora arquivadas não sejam
+oferecidas para nova escolha. O item também possui campo para o tom daquela
+ocasião. Esse tom é snapshot operacional e fonte de verdade ao abrir a música
+pela Lista: mudanças
 posteriores no último tom da VersaoMusica, na versão principal ou em outras
 Listas não alteram uma Lista anterior. Alterar o tom dentro do contexto da Lista
 atualiza somente o ItemListaCulto correspondente e não altera a preferência
@@ -235,6 +239,13 @@ global da VersaoMusica. Trocar a versão concreta do item preserva seu tom; se o
 tom era nulo, permanece nulo e nenhum histórico é consultado para preenchê-lo.
 Trocar o Ministrante da Lista também preserva todos os tons já registrados;
 somente novas inclusões passam a usar o novo Ministrante no fallback.
+
+O campo `ItemListaCulto.tom` já existe no domínio e na persistência, mas ainda
+não participa da visualização. Transitoriamente, abrir pela Lista usa a mesma
+preferência global da VersaoMusica usada pela Biblioteca, e alterar o tom nesse
+fluxo ainda grava essa preferência global. Isso é lacuna de implementação a ser
+corrigida em H1b/H1c, não regra de domínio desejada. Da mesma forma, `criadaEm`
+já existe, porém o caso de uso atual de criação ainda não o preenche.
 
 ## Preferência de tom de execução
 

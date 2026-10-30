@@ -41,6 +41,13 @@ no caminho principal interrompem a sequência.
   índices, relações e preferências.
 - Biblioteca Oficial pública por manifesto e arquivos `.cho` via HTTPS, com
   atualização incremental, relatório, uso offline e migração validada no A72.
+- Biblioteca leve por `ItemBiblioteca`, com índices textuais persistidos,
+  manutenção incremental, pesquisa sem reconstruir todas as Musicas e listagem
+  sem ler os arquivos `.cho`.
+- Detalhe de Lista agregado por `ConsultaDetalheListaCulto`, limitado aos
+  catálogos, versões concretas e origens sincronizadas referenciados pelos
+  itens, com IDs deduplicados e falha isolada por versão; um item permanece no
+  detalhe quando sua versão não pode ser reconstruída.
 
 ## Prioridade 0 — Estabilizar a jornada já entregue
 
@@ -51,19 +58,22 @@ da primeira release:
 1. **QX-01 — qualidade das cifras:** retirar definitivamente tablaturas do
    conteúdo publicado, revisar gradualmente cifras e permitir que a curadoria
    retire músicas inadequadas sem que gerações futuras as restaurem;
-2. **QX-02 — desempenho da Biblioteca:** medir abertura, retorno, consulta,
-   leitura e processamento antes de escolher entre carregamento seletivo,
-   paginação ou outra solução; implementar a alternativa mais simples com
-   ganho real no A72 e na Biblioteca completa;
-3. **QX-03 — relevância da pesquisa:** ordenar correspondências por igualdade,
-   prefixo e ocorrência no título, deixando resultados somente da letra por
-   último e mantendo ordem alfabética dentro dos grupos.
+2. **QX-02 — desempenho da Biblioteca, entregue:** a medição no A72 levou à
+   projeção leve `ItemBiblioteca` e aos índices textuais persistidos nos schemas
+   9 e 10. A listagem e a pesquisa deixaram de reconstruir todas as Musicas e de
+   ler todos os `.cho`; o retorno da visualização sem alteração também deixou de
+   recarregar a Biblioteca. O detalhe de Lista usa consulta agregada própria e
+   não carrega a Biblioteca inteira nem consulta uma versão por item;
+3. **QX-03 — relevância da pesquisa, entregue:** a ordem vigente é título
+   exato, título iniciado pela consulta, título contendo a consulta, Artista e,
+   por último, correspondência somente na letra, com ordem alfabética estável
+   dentro de cada grupo.
 
-QX-01 e QX-03 podem avançar independentemente. QX-02 começa por diagnóstico e
-medição, sem presumir paginação. A posição de Artista na relevância da pesquisa
-e o mecanismo futuro para impedir novas tablaturas precisam de decisão antes
-das respectivas implementações. Regressões de integridade, leitura, navegação
-ou desempenho no caminho principal continuam bloqueadoras.
+QX-01 permanece aberta quanto ao mecanismo futuro para impedir novas
+tablaturas. QX-02 e QX-03 estão implementadas; suas projeções leves, consultas
+agregadas e testes de regressão são guardrails para as próximas evoluções.
+Regressões de integridade, leitura, navegação ou desempenho no caminho
+principal continuam bloqueadoras.
 
 ## Prioridade 1 concluída — Biblioteca Oficial por manifesto e HTTPS
 
@@ -150,22 +160,49 @@ O histórico será desenvolvido antes da preparação final de release. As Lista
 de Culto são sua fonte de verdade; não será criado subsistema autônomo de
 Histórico ou Execução. A sequência aprovada é:
 
-### H1 — Base histórica
+### H1a — fechamento da base histórica
 
-- criar entidade e cadastro local simples de Ministrante;
-- acrescentar DataCulto opcional, `criadaEm` técnico e Ministrante opcional à
-  ListaCulto;
-- acrescentar o tom opcional da ocorrência ao ItemListaCulto;
-- migrar a persistência preservando as Listas existentes;
-- aplicar o fallback de tom: último usado pelo mesmo Ministrante na mesma
-  Música e VersaoMusica, último geral da VersaoMusica e tom original.
+A fundação foi parcialmente entregue no schema 8 e permanece no schema atual
+10. Já existem IdMinistrante, Ministrante, DataCulto, os campos contextuais de
+ListaCulto, o tom opcional de ItemListaCulto, migração aditiva, codecs,
+persistência básica e a implementação inicial do repositório de Ministrantes.
+Listas e itens legados preservam valores nulos.
 
-### H2 — Uso do histórico na Lista
+Para encerrar H1a ainda falta:
 
-- selecionar o Ministrante da Lista;
-- sugerir o último tom daquele Ministrante;
-- alterar e persistir o tom específico do ItemListaCulto;
-- mostrar resumo histórico ao adicionar músicas.
+- preencher `criadaEm` automaticamente nas novas Listas;
+- atualizar DataCulto e Ministrante preservando `criadaEm`;
+- compor e expor os casos de uso e o repositório de Ministrantes;
+- complementar testes de criação, contexto e preservação.
+
+### H1b — consulta, fallback e inclusão batch
+
+- consultar o último tom histórico em lote, sem consulta por item e sem ler
+  ChordPro;
+- resolver em lote a precedência: item, último tom do mesmo Ministrante na
+  mesma Música e VersaoMusica, preferência global e tom original;
+- obter eficientemente as preferências globais e reutilizar as consultas batch
+  de versões já existentes;
+- atualizar explicitamente `ItemListaCulto.tom`;
+- substituir a inclusão sequencial por resolução em lote, mapas em memória e
+  persistência em uma única transação;
+- migrar o seletor “Adicionar músicas” de `ListarMusicas` para a projeção leve
+  `ItemBiblioteca`.
+
+### H1c — integração contextual mínima
+
+- cadastrar e selecionar Ministrante e editar DataCulto/Ministrante na Lista;
+- usar `ItemListaCulto.tom` como fonte de verdade na visualização pela Lista;
+- manter o fallback do item legado apenas em memória até alteração explícita;
+- alterar somente o tom do item quando a visualização foi aberta pela Lista;
+- atualizar o contexto mantido para swipe depois de alterar o tom, sem nova
+  consulta histórica a cada item.
+
+### H2 — Histórico aplicado à Lista
+
+- mostrar última utilização e último tom do Ministrante ao adicionar músicas;
+- apresentar resumo histórico útil à preparação da Lista;
+- ampliar filtros somente sobre as consultas agregadas entregues em H1b.
 
 ### H3 — Tela Histórico
 
@@ -205,7 +242,7 @@ Histórico ou Execução. A sequência aprovada é:
 | Diagnóstico contextual da transposição | Desejável, não bloqueador | Frequência de cifras que impedem transpor |
 | Rework amplo do editor | Desejável, não bloqueador | Atritos observados no uso real |
 | C3: escolher versão ao incluir em Lista | Conveniência adiável | Custo real da troca depois da inclusão |
-| Histórico H1–H4 | Aprovado antes da preparação final de release | Executar na sequência definida |
+| Histórico H1a–H4 | H1a parcialmente entregue; restante aprovado antes da release | H1a-fechamento → H1b → H1c → H2 → H3 → H4 |
 | Estatísticas adicionais | Adiáveis | Derivar das Listas quando houver volume real |
 | Otimizações gerais | Adiáveis | Perfil ou regressão perceptível no A72 |
 | Importação em lote | Adiável e separada da sincronização | Necessidade de fontes não curadas |
@@ -247,6 +284,6 @@ transições.
     S1–S5 → manifesto + publicador → hospedagem e cliente HTTPS
     Cliente HTTPS + aplicação incremental → nova UX → validação A72 → remoção SAF
     Uso real do editor → recorte do rework e diagnóstico da transposição
-    Versões/arranjos entregues → H1 → H2 → H3 → H4 → preparação final de release
+    Versões/arranjos entregues → H1a-fechamento → H1b → H1c → H2 → H3 → H4 → preparação final de release
     Contexto da Lista → consultas e estatísticas derivadas
     Biblioteca Oficial validada → backup e fontes remotas futuras

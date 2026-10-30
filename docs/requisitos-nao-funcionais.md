@@ -25,6 +25,16 @@
   Biblioteca Oficial completa, inclusive acima de 2.000 músicas. A solução
   deve ser escolhida a partir de medição que separe consulta SQLite, leitura e
   parsing de ChordPro, criação do índice de pesquisa e construção de widgets.
+- Listagem e pesquisa da Biblioteca reutilizam projeções leves e índices
+  textuais persistidos; não devem reconstruir todas as Musicas nem ler todos os
+  arquivos `.cho` em cada abertura ou retorno.
+- O detalhe de Lista e as consultas históricas trabalham com IDs, colunas
+  SQLite, projeções leves e mapas agregados. Devem deduplicar referências,
+  evitar consultas por item, não reconstruir ChordPro para responder histórico
+  e isolar a falha de uma versão sem derrubar a Lista.
+- Inclusões múltiplas devem resolver versões e tons em lote e persistir em
+  transação. A navegação por swipe não deve repetir consulta histórica a cada
+  item, e o seletor de músicas deve reutilizar `ItemBiblioteca`.
 - Rolagem é fluida, com consumo moderado de memória e bateria.
 - A cifra cabe na largura útil sem truncamento, ellipsis ou rolagem horizontal
   no modo normal; o reflow preserva acorde e trecho associado.

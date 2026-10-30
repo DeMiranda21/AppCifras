@@ -152,8 +152,10 @@ estatísticas permanecem evoluções.
 
 ### Contexto da Lista e histórico
 
-ListaCulto terá DataCulto opcional e um Ministrante opcional de cadastro local
-simples. Toda Lista nova recebe também `criadaEm`, instante técnico imutável de
+ListaCulto já possui no domínio e na persistência DataCulto opcional, um
+Ministrante opcional de cadastro local simples e `criadaEm` opcional. Essa base
+foi introduzida no schema 8 e permanece no schema atual 10. Toda Lista nova deve
+receber `criadaEm`, instante técnico imutável de
 criação no aplicativo que não substitui nem representa a data do culto. Ao ser
 salva, a Lista compõe o histórico sem exigir confirmação de execução e sem
 distinguir planejamento de repertório efetivamente tocado. Não haverá entidade
@@ -165,6 +167,11 @@ mesma Música, VersaoMusica, posição, ordem e referências. A interface
 apresentará “Data não informada”, “Ministrante não informado” e “Tom não
 registrado”, ou textos equivalentes, sem preencher esses valores
 automaticamente.
+
+A implementação dessa base ainda é parcial: o caso de uso de criação não
+preenche `criadaEm` automaticamente, a edição de DataCulto/Ministrante e a
+composição funcional do cadastro de Ministrantes permanecem no fechamento da
+H1a.
 
 O cadastro permitirá renomear Ministrante preservando as Listas associadas.
 Ministrantes arquivados ou inativos deixarão de aparecer normalmente na seleção
@@ -181,6 +188,12 @@ anteriores, sem acompanhar mudanças posteriores e sem atualizar a preferência
 global. Item legado sem tom usa preferência global e depois tom original apenas
 temporariamente; esse fallback só passa a ser persistido quando o usuário
 altera explicitamente o tom.
+
+Embora `ItemListaCulto.tom` já esteja no domínio e na persistência, a
+visualização ainda não o utiliza. No comportamento transitório atual, abrir
+pela Lista usa a preferência global da VersaoMusica e alterar o tom também a
+grava. H1b/H1c substituirão esse comportamento pela regra contextual descrita
+acima.
 
 Trocar o Ministrante de uma Lista preserva todos os tons existentes e afeta
 somente o fallback de músicas adicionadas depois. Trocar a versão de um item
