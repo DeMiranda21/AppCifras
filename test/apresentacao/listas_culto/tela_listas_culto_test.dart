@@ -15,8 +15,10 @@ import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
 import 'package:appcifras/dominio/entidades/versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
+import 'package:appcifras/dominio/objetos_de_valor/data_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_ministrante.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
 import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
 import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
@@ -595,7 +597,30 @@ class _RepositorioListasFake implements RepositorioListasCulto {
 
   @override
   Future<void> renomear(IdListaCulto id, String nome) async {
-    _porId[id] = ListaCulto(id: id, nome: nome);
+    final atual = _porId[id]!;
+    _porId[id] = ListaCulto(
+      id: id,
+      nome: nome,
+      data: atual.data,
+      idMinistrante: atual.idMinistrante,
+      criadaEm: atual.criadaEm,
+    );
+  }
+
+  @override
+  Future<void> atualizarContexto(
+    IdListaCulto id, {
+    required DataCulto? data,
+    required IdMinistrante? idMinistrante,
+  }) async {
+    final atual = _porId[id]!;
+    _porId[id] = ListaCulto(
+      id: id,
+      nome: atual.nome,
+      data: data,
+      idMinistrante: idMinistrante,
+      criadaEm: atual.criadaEm,
+    );
   }
 
   @override

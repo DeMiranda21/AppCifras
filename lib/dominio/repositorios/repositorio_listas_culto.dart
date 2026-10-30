@@ -2,6 +2,8 @@ import '../entidades/item_lista_culto.dart';
 import '../entidades/lista_culto.dart';
 import '../objetos_de_valor/id_item_lista_culto.dart';
 import '../objetos_de_valor/id_lista_culto.dart';
+import '../objetos_de_valor/data_culto.dart';
+import '../objetos_de_valor/id_ministrante.dart';
 import '../objetos_de_valor/id_versao_musica.dart';
 
 abstract interface class RepositorioListasCulto {
@@ -12,6 +14,12 @@ abstract interface class RepositorioListasCulto {
   Future<List<ListaCulto>> listar();
 
   Future<void> renomear(IdListaCulto id, String nome);
+
+  Future<void> atualizarContexto(
+    IdListaCulto id, {
+    required DataCulto? data,
+    required IdMinistrante? idMinistrante,
+  });
 
   Future<void> excluir(IdListaCulto id);
 

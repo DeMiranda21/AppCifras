@@ -3,12 +3,19 @@ import 'package:appcifras/aplicacao/portas/gerador_id_item_lista_culto.dart';
 import 'package:appcifras/aplicacao/portas/gerador_id_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/lista_culto.dart';
+import 'package:appcifras/dominio/entidades/ministrante.dart';
 import 'package:appcifras/dominio/entidades/versao_musica.dart';
+import 'package:appcifras/dominio/erros/ministrante_nao_encontrado.dart';
+import 'package:appcifras/dominio/objetos_de_valor/data_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_item_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_lista_culto.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/id_ministrante.dart';
 import 'package:appcifras/dominio/objetos_de_valor/id_versao_musica.dart';
+import 'package:appcifras/dominio/objetos_de_valor/nota.dart';
+import 'package:appcifras/dominio/objetos_de_valor/tom.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_listas_culto.dart';
+import 'package:appcifras/dominio/repositorios/repositorio_ministrantes.dart';
 import 'package:appcifras/dominio/repositorios/repositorio_versoes_musicas.dart';
 import 'package:appcifras/dominio/servicos/parser_documento_chordpro.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,23 +23,127 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('cria, renomeia, lista e exclui lista', () async {
     final repositorio = _RepositorioListasCultoFake();
+    final instante = DateTime.utc(2026, 10, 29, 15, 30);
     final criar = CriarListaCulto(
       repositorio,
       _GeradorListaFake(IdListaCulto('lista-1')),
+      agora: () => instante,
     );
     final lista = await criar.executar(' Culto ');
 
     expect(lista.nome, 'Culto');
+    expect(lista.criadaEm, instante);
     expect(await ListarListasCulto(repositorio).executar(), [lista]);
 
     await RenomearListaCulto(repositorio).executar(lista.id, 'Ensaio');
     expect(
-      (await ObterListaCulto(repositorio).executar(lista.id))!.nome,
-      'Ensaio',
+      await ObterListaCulto(repositorio).executar(lista.id),
+      isA<ListaCulto>()
+          .having((lista) => lista.nome, 'nome', 'Ensaio')
+          .having((lista) => lista.criadaEm, 'criadaEm', instante),
     );
 
     await ExcluirListaCulto(repositorio).executar(lista.id);
     expect(await ObterListaCulto(repositorio).executar(lista.id), isNull);
+  });
+
+  test('criação converte o instante fornecido para UTC', () async {
+    final local = DateTime.parse('2026-10-29T12:30:00-03:00');
+    final lista = await CriarListaCulto(
+      _RepositorioListasCultoFake(),
+      _GeradorListaFake(IdListaCulto('lista-utc')),
+      agora: () => local,
+    ).executar('Culto');
+
+    expect(lista.criadaEm, DateTime.utc(2026, 10, 29, 15, 30));
+    expect(lista.criadaEm?.isUtc, isTrue);
+  });
+
+  test(
+    'atualiza e limpa contexto preservando identidade, nome, criação e itens',
+    () async {
+      final listas = _RepositorioListasCultoFake();
+      final ministrantes = _RepositorioMinistrantesFake();
+      final criadaEm = DateTime.utc(2026, 10, 20, 18);
+      final idLista = IdListaCulto('lista-contexto');
+      final primeiroMinistrante = Ministrante(
+        id: IdMinistrante('ministrante-1'),
+        nome: 'Primeiro',
+        arquivado: false,
+      );
+      final segundoMinistrante = Ministrante(
+        id: IdMinistrante('ministrante-2'),
+        nome: 'Segundo',
+        arquivado: false,
+      );
+      await ministrantes.salvar(primeiroMinistrante);
+      await ministrantes.salvar(segundoMinistrante);
+      await listas.salvar(
+        ListaCulto(id: idLista, nome: 'Culto', criadaEm: criadaEm),
+      );
+      const tom = Tom(
+        notaFundamental: Nota(nome: NomeNota.d),
+        modo: ModoTom.maior,
+      );
+      final item = ItemListaCulto(
+        id: IdItemListaCulto('item-1'),
+        idLista: idLista,
+        idMusica: IdMusica('musica-1'),
+        idVersaoMusica: IdVersaoMusica('versao-1'),
+        posicao: 0,
+        tom: tom,
+      );
+      await listas.adicionarItem(item);
+      final atualizar = AtualizarContextoListaCulto(listas, ministrantes);
+
+      final definida = await atualizar.executar(
+        idLista,
+        data: DataCulto(ano: 2026, mes: 11, dia: 2),
+        idMinistrante: primeiroMinistrante.id,
+      );
+      final alterada = await atualizar.executar(
+        idLista,
+        data: DataCulto(ano: 2026, mes: 11, dia: 9),
+        idMinistrante: segundoMinistrante.id,
+      );
+      final limpa = await atualizar.executar(
+        idLista,
+        data: null,
+        idMinistrante: null,
+      );
+
+      expect(definida.idMinistrante, primeiroMinistrante.id);
+      expect(alterada.idMinistrante, segundoMinistrante.id);
+      expect(limpa.id, idLista);
+      expect(limpa.nome, 'Culto');
+      expect(limpa.data, isNull);
+      expect(limpa.idMinistrante, isNull);
+      expect(limpa.criadaEm, criadaEm);
+      expect(await listas.listarItens(idLista), [item]);
+    },
+  );
+
+  test('rejeita Ministrante inexistente sem alterar o contexto', () async {
+    final listas = _RepositorioListasCultoFake();
+    final lista = ListaCulto(
+      id: IdListaCulto('lista-1'),
+      nome: 'Culto',
+      criadaEm: DateTime.utc(2026, 10, 20),
+    );
+    await listas.salvar(lista);
+
+    await expectLater(
+      AtualizarContextoListaCulto(
+        listas,
+        _RepositorioMinistrantesFake(),
+      ).executar(
+        lista.id,
+        data: DataCulto(ano: 2026, mes: 11, dia: 2),
+        idMinistrante: IdMinistrante('inexistente'),
+      ),
+      throwsA(isA<MinistranteNaoEncontrado>()),
+    );
+    expect(await listas.obterPorId(lista.id), same(lista));
   });
 
   test('adiciona a mesma música como itens independentes e reordena', () async {
@@ -250,13 +361,37 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
           idMusica: itens[indice].idMusica,
           idVersaoMusica: itens[indice].idVersaoMusica,
           posicao: indice,
+          tom: itens[indice].tom,
         ),
     ];
   }
 
   @override
   Future<void> renomear(IdListaCulto id, String nome) async {
-    _listas[id] = ListaCulto(id: id, nome: nome);
+    final atual = _listas[id]!;
+    _listas[id] = ListaCulto(
+      id: id,
+      nome: nome,
+      data: atual.data,
+      idMinistrante: atual.idMinistrante,
+      criadaEm: atual.criadaEm,
+    );
+  }
+
+  @override
+  Future<void> atualizarContexto(
+    IdListaCulto id, {
+    required DataCulto? data,
+    required IdMinistrante? idMinistrante,
+  }) async {
+    final atual = _listas[id]!;
+    _listas[id] = ListaCulto(
+      id: id,
+      nome: atual.nome,
+      data: data,
+      idMinistrante: idMinistrante,
+      criadaEm: atual.criadaEm,
+    );
   }
 
   @override
@@ -274,6 +409,7 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
       idMusica: item.idMusica,
       idVersaoMusica: idVersaoMusica,
       posicao: item.posicao,
+      tom: item.tom,
     );
   }
 
@@ -289,7 +425,9 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
           id: porId[ordem[indice]]!.id,
           idLista: idLista,
           idMusica: porId[ordem[indice]]!.idMusica,
+          idVersaoMusica: porId[ordem[indice]]!.idVersaoMusica,
           posicao: indice,
+          tom: porId[ordem[indice]]!.tom,
         ),
     ];
   }
@@ -297,6 +435,39 @@ class _RepositorioListasCultoFake implements RepositorioListasCulto {
   @override
   Future<void> salvar(ListaCulto lista) async {
     _listas[lista.id] = lista;
+  }
+}
+
+class _RepositorioMinistrantesFake implements RepositorioMinistrantes {
+  final Map<IdMinistrante, Ministrante> _ministrantes = {};
+
+  @override
+  Future<void> salvar(Ministrante ministrante) async {
+    _ministrantes[ministrante.id] = ministrante;
+  }
+
+  @override
+  Future<Ministrante?> obterPorId(IdMinistrante id) async => _ministrantes[id];
+
+  @override
+  Future<List<Ministrante>> listar({bool incluirArquivados = true}) async =>
+      _ministrantes.values
+          .where((ministrante) => incluirArquivados || !ministrante.arquivado)
+          .toList();
+
+  @override
+  Future<void> renomear(IdMinistrante id, String nome) async {
+    _ministrantes[id] = _ministrantes[id]!.renomear(nome);
+  }
+
+  @override
+  Future<void> arquivar(IdMinistrante id) async {
+    _ministrantes[id] = _ministrantes[id]!.arquivar();
+  }
+
+  @override
+  Future<void> restaurar(IdMinistrante id) async {
+    _ministrantes[id] = _ministrantes[id]!.restaurar();
   }
 }
 

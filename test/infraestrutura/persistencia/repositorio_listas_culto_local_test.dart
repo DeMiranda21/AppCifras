@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:appcifras/aplicacao/casos_de_uso/musicas.dart';
+import 'package:appcifras/aplicacao/casos_de_uso/listas_culto.dart';
+import 'package:appcifras/aplicacao/portas/gerador_id_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/item_lista_culto.dart';
 import 'package:appcifras/dominio/entidades/lista_culto.dart';
 import 'package:appcifras/dominio/entidades/musica.dart';
@@ -97,14 +99,26 @@ void main() {
     },
   );
 
+  test('criação automática persiste e recupera criadaEm exatamente', () async {
+    final instante = DateTime.utc(2026, 10, 29, 15, 30, 45);
+    final lista = await CriarListaCulto(
+      repositorio,
+      _GeradorListaCultoFixo(IdListaCulto('lista-criada')),
+      agora: () => instante,
+    ).executar('Culto');
+
+    final recuperada = await repositorio.obterPorId(lista.id);
+    expect(lista.criadaEm, instante);
+    expect(recuperada?.criadaEm, instante);
+
+    await repositorio.renomear(lista.id, 'Renomeada');
+    expect((await repositorio.obterPorId(lista.id))?.criadaEm, instante);
+  });
+
   test('persiste contexto histórico da lista e tom opcional do item', () async {
     final idMinistrante = IdMinistrante('ministrante-1');
     await RepositorioMinistrantesLocal(banco).salvar(
-      Ministrante(
-        id: idMinistrante,
-        nome: 'Ministrante',
-        arquivado: false,
-      ),
+      Ministrante(id: idMinistrante, nome: 'Ministrante', arquivado: false),
     );
     final lista = ListaCulto(
       id: IdListaCulto('lista-contextual'),
@@ -144,6 +158,78 @@ void main() {
     expect(renomeada?.data, lista.data);
     expect(renomeada?.idMinistrante, idMinistrante);
     expect(renomeada?.criadaEm, lista.criadaEm);
+  });
+
+  test('atualiza e limpa contexto preservando criação, nome, itens, versões e tons', () async {
+    final ministrantes = RepositorioMinistrantesLocal(banco);
+    final primeiro = Ministrante(
+      id: IdMinistrante('ministrante-1'),
+      nome: 'Primeiro',
+      arquivado: false,
+    );
+    final segundo = Ministrante(
+      id: IdMinistrante('ministrante-2'),
+      nome: 'Segundo',
+      arquivado: false,
+    );
+    await ministrantes.salvar(primeiro);
+    await ministrantes.salvar(segundo);
+    final criadaEm = DateTime.utc(2026, 10, 1, 15, 30);
+    final lista = ListaCulto(
+      id: IdListaCulto('lista-contexto-atualizavel'),
+      nome: 'Culto',
+      criadaEm: criadaEm,
+    );
+    await repositorio.salvar(lista);
+    await inserirMusicaIndice('musica-contexto');
+    const tom = Tom(
+      notaFundamental: Nota(nome: NomeNota.f),
+      modo: ModoTom.menor,
+    );
+    final itemOriginal = ItemListaCulto(
+      id: IdItemListaCulto('item-contexto'),
+      idLista: lista.id,
+      idMusica: IdMusica('musica-contexto'),
+      idVersaoMusica: IdVersaoMusica('musica-contexto'),
+      posicao: 0,
+      tom: tom,
+    );
+    await repositorio.adicionarItem(itemOriginal);
+
+    await repositorio.atualizarContexto(
+      lista.id,
+      data: DataCulto(ano: 2026, mes: 11, dia: 2),
+      idMinistrante: primeiro.id,
+    );
+    await repositorio.atualizarContexto(
+      lista.id,
+      data: DataCulto(ano: 2026, mes: 11, dia: 9),
+      idMinistrante: segundo.id,
+    );
+    final alterada = await repositorio.obterPorId(lista.id);
+    expect(alterada?.nome, lista.nome);
+    expect(alterada?.data, DataCulto(ano: 2026, mes: 11, dia: 9));
+    expect(alterada?.idMinistrante, segundo.id);
+    expect(alterada?.criadaEm, criadaEm);
+    final itemAposAlteracao = (await repositorio.listarItens(lista.id)).single;
+    expect(itemAposAlteracao.id, itemOriginal.id);
+    expect(itemAposAlteracao.idMusica, itemOriginal.idMusica);
+    expect(itemAposAlteracao.idVersaoMusica, itemOriginal.idVersaoMusica);
+    expect(itemAposAlteracao.posicao, itemOriginal.posicao);
+    expect(itemAposAlteracao.tom, tom);
+
+    await repositorio.atualizarContexto(
+      lista.id,
+      data: null,
+      idMinistrante: null,
+    );
+    final limpa = await repositorio.obterPorId(lista.id);
+    expect(limpa?.data, isNull);
+    expect(limpa?.idMinistrante, isNull);
+    expect(limpa?.criadaEm, criadaEm);
+    final itemAposLimpeza = (await repositorio.listarItens(lista.id)).single;
+    expect(itemAposLimpeza.idVersaoMusica, itemOriginal.idVersaoMusica);
+    expect(itemAposLimpeza.tom, tom);
   });
 
   test(
@@ -504,4 +590,13 @@ class _UsuarioExecutorLegado implements QueryExecutorUser {
     QueryExecutor executor,
     OpeningDetails details,
   ) async {}
+}
+
+class _GeradorListaCultoFixo implements GeradorIdListaCulto {
+  const _GeradorListaCultoFixo(this._id);
+
+  final IdListaCulto _id;
+
+  @override
+  IdListaCulto gerar() => _id;
 }

@@ -3,6 +3,7 @@ import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/erros/item_lista_culto_nao_encontrado.dart';
 import '../../dominio/erros/lista_culto_nao_encontrada.dart';
 import '../../dominio/erros/musica_nao_encontrada.dart';
+import '../../dominio/objetos_de_valor/data_culto.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_ministrante.dart';
@@ -58,6 +59,20 @@ class RepositorioListasCultoLocal implements RepositorioListasCulto {
     if (linhasAtualizadas != 1) {
       throw ListaCultoNaoEncontrada(id);
     }
+  }
+
+  @override
+  Future<void> atualizarContexto(
+    IdListaCulto id, {
+    required DataCulto? data,
+    required IdMinistrante? idMinistrante,
+  }) async {
+    final linhasAtualizadas = await _banco.atualizarContextoListaCulto(
+      id: id.valor,
+      data: data == null ? null : _codecData.codificar(data),
+      idMinistrante: idMinistrante?.valor,
+    );
+    if (linhasAtualizadas != 1) throw ListaCultoNaoEncontrada(id);
   }
 
   @override

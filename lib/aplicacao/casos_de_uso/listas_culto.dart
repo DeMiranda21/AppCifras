@@ -1,25 +1,39 @@
 import '../../dominio/entidades/item_lista_culto.dart';
 import '../../dominio/entidades/lista_culto.dart';
 import '../../dominio/erros/item_lista_culto_nao_encontrado.dart';
+import '../../dominio/erros/lista_culto_nao_encontrada.dart';
+import '../../dominio/erros/ministrante_nao_encontrado.dart';
 import '../../dominio/erros/versao_musica_nao_encontrada.dart';
 import '../../dominio/objetos_de_valor/id_item_lista_culto.dart';
 import '../../dominio/objetos_de_valor/id_lista_culto.dart';
+import '../../dominio/objetos_de_valor/data_culto.dart';
 import '../../dominio/objetos_de_valor/id_musica.dart';
+import '../../dominio/objetos_de_valor/id_ministrante.dart';
 import '../../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../../dominio/repositorios/repositorio_listas_culto.dart';
+import '../../dominio/repositorios/repositorio_ministrantes.dart';
 import '../../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../portas/consulta_detalhe_lista_culto.dart';
 import '../portas/gerador_id_item_lista_culto.dart';
 import '../portas/gerador_id_lista_culto.dart';
 
 class CriarListaCulto {
-  const CriarListaCulto(this._repositorio, this._geradorId);
+  CriarListaCulto(
+    this._repositorio,
+    this._geradorId, {
+    DateTime Function()? agora,
+  }) : _agora = agora ?? DateTime.now;
 
   final RepositorioListasCulto _repositorio;
   final GeradorIdListaCulto _geradorId;
+  final DateTime Function() _agora;
 
   Future<ListaCulto> executar(String nome) async {
-    final lista = ListaCulto(id: _geradorId.gerar(), nome: nome);
+    final lista = ListaCulto(
+      id: _geradorId.gerar(),
+      nome: nome,
+      criadaEm: _agora().toUtc(),
+    );
     await _repositorio.salvar(lista);
     return lista;
   }
@@ -48,6 +62,40 @@ class RenomearListaCulto {
 
   Future<void> executar(IdListaCulto id, String nome) =>
       _repositorio.renomear(id, nome);
+}
+
+class AtualizarContextoListaCulto {
+  const AtualizarContextoListaCulto(this._listas, this._ministrantes);
+
+  final RepositorioListasCulto _listas;
+  final RepositorioMinistrantes _ministrantes;
+
+  Future<ListaCulto> executar(
+    IdListaCulto id, {
+    required DataCulto? data,
+    required IdMinistrante? idMinistrante,
+  }) async {
+    final atual = await _listas.obterPorId(id);
+    if (atual == null) throw ListaCultoNaoEncontrada(id);
+
+    if (idMinistrante != null &&
+        await _ministrantes.obterPorId(idMinistrante) == null) {
+      throw MinistranteNaoEncontrado(idMinistrante);
+    }
+
+    await _listas.atualizarContexto(
+      id,
+      data: data,
+      idMinistrante: idMinistrante,
+    );
+    return ListaCulto(
+      id: atual.id,
+      nome: atual.nome,
+      data: data,
+      idMinistrante: idMinistrante,
+      criadaEm: atual.criadaEm,
+    );
+  }
 }
 
 class ExcluirListaCulto {

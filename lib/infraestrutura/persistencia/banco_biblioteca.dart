@@ -772,6 +772,17 @@ class BancoBiblioteca extends _$BancoBiblioteca {
         ListasCultoCompanion(nome: Value(nome)),
       );
 
+  Future<int> atualizarContextoListaCulto({
+    required String id,
+    required int? data,
+    required String? idMinistrante,
+  }) => (update(listasCulto)..where((tabela) => tabela.id.equals(id))).write(
+    ListasCultoCompanion(
+      data: Value(data),
+      idMinistrante: Value(idMinistrante),
+    ),
+  );
+
   Future<int> excluirListaCulto(String id) => transaction(() async {
     await (delete(
       itensListaCulto,

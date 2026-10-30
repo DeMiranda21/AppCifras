@@ -2,6 +2,7 @@ import '../aplicacao/casos_de_uso/ciclo_vida_versoes_musicas.dart';
 import '../aplicacao/casos_de_uso/classificacao_musica.dart';
 import '../aplicacao/casos_de_uso/editar_versao_musica.dart';
 import '../aplicacao/casos_de_uso/listas_culto.dart';
+import '../aplicacao/casos_de_uso/ministrantes.dart';
 import '../aplicacao/casos_de_uso/musicas.dart';
 import '../aplicacao/casos_de_uso/salvar_rascunho_chordpro.dart';
 import '../aplicacao/casos_de_uso/tom_execucao.dart';
@@ -16,6 +17,7 @@ import '../aplicacao/portas/consulta_detalhe_lista_culto.dart';
 import '../aplicacao/portas/aplicador_grupo_sincronizacao.dart';
 import '../aplicacao/portas/gerador_id_item_lista_culto.dart';
 import '../aplicacao/portas/gerador_id_lista_culto.dart';
+import '../aplicacao/portas/gerador_id_ministrante.dart';
 import '../aplicacao/portas/gerador_id_musica.dart';
 import '../aplicacao/portas/gerador_id_versao_musica.dart';
 import '../aplicacao/portas/repositorio_classificacao_musica.dart';
@@ -30,6 +32,7 @@ import '../dominio/objetos_de_valor/id_musica.dart';
 import '../dominio/objetos_de_valor/id_versao_musica.dart';
 import '../dominio/objetos_de_valor/tag_musica.dart';
 import '../dominio/repositorios/repositorio_listas_culto.dart';
+import '../dominio/repositorios/repositorio_ministrantes.dart';
 import '../dominio/repositorios/repositorio_musicas.dart';
 import '../dominio/repositorios/repositorio_versoes_musicas.dart';
 import '../dominio/servicos/parser_documento_chordpro.dart';
@@ -37,6 +40,7 @@ import '../infraestrutura/arquivos/armazenamento_arquivos_chordpro.dart';
 import '../infraestrutura/arquivos/codificador_chordpro_gerenciado.dart';
 import '../infraestrutura/identidade/gerador_id_item_lista_culto_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_lista_culto_uuid.dart';
+import '../infraestrutura/identidade/gerador_id_ministrante_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_musica_uuid.dart';
 import '../infraestrutura/identidade/gerador_id_versao_musica_uuid.dart';
 import '../infraestrutura/http/fonte_biblioteca_oficial_http.dart';
@@ -44,6 +48,7 @@ import '../infraestrutura/persistencia/banco_biblioteca.dart';
 import '../infraestrutura/persistencia/consulta_detalhe_lista_culto_local.dart';
 import '../infraestrutura/persistencia/repositorio_classificacao_musica_local.dart';
 import '../infraestrutura/persistencia/repositorio_listas_culto_local.dart';
+import '../infraestrutura/persistencia/repositorio_ministrantes_local.dart';
 import '../infraestrutura/persistencia/repositorio_musicas_local.dart';
 import '../infraestrutura/persistencia/repositorio_sincronizacao_local.dart';
 import '../infraestrutura/persistencia/repositorio_tom_execucao_local.dart';
@@ -55,6 +60,7 @@ class ComposicaoAppCifras {
     required RepositorioConsultaBiblioteca repositorioConsultaBiblioteca,
     required RepositorioVersoesMusicas repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
+    required RepositorioMinistrantes repositorioMinistrantes,
     required ConsultaDetalheListaCulto consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     required RepositorioClassificacaoMusica repositorioClassificacao,
@@ -64,9 +70,11 @@ class ComposicaoAppCifras {
     required GeradorIdMusica geradorId,
     required GeradorIdVersaoMusica geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
+    required GeradorIdMinistrante geradorIdMinistrante,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
     required FonteBibliotecaOficial fonteBibliotecaOficial,
+    DateTime Function()? agora,
   }) : _repositorioMusicasEdicao = repositorio,
        _repositorioVersoesEdicao = repositorioVersoes,
        _repositorioTomEdicao = repositorioTomExecucao,
@@ -158,10 +166,15 @@ class ComposicaoAppCifras {
        criarListaCulto = CriarListaCulto(
          repositorioListasCulto,
          geradorIdListaCulto,
+         agora: agora,
        ),
        listarListasCulto = ListarListasCulto(repositorioListasCulto),
        obterListaCulto = ObterListaCulto(repositorioListasCulto),
        renomearListaCulto = RenomearListaCulto(repositorioListasCulto),
+       atualizarContextoListaCulto = AtualizarContextoListaCulto(
+         repositorioListasCulto,
+         repositorioMinistrantes,
+       ),
        excluirListaCulto = ExcluirListaCulto(repositorioListasCulto),
        listarItensListaCulto = ListarItensListaCulto(repositorioListasCulto),
        carregarDetalheListaCulto = CarregarDetalheListaCulto(
@@ -180,6 +193,17 @@ class ComposicaoAppCifras {
        reordenarItensListaCulto = ReordenarItensListaCulto(
          repositorioListasCulto,
        ),
+       criarMinistrante = CriarMinistrante(
+         repositorioMinistrantes,
+         geradorIdMinistrante,
+       ),
+       listarMinistrantesAtivos = ListarMinistrantesAtivos(
+         repositorioMinistrantes,
+       ),
+       obterMinistrante = ObterMinistrante(repositorioMinistrantes),
+       renomearMinistrante = RenomearMinistrante(repositorioMinistrantes),
+       arquivarMinistrante = ArquivarMinistrante(repositorioMinistrantes),
+       restaurarMinistrante = RestaurarMinistrante(repositorioMinistrantes),
        importarMusica = ImportarMusica(
          repositorio: repositorio,
          parserDocumento: parserDocumento,
@@ -236,6 +260,7 @@ class ComposicaoAppCifras {
   final ListarListasCulto listarListasCulto;
   final ObterListaCulto obterListaCulto;
   final RenomearListaCulto renomearListaCulto;
+  final AtualizarContextoListaCulto atualizarContextoListaCulto;
   final ExcluirListaCulto excluirListaCulto;
   final ListarItensListaCulto listarItensListaCulto;
   final CarregarDetalheListaCulto carregarDetalheListaCulto;
@@ -243,6 +268,12 @@ class ComposicaoAppCifras {
   final RemoverItemListaCulto removerItemListaCulto;
   final TrocarVersaoItemListaCulto trocarVersaoItemListaCulto;
   final ReordenarItensListaCulto reordenarItensListaCulto;
+  final CriarMinistrante criarMinistrante;
+  final ListarMinistrantesAtivos listarMinistrantesAtivos;
+  final ObterMinistrante obterMinistrante;
+  final RenomearMinistrante renomearMinistrante;
+  final ArquivarMinistrante arquivarMinistrante;
+  final RestaurarMinistrante restaurarMinistrante;
 
   factory ComposicaoAppCifras.paraTeste({
     required BancoBiblioteca banco,
@@ -250,6 +281,7 @@ class ComposicaoAppCifras {
     RepositorioConsultaBiblioteca? repositorioConsultaBiblioteca,
     RepositorioVersoesMusicas? repositorioVersoes,
     required RepositorioListasCulto repositorioListasCulto,
+    RepositorioMinistrantes? repositorioMinistrantes,
     ConsultaDetalheListaCulto? consultaDetalheListaCulto,
     required RepositorioTomExecucao repositorioTomExecucao,
     RepositorioClassificacaoMusica? repositorioClassificacao,
@@ -259,9 +291,11 @@ class ComposicaoAppCifras {
     required GeradorIdMusica geradorId,
     GeradorIdVersaoMusica? geradorIdVersao,
     required GeradorIdListaCulto geradorIdListaCulto,
+    GeradorIdMinistrante? geradorIdMinistrante,
     required GeradorIdItemListaCulto geradorIdItemListaCulto,
     required ParserDocumentoChordPro parserDocumento,
     FonteBibliotecaOficial? fonteBibliotecaOficial,
+    DateTime Function()? agora,
   }) => ComposicaoAppCifras._(
     banco: banco,
     repositorio: repositorio,
@@ -271,6 +305,8 @@ class ComposicaoAppCifras {
     repositorioVersoes:
         repositorioVersoes ?? _RepositorioVersoesVazio(repositorio),
     repositorioListasCulto: repositorioListasCulto,
+    repositorioMinistrantes:
+        repositorioMinistrantes ?? RepositorioMinistrantesLocal(banco),
     consultaDetalheListaCulto:
         consultaDetalheListaCulto ?? const _ConsultaDetalheListaCultoVazia(),
     repositorioTomExecucao: repositorioTomExecucao,
@@ -285,10 +321,12 @@ class ComposicaoAppCifras {
     geradorId: geradorId,
     geradorIdVersao: geradorIdVersao ?? _GeradorIdVersaoLegado(),
     geradorIdListaCulto: geradorIdListaCulto,
+    geradorIdMinistrante: geradorIdMinistrante ?? GeradorIdMinistranteUuid(),
     geradorIdItemListaCulto: geradorIdItemListaCulto,
     parserDocumento: parserDocumento,
     fonteBibliotecaOficial:
         fonteBibliotecaOficial ?? const FonteBibliotecaOficialIndisponivel(),
+    agora: agora,
   );
 
   static Future<ComposicaoAppCifras> inicializar() async {
@@ -313,6 +351,7 @@ class ComposicaoAppCifras {
         banco,
       );
       final repositorioListasCulto = RepositorioListasCultoLocal(banco);
+      final repositorioMinistrantes = RepositorioMinistrantesLocal(banco);
       final repositorioSincronizacao = RepositorioSincronizacaoLocal(banco);
       final consultaDetalheListaCulto = ConsultaDetalheListaCultoLocal(
         repositorioListas: repositorioListasCulto,
@@ -333,6 +372,7 @@ class ComposicaoAppCifras {
         repositorioConsultaBiblioteca: repositorio,
         repositorioVersoes: repositorio,
         repositorioListasCulto: repositorioListasCulto,
+        repositorioMinistrantes: repositorioMinistrantes,
         consultaDetalheListaCulto: consultaDetalheListaCulto,
         repositorioTomExecucao: repositorioTomExecucao,
         repositorioClassificacao: repositorioClassificacao,
@@ -342,6 +382,7 @@ class ComposicaoAppCifras {
         geradorId: GeradorIdMusicaUuid(),
         geradorIdVersao: GeradorIdVersaoMusicaUuid(),
         geradorIdListaCulto: GeradorIdListaCultoUuid(),
+        geradorIdMinistrante: GeradorIdMinistranteUuid(),
         geradorIdItemListaCulto: GeradorIdItemListaCultoUuid(),
         parserDocumento: parserDocumento,
         fonteBibliotecaOficial: fonteBibliotecaOficial,
